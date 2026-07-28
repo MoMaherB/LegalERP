@@ -1,5 +1,6 @@
 @page "/companies"
 @using LegalERP.Application.Companies
+@using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
 @inject CompanyApiClient CompanyApi
 @inject NavigationManager NavManager
@@ -13,17 +14,46 @@
     <a href="/companies/new" class="btn btn-primary">Add New Company</a>
 </div>
 
+<!-- Search & Filter Controls -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label font-weight-bold">Search (Name / Trade Name / English)</label>
+                <input type="text" class="form-control" placeholder="Search by name, English name, or trade name..." 
+                       @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label font-weight-bold">Category Filter</label>
+                <select class="form-select" @bind="selectedCategory">
+                    <option value="">All Categories</option>
+                    @foreach (var cat in Enum.GetValues<CompanyCategory>())
+                    {
+                        <option value="@cat">@cat</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-secondary w-100" @onclick="PerformSearch">Search</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetSearch">Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @if (companies is null)
 {
     <p>Loading...</p>
 }
 else if (companies.Count == 0)
 {
-    <p>No companies found.</p>
+    <div class="alert alert-info">
+        No companies match the specified search or filter criteria.
+    </div>
 }
 else
 {
-    <table class="table table-hover">
+    <table class="table table-hover align-middle">
         <thead>
             <tr>
                 <th>Name</th>
@@ -36,9 +66,15 @@ else
             @foreach (var c in companies)
             {
                 <tr>
-                    <td>@c.CompanyName</td>
-                    <td>@c.TradeName</td>
-                    <td>@c.Category</td>
+                    <td>
+                        <strong>@c.CompanyName</strong>
+                        @if (!string.IsNullOrWhiteSpace(c.CompanyNameEn))
+                        {
+                            <br /><small class="text-muted">@c.CompanyNameEn</small>
+                        }
+                    </td>
+                    <td>@(string.IsNullOrWhiteSpace(c.TradeName) ? "—" : c.TradeName)</td>
+                    <td><span class="badge bg-secondary">@c.Category</span></td>
                     <td>
                         <a href="/companies/@c.Id" class="btn btn-sm btn-info me-2">View</a>
                         <a href="/companies/edit/@c.Id" class="btn btn-sm btn-secondary me-2">Edit</a>
@@ -52,10 +88,32 @@ else
 
 @code {
     private List<CompanyDto>? companies;
+    private string? searchTerm;
+    private CompanyCategory? selectedCategory;
 
     protected override async Task OnInitializedAsync()
     {
-        companies = await CompanyApi.GetAllAsync();
+        await PerformSearch();
+    }
+
+    private async Task PerformSearch()
+    {
+        companies = await CompanyApi.SearchAsync(searchTerm, selectedCategory);
+    }
+
+    private async Task ResetSearch()
+    {
+        searchTerm = null;
+        selectedCategory = null;
+        await PerformSearch();
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+        }
     }
 
     private async Task DeleteCompany(Guid id)
@@ -64,7 +122,7 @@ else
         if (confirmed)
         {
             await CompanyApi.DeleteAsync(id);
-            companies = await CompanyApi.GetAllAsync();
+            await PerformSearch();
         }
     }
 }

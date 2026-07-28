@@ -3,6 +3,7 @@ using System;
 using LegalERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LegalERP.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260728140632_AddTrigramFuzzySearchIndexes")]
+    partial class AddTrigramFuzzySearchIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -81,8 +84,6 @@ namespace LegalERP.Infrastructure.Migrations
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("CompanyNameEn"), "gin");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("CompanyNameEn"), new[] { "gin_trgm_ops" });
-
-                    b.HasIndex("IncorporationDocumentId");
 
                     b.HasIndex("TradeName");
 
@@ -222,16 +223,6 @@ namespace LegalERP.Infrastructure.Migrations
                     b.HasIndex("OwnerType", "OwnerId");
 
                     b.ToTable("documents", (string)null);
-                });
-
-            modelBuilder.Entity("LegalERP.Domain.Entities.Company", b =>
-                {
-                    b.HasOne("LegalERP.Domain.Entities.Document", "IncorporationDocument")
-                        .WithMany()
-                        .HasForeignKey("IncorporationDocumentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("IncorporationDocument");
                 });
 
             modelBuilder.Entity("LegalERP.Domain.Entities.CompanyAmendment", b =>

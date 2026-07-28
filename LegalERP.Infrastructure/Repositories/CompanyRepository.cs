@@ -20,6 +20,7 @@ public class CompanyRepository : ICompanyRepository
 
     public async Task<Company?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _db.Companies
+            .Include(c => c.IncorporationDocument)
             .Include(c => c.Amendments).ThenInclude(a => a.Document)
             .Include(c => c.Partners).ThenInclude(p => p.NationalIdDocument)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
@@ -36,12 +37,13 @@ public class CompanyRepository : ICompanyRepository
 
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
-            // Fuzzy search via pg_trgm (TR-7.1). Falls back to this simple
-            // form now; we'll swap in EF.Functions trigram similarity once
-            // the trigram extension/index is added in the migration step.
+            var pattern = $"%{searchTerm}%";
             query = query.Where(c =>
-                EF.Functions.ILike(c.CompanyName, $"%{searchTerm}%") ||
-                (c.CompanyNameEn != null && EF.Functions.ILike(c.CompanyNameEn, $"%{searchTerm}%")));
+                EF.Functions.ILike(c.CompanyName, pattern) ||
+                (c.CompanyNameEn != null && EF.Functions.ILike(c.CompanyNameEn, pattern)) ||
+                (c.TradeName != null && EF.Functions.ILike(c.TradeName, pattern)) ||
+                EF.Functions.TrigramsAreSimilar(c.CompanyName, searchTerm) ||
+                (c.CompanyNameEn != null && EF.Functions.TrigramsAreSimilar(c.CompanyNameEn, searchTerm)));
         }
 
         return await query.OrderBy(c => c.CompanyName).ToListAsync(ct);

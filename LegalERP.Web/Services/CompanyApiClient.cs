@@ -26,6 +26,19 @@ public class CompanyApiClient
         return result ?? new List<CompanyDto>();
     }
 
+    public async Task<List<CompanyDto>> SearchAsync(string? searchTerm, LegalERP.Domain.Enums.CompanyCategory? category)
+    {
+        var queryParams = new List<string>();
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+            queryParams.Add($"term={Uri.EscapeDataString(searchTerm)}");
+        if (category.HasValue)
+            queryParams.Add($"category={category.Value}");
+
+        var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
+        var result = await _http.GetFromJsonAsync<List<CompanyDto>>($"api/companies/search{queryString}", JsonOptions);
+        return result ?? new List<CompanyDto>();
+    }
+
     public async Task<CompanyDto?> CreateAsync(CreateCompanyDto dto)
     {
         var response = await _http.PostAsJsonAsync("api/companies", dto, JsonOptions);

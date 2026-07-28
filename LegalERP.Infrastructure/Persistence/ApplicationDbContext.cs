@@ -21,6 +21,8 @@ public class ApplicationDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasPostgresExtension("pg_trgm");
+
         // Applies every IEntityTypeConfiguration<T> class in this assembly
         // (the files in Persistence/Configurations/) automatically.
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);

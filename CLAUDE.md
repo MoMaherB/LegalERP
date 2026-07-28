@@ -568,22 +568,23 @@ User tested the following endpoints via Swagger and confirmed working:
 - **Domain/Infrastructure:** Created polymorphic `Document` entity, added `EstablishmentDate`, `RegistrationNumber`, and `Address` to `Company`. Configured `ApplicationDbContext` and added EF migration.
 - **Storage:** Created `LocalFileStorageService` saving files directly to `wwwroot/uploads`.
 - **API:** Created `DocumentsController` (POST/GET/DELETE). Added `Partners` CRUD endpoints to `CompaniesController`. Updated `Company` endpoints to map new fields. Implemented auto-generating Arabic ordinal sequence titles (عقد التعديل الأول).
-- **Web UI:** Created `FileThumbnail.razor` component with modal popups for PDFs and Images. Rewrote `CompanyForm.razor` to handle new fields and initial file upload. Rewrote `CompanyDetail.razor` to include interactive Partner Management and Amendment Management with integrated document uploads. All deletions include `confirm()` JS dialogs.
+- **Web UI:** Created `FileThumbnail.razor` component with modal popups for PDFs and Images. Rewrote `CompanyForm.razor` to handle new fields and initial file upload. Rewrote `CompanyDetail.razor` to include interactive Partner Management, Amendment Management, and direct Incorporation Contract Upload/Preview/Replacement with integrated document uploads. All deletions include `confirm()` JS dialogs.
 
-- **Bug Fixes (2026-07-26):** Fixed `500 Internal Server Error` on recreating soft-deleted amendments by making the `SequenceNumber` database unique index a Partial Index (ignoring soft-deleted rows). Fixed UI placeholder to dynamically reflect correct Arabic ordinal based on active amendments.
+- **Bug Fixes (2026-07-26 & 2026-07-28):** Fixed `500 Internal Server Error` on recreating soft-deleted amendments by making the `SequenceNumber` database unique index a Partial Index (ignoring soft-deleted rows). Fixed UI placeholder to dynamically reflect correct Arabic ordinal based on active amendments. Added direct Incorporation Contract uploading and preview thumbnails to `CompanyDetail.razor`.
+
+**Feature 5: Fuzzy Search (pg_trgm) + Category Filter — ✅ COMPLETED (2026-07-28)**
+- **Infrastructure:** Enabled `pg_trgm` extension in `ApplicationDbContext`. Added GIN trigram indexes (`gin_trgm_ops`) on `CompanyName`, `CompanyNameEn`, and `TradeName` in `CompanyConfiguration`.
+- **API/Repository:** Updated `CompanyRepository.SearchAsync` to use `EF.Functions.TrigramsAreSimilar` and `ILike` pattern matching.
+- **Web UI:** Added `SearchAsync` to `CompanyApiClient`. Added Search bar (with Enter key binding), Category filter dropdown, and Reset button to `CompanyList.razor`.
 
 ### In Progress
 
-**Feature 5: Fuzzy Search (pg_trgm) + Category Filter**
-- Enable `pg_trgm` in PostgreSQL via EF Core migration.
-- Add GIN indexes with `gin_trgm_ops` to `CompanyName` and `CompanyNameEn`.
-- Update `SearchAsync` repository method to use `EF.Functions.TrigramsAreSimilar`.
-- Add search and category filter UI to `CompanyList.razor`.
+*(No active features being built. Feature 5 complete & confirmed by user)*
 
 ### Current Position
 
-**Feature Sequence Position: Starting Feature 5 (Fuzzy Search & Filtering)**
-Agent has successfully completed Feature 3+4 and all bug fixes. Awaiting approval of Implementation Plan for Feature 5.
+**Feature Sequence Position: Ready for Feature 6 (Cases Module: Core CRUD + Case Types)**
+Agent has completed Feature 5. Ready to proceed to Feature 6 upon user confirmation.
 
 ### Active Agent Instructions
 

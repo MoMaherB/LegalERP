@@ -22,6 +22,7 @@ public class Company : BaseEntity
     // nullable Guid for now, no navigation property yet, to keep this
     // module self-contained until Documents is built).
     public Guid? IncorporationDocumentId { get; set; } // عقد التأسيس
+    public Document? IncorporationDocument { get; set; }
 
     // Navigation collections — populated once EF relationships are configured
     // in the Infrastructure layer (next steps).

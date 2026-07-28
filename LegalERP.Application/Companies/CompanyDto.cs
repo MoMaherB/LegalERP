@@ -26,6 +26,7 @@ public record CompanyDto(
     string? RegistrationNumber,
     string? Address,
     Guid? IncorporationDocumentId,
+    DocumentDto? IncorporationDocument,
     List<CompanyAmendmentDto> Amendments,
     List<CompanyPartnerDto> Partners
 );

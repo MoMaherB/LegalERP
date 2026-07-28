@@ -27,9 +27,12 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
 
       
 
-        // Soft-delete filter (TR-1.3): queries automatically exclude
-        // deleted rows unless explicitly overridden with IgnoreQueryFilters().
         builder.HasQueryFilter(c => !c.IsDeleted);
+
+        builder.HasOne(c => c.IncorporationDocument)
+            .WithMany()
+            .HasForeignKey(c => c.IncorporationDocumentId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasMany(c => c.Amendments)
             .WithOne()
@@ -41,7 +44,17 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
             .HasForeignKey(p => p.CompanyId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Trigram fuzzy-search index (TR-2.2, TR-7.1) — created via raw SQL
-        // in the migration itself, since EF Core has no built-in GIN/trgm API.
+        // Trigram fuzzy-search index (TR-2.2, TR-7.1)
+        builder.HasIndex(c => c.CompanyName)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
+
+        builder.HasIndex(c => c.CompanyNameEn)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
+
+        builder.HasIndex(c => c.TradeName)
+            .HasMethod("gin")
+            .HasOperators("gin_trgm_ops");
     }
 }

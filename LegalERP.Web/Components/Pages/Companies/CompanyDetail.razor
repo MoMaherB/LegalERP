@@ -57,16 +57,38 @@ else
             <div class="card mb-4 h-100">
                 <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
                     <h5 class="card-title w-100 text-start">Incorporation Contract</h5>
-                    @if (company.IncorporationDocumentId.HasValue)
+                    @if (company.IncorporationDocument != null)
                     {
-                        <div class="alert alert-success mb-0 w-100 text-start">
-                            <strong>Document ID:</strong> @company.IncorporationDocumentId
-                            <br/><small class="text-muted">(Document info is available in backend)</small>
+                        <div class="mb-2">
+                            <FileThumbnail Document="company.IncorporationDocument" OwnerType="company" OwnerId="company.Id" />
+                        </div>
+                        <div class="mt-2 w-100">
+                            <label class="form-label text-muted small">Replace Contract</label>
+                            <InputFile class="form-control form-control-sm mb-2" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
+                            @if (incorporationContractFile != null)
+                            {
+                                <button class="btn btn-sm btn-primary w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
+                                    @(isUploadingIncorporationContract ? "Uploading..." : "Save New Contract")
+                                </button>
+                            }
                         </div>
                     }
                     else
                     {
-                        <p class="text-muted mb-0">No contract uploaded.</p>
+                        <p class="text-muted mb-2">No contract uploaded yet.</p>
+                        <div class="w-100">
+                            <InputFile class="form-control form-control-sm mb-2" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
+                            @if (incorporationContractFile != null)
+                            {
+                                <button class="btn btn-sm btn-success w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
+                                    @(isUploadingIncorporationContract ? "Uploading..." : "Upload Contract")
+                                </button>
+                            }
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(incorporationContractErrorMessage))
+                    {
+                        <p class="text-danger small mt-2 mb-0">@incorporationContractErrorMessage</p>
                     }
                 </div>
             </div>
@@ -247,6 +269,52 @@ else
     public Guid Id { get; set; }
 
     private CompanyDto? company;
+
+    // Incorporation Contract state
+    private IBrowserFile? incorporationContractFile;
+    private bool isUploadingIncorporationContract;
+    private string? incorporationContractErrorMessage;
+
+    private void LoadIncorporationFile(InputFileChangeEventArgs e)
+    {
+        incorporationContractFile = e.File;
+        incorporationContractErrorMessage = null;
+    }
+
+    private async Task UploadIncorporationContract()
+    {
+        if (company == null || incorporationContractFile == null) return;
+
+        isUploadingIncorporationContract = true;
+        incorporationContractErrorMessage = null;
+
+        try
+        {
+            var docId = await CompanyApi.UploadDocumentAsync("company", company.Id, incorporationContractFile);
+            var updateDto = new UpdateCompanyDto(
+                company.Category,
+                company.CompanyName,
+                company.CompanyNameEn,
+                company.TradeName,
+                company.EstablishmentDate,
+                company.RegistrationNumber,
+                company.Address,
+                docId
+            );
+            await CompanyApi.UpdateAsync(company.Id, updateDto);
+
+            incorporationContractFile = null;
+            await LoadCompany();
+        }
+        catch (Exception ex)
+        {
+            incorporationContractErrorMessage = "Failed to upload contract: " + ex.Message;
+        }
+        finally
+        {
+            isUploadingIncorporationContract = false;
+        }
+    }
 
     private string NextAmendmentPlaceholder
     {

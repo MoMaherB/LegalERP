@@ -62,6 +62,7 @@ public class CompaniesController : ControllerBase
         c.RegistrationNumber,
         c.Address,
         c.IncorporationDocumentId,
+        c.IncorporationDocument == null ? null : new DocumentDto(c.IncorporationDocument.Id, c.IncorporationDocument.FileName, c.IncorporationDocument.StoredFileName, c.IncorporationDocument.ContentType, c.IncorporationDocument.FileSizeBytes),
         c.Amendments.Select(a => new CompanyAmendmentDto(
             a.Id, 
             a.SequenceNumber, 
