@@ -1,0 +1,420 @@
+@page "/companies/{Id:guid}"
+@using LegalERP.Application.Companies
+@using LegalERP.Web.Services
+@using LegalERP.Web.Components.Shared
+@using Microsoft.AspNetCore.Components.Forms
+@inject CompanyApiClient CompanyApi
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+@if (company is null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <PageTitle>@company.CompanyName - Details</PageTitle>
+
+    <div class="mb-4">
+        <button class="btn btn-outline-secondary" @onclick="GoBack">Back to List</button>
+        <a href="/companies/edit/@company.Id" class="btn btn-primary ms-2">Edit</a>
+    </div>
+
+    <h1>@company.CompanyName</h1>
+    
+    <div class="row">
+        @* ── Company Info Card ── *@
+        <div class="col-md-8">
+            <div class="card mb-4 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Company Info</h5>
+                    <dl class="row">
+                        <dt class="col-sm-4">English Name</dt>
+                        <dd class="col-sm-8">@(company.CompanyNameEn ?? "—")</dd>
+
+                        <dt class="col-sm-4">Trade Name</dt>
+                        <dd class="col-sm-8">@(company.TradeName ?? "—")</dd>
+
+                        <dt class="col-sm-4">Category</dt>
+                        <dd class="col-sm-8">@company.Category</dd>
+
+                        <dt class="col-sm-4">Establishment Date</dt>
+                        <dd class="col-sm-8">@(company.EstablishmentDate?.ToString("yyyy-MM-dd") ?? "—")</dd>
+
+                        <dt class="col-sm-4">Registration Number</dt>
+                        <dd class="col-sm-8">@(company.RegistrationNumber ?? "—")</dd>
+
+                        <dt class="col-sm-4">Address</dt>
+                        <dd class="col-sm-8">@(company.Address ?? "—")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        @* ── Incorporation Contract Card ── *@
+        <div class="col-md-4">
+            <div class="card mb-4 h-100">
+                <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
+                    <h5 class="card-title w-100 text-start">Incorporation Contract</h5>
+                    @if (company.IncorporationDocumentId.HasValue)
+                    {
+                        <div class="alert alert-success mb-0 w-100 text-start">
+                            <strong>Document ID:</strong> @company.IncorporationDocumentId
+                            <br/><small class="text-muted">(Document info is available in backend)</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-0">No contract uploaded.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Partners Section ── *@
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h3 class="mb-0">Partners</h3>
+        <button class="btn btn-sm btn-success" @onclick="ToggleAddPartnerForm">
+            @(showAddPartnerForm ? "Cancel" : "+ Add Partner")
+        </button>
+    </div>
+
+    @if (showAddPartnerForm)
+    {
+        <div class="card mb-3 border-success">
+            <div class="card-body">
+                <h5 class="card-title text-success">New Partner</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Full Name</label>
+                        <input class="form-control" @bind="newPartnerName" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">National ID</label>
+                        <input class="form-control" @bind="newPartnerNationalId" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Ownership %</label>
+                        <input type="number" step="0.01" class="form-control" @bind="newPartnerOwnership" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">ID Document</label>
+                        <InputFile class="form-control" OnChange="LoadPartnerFile" accept=".pdf,.jpg,.jpeg,.png" />
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button class="btn btn-success" @onclick="AddPartner" disabled="@isSavingPartner">
+                            @(isSavingPartner ? "Saving..." : "Save Partner")
+                        </button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(partnerErrorMessage))
+                {
+                    <p class="text-danger mt-2">@partnerErrorMessage</p>
+                }
+            </div>
+        </div>
+    }
+
+    @if (company.Partners.Count == 0)
+    {
+        <p class="text-muted">No partners recorded yet.</p>
+    }
+    else
+    {
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>National ID</th>
+                    <th>Ownership %</th>
+                    <th>ID Document</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var partner in company.Partners)
+                {
+                    <tr>
+                        <td>@partner.FullName</td>
+                        <td>@(partner.NationalIdNumber ?? "—")</td>
+                        <td>@(partner.OwnershipPercentage?.ToString("0.00") ?? "—")%</td>
+                        <td>
+                            @if (partner.NationalIdDocument != null)
+                            {
+                                <FileThumbnail Document="partner.NationalIdDocument" OwnerType="partner" OwnerId="partner.Id" />
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeletePartner(partner.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @* ── Amendments Section ── *@
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h3 class="mb-0">Amendments</h3>
+        <button class="btn btn-sm btn-success" @onclick="ToggleAddAmendmentForm">
+            @(showAddAmendmentForm ? "Cancel" : "+ Add Amendment")
+        </button>
+    </div>
+
+    @if (showAddAmendmentForm)
+    {
+        <div class="card mb-3 border-success">
+            <div class="card-body">
+                <h5 class="card-title text-success">New Amendment</h5>
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label class="form-label">Title (Leave blank for auto-generation)</label>
+                        <input class="form-control" @bind="newAmendmentTitle" placeholder="@NextAmendmentPlaceholder" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Date</label>
+                        <input type="date" class="form-control" @bind="newAmendmentDate" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Amendment Contract</label>
+                        <InputFile class="form-control" OnChange="LoadAmendmentFile" accept=".pdf,.jpg,.jpeg,.png" />
+                    </div>
+                    <div class="col-12 mt-3">
+                        <button class="btn btn-success" @onclick="AddAmendment" disabled="@isSavingAmendment">
+                            @(isSavingAmendment ? "Saving..." : "Save Amendment")
+                        </button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(amendmentErrorMessage))
+                {
+                    <p class="text-danger mt-2">@amendmentErrorMessage</p>
+                }
+            </div>
+        </div>
+    }
+
+    @if (company.Amendments.Count == 0)
+    {
+        <p class="text-muted">No amendments recorded yet.</p>
+    }
+    else
+    {
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Title</th>
+                    <th>Date</th>
+                    <th>Contract</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var amendment in company.Amendments.OrderBy(a => a.SequenceNumber))
+                {
+                    <tr>
+                        <td>@amendment.SequenceNumber</td>
+                        <td>@amendment.Title</td>
+                        <td>@amendment.AmendmentDate?.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            @if (amendment.Document != null)
+                            {
+                                <FileThumbnail Document="amendment.Document" OwnerType="amendment" OwnerId="amendment.Id" />
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteAmendment(amendment.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private CompanyDto? company;
+
+    private string NextAmendmentPlaceholder
+    {
+        get
+        {
+            if (company == null) return "عقد التعديل الأول";
+            var nextSeq = company.Amendments.Count == 0 ? 1 : company.Amendments.Max(a => a.SequenceNumber) + 1;
+            var ordinals = new[] { "الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع", "الثامن", "التاسع", "العاشر" };
+            var ordinalStr = nextSeq <= 10 ? ordinals[nextSeq - 1] : nextSeq.ToString();
+            return $"عقد التعديل {ordinalStr}";
+        }
+    }
+
+    // Amendment state
+    private bool showAddAmendmentForm;
+    private string? newAmendmentTitle;
+    private DateOnly? newAmendmentDate;
+    private IBrowserFile? newAmendmentFile;
+    private bool isSavingAmendment;
+    private string? amendmentErrorMessage;
+
+    // Partner state
+    private bool showAddPartnerForm;
+    private string? newPartnerName;
+    private string? newPartnerNationalId;
+    private decimal? newPartnerOwnership;
+    private IBrowserFile? newPartnerFile;
+    private bool isSavingPartner;
+    private string? partnerErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCompany();
+    }
+
+    private async Task LoadCompany()
+    {
+        company = await CompanyApi.GetByIdAsync(Id);
+    }
+
+    private void GoBack() => NavManager.NavigateTo("/companies");
+
+    // ── Amendments ──
+
+    private void ToggleAddAmendmentForm()
+    {
+        showAddAmendmentForm = !showAddAmendmentForm;
+        amendmentErrorMessage = null;
+        newAmendmentTitle = null;
+        newAmendmentDate = null;
+        newAmendmentFile = null;
+    }
+
+    private void LoadAmendmentFile(InputFileChangeEventArgs e)
+    {
+        newAmendmentFile = e.File;
+    }
+
+    private async Task AddAmendment()
+    {
+        amendmentErrorMessage = null;
+        isSavingAmendment = true;
+
+        try
+        {
+            var dto = new CreateCompanyAmendmentDto(newAmendmentTitle, newAmendmentDate, null);
+            var result = await CompanyApi.AddAmendmentAsync(Id, dto);
+
+            if (result != null && newAmendmentFile != null)
+            {
+                var docId = await CompanyApi.UploadDocumentAsync("amendment", result.Id, newAmendmentFile);
+                var updateDto = new UpdateCompanyAmendmentDto(result.Title, result.AmendmentDate, docId);
+                await CompanyApi.UpdateAmendmentAsync(Id, result.Id, updateDto);
+            }
+
+            showAddAmendmentForm = false;
+            newAmendmentTitle = null;
+            newAmendmentDate = null;
+            newAmendmentFile = null;
+            await LoadCompany();
+        }
+        catch (Exception ex)
+        {
+            amendmentErrorMessage = "Failed to add amendment: " + ex.Message;
+        }
+        finally
+        {
+            isSavingAmendment = false;
+        }
+    }
+
+    private async Task DeleteAmendment(Guid amendmentId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm",
+            "Are you sure you want to delete this amendment?");
+        if (confirmed)
+        {
+            await CompanyApi.DeleteAmendmentAsync(Id, amendmentId);
+            await LoadCompany();
+        }
+    }
+
+    // ── Partners ──
+
+    private void ToggleAddPartnerForm()
+    {
+        showAddPartnerForm = !showAddPartnerForm;
+        partnerErrorMessage = null;
+        newPartnerName = null;
+        newPartnerNationalId = null;
+        newPartnerOwnership = null;
+        newPartnerFile = null;
+    }
+
+    private void LoadPartnerFile(InputFileChangeEventArgs e)
+    {
+        newPartnerFile = e.File;
+    }
+
+    private async Task AddPartner()
+    {
+        partnerErrorMessage = null;
+        isSavingPartner = true;
+
+        if (string.IsNullOrWhiteSpace(newPartnerName))
+        {
+            partnerErrorMessage = "Name is required.";
+            isSavingPartner = false;
+            return;
+        }
+
+        try
+        {
+            var dto = new CreateCompanyPartnerDto(newPartnerName, newPartnerNationalId, newPartnerOwnership, null);
+            var result = await CompanyApi.AddPartnerAsync(Id, dto);
+
+            if (result != null && newPartnerFile != null)
+            {
+                var docId = await CompanyApi.UploadDocumentAsync("partner", result.Id, newPartnerFile);
+                var updateDto = new UpdateCompanyPartnerDto(result.FullName, result.NationalIdNumber, result.OwnershipPercentage, docId);
+                await CompanyApi.UpdatePartnerAsync(Id, result.Id, updateDto);
+            }
+
+            showAddPartnerForm = false;
+            newPartnerName = null;
+            newPartnerNationalId = null;
+            newPartnerOwnership = null;
+            newPartnerFile = null;
+            await LoadCompany();
+        }
+        catch (Exception ex)
+        {
+            partnerErrorMessage = "Failed to add partner: " + ex.Message;
+        }
+        finally
+        {
+            isSavingPartner = false;
+        }
+    }
+
+    private async Task DeletePartner(Guid partnerId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm",
+            "Are you sure you want to delete this partner?");
+        if (confirmed)
+        {
+            await CompanyApi.DeletePartnerAsync(Id, partnerId);
+            await LoadCompany();
+        }
+    }
+}

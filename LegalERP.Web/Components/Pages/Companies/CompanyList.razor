@@ -1,0 +1,70 @@
+@page "/companies"
+@using LegalERP.Application.Companies
+@using LegalERP.Web.Services
+@inject CompanyApiClient CompanyApi
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Companies Management</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Companies Management</h1>
+    <a href="/companies/new" class="btn btn-primary">Add New Company</a>
+</div>
+
+@if (companies is null)
+{
+    <p>Loading...</p>
+}
+else if (companies.Count == 0)
+{
+    <p>No companies found.</p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Trade Name</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in companies)
+            {
+                <tr>
+                    <td>@c.CompanyName</td>
+                    <td>@c.TradeName</td>
+                    <td>@c.Category</td>
+                    <td>
+                        <a href="/companies/@c.Id" class="btn btn-sm btn-info me-2">View</a>
+                        <a href="/companies/edit/@c.Id" class="btn btn-sm btn-secondary me-2">Edit</a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCompany(c.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<CompanyDto>? companies;
+
+    protected override async Task OnInitializedAsync()
+    {
+        companies = await CompanyApi.GetAllAsync();
+    }
+
+    private async Task DeleteCompany(Guid id)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this company? This action cannot be undone.");
+        if (confirmed)
+        {
+            await CompanyApi.DeleteAsync(id);
+            companies = await CompanyApi.GetAllAsync();
+        }
+    }
+}

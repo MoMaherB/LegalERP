@@ -1,0 +1,6 @@
+@LegalERP.Api_HostAddress = http://localhost:5123
+
+GET {{LegalERP.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

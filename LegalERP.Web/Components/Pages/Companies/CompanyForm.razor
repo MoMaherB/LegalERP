@@ -1,0 +1,255 @@
+@page "/companies/new"
+@page "/companies/edit/{Id:guid}"
+@using LegalERP.Application.Companies
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Services
+@inject CompanyApiClient CompanyApi
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+
+<PageTitle>@(IsEdit ? "Edit Company" : "Add Company")</PageTitle>
+
+<div class="mb-4">
+    <button class="btn btn-outline-secondary" @onclick="GoBack">Back</button>
+</div>
+
+<h1>@(IsEdit ? "Edit Company" : "Add Company")</h1>
+
+@if (IsEdit && isInitializing)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Category</label>
+                <InputSelect class="form-select" @bind-Value="model.Category">
+                    @foreach (var category in Enum.GetValues<CompanyCategory>())
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </InputSelect>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Establishment Date</label>
+                <InputDate class="form-control" @bind-Value="model.EstablishmentDate" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Company Name (Arabic)</label>
+                <InputText class="form-control" @bind-Value="model.CompanyName" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Company Name (English)</label>
+                <InputText class="form-control" @bind-Value="model.CompanyNameEn" />
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Trade Name</label>
+                <InputText class="form-control" @bind-Value="model.TradeName" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Registration Number</label>
+                <InputText class="form-control" @bind-Value="model.RegistrationNumber" />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Address</label>
+            <InputTextArea class="form-control" @bind-Value="model.Address" rows="2" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Incorporation Contract (عقد التأسيس)</label>
+            @if (IsEdit && model.ExistingIncorporationDocument != null)
+            {
+                <div class="mb-2">
+                    <span class="badge bg-success">Contract Uploaded</span> 
+                    @model.ExistingIncorporationDocument.FileName
+                </div>
+            }
+            <InputFile class="form-control" OnChange="LoadFile" accept=".pdf,.jpg,.jpeg,.png" />
+            <div class="form-text">Allowed types: PDF, JPG, PNG.</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" disabled="@isSaving">
+            @if (isSaving)
+            {
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span> Saving...</span>
+            }
+            else
+            {
+                <span>Save Company</span>
+            }
+        </button>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">@errorMessage</div>
+    }
+}
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private bool IsEdit => Id.HasValue;
+    private bool isInitializing = true;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private IBrowserFile? selectedFile;
+
+    private class CompanyFormModel
+    {
+        public CompanyCategory Category { get; set; } = CompanyCategory.SoleProprietorship;
+        public string CompanyName { get; set; } = string.Empty;
+        public string? CompanyNameEn { get; set; }
+        public string? TradeName { get; set; }
+        public DateOnly? EstablishmentDate { get; set; }
+        public string? RegistrationNumber { get; set; }
+        public string? Address { get; set; }
+        public Guid? IncorporationDocumentId { get; set; }
+        public DocumentDto? ExistingIncorporationDocument { get; set; }
+    }
+
+    private CompanyFormModel model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEdit)
+        {
+            var company = await CompanyApi.GetByIdAsync(Id!.Value);
+            if (company != null)
+            {
+                model.Category = company.Category;
+                model.CompanyName = company.CompanyName;
+                model.CompanyNameEn = company.CompanyNameEn;
+                model.TradeName = company.TradeName;
+                model.EstablishmentDate = company.EstablishmentDate;
+                model.RegistrationNumber = company.RegistrationNumber;
+                model.Address = company.Address;
+                model.IncorporationDocumentId = company.IncorporationDocumentId;
+                
+                // If the backend returned a DocumentDto, we could map it if it was in CompanyDto. 
+                // Currently CompanyDto only holds IncorporationDocumentId, not the full DocumentDto.
+                // We'll leave ExistingIncorporationDocument out for now unless added to DTO.
+            }
+            else
+            {
+                errorMessage = "Company not found.";
+            }
+        }
+        isInitializing = false;
+    }
+
+    private void LoadFile(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+        isSaving = true;
+
+        if (string.IsNullOrWhiteSpace(model.CompanyName))
+        {
+            errorMessage = "Company Name is required.";
+            isSaving = false;
+            return;
+        }
+
+        try
+        {
+            Guid companyId;
+
+            if (IsEdit)
+            {
+                companyId = Id!.Value;
+                
+                // If a new file is selected, upload it first
+                if (selectedFile != null)
+                {
+                    var docId = await CompanyApi.UploadDocumentAsync("company", companyId, selectedFile);
+                    model.IncorporationDocumentId = docId;
+                }
+
+                var dto = new UpdateCompanyDto(
+                    model.Category,
+                    model.CompanyName,
+                    model.CompanyNameEn,
+                    model.TradeName,
+                    model.EstablishmentDate,
+                    model.RegistrationNumber,
+                    model.Address,
+                    model.IncorporationDocumentId);
+
+                await CompanyApi.UpdateAsync(companyId, dto);
+            }
+            else
+            {
+                // Create basic company first
+                var createDto = new CreateCompanyDto(
+                    model.Category,
+                    model.CompanyName,
+                    model.CompanyNameEn,
+                    model.TradeName,
+                    model.EstablishmentDate,
+                    model.RegistrationNumber,
+                    model.Address,
+                    null); // No document ID yet
+
+                var newCompany = await CompanyApi.CreateAsync(createDto);
+                if (newCompany == null) throw new Exception("Creation failed");
+                
+                companyId = newCompany.Id;
+
+                // If a file was selected, upload it and update the company
+                if (selectedFile != null)
+                {
+                    var docId = await CompanyApi.UploadDocumentAsync("company", companyId, selectedFile);
+                    
+                    var updateDto = new UpdateCompanyDto(
+                        model.Category,
+                        model.CompanyName,
+                        model.CompanyNameEn,
+                        model.TradeName,
+                        model.EstablishmentDate,
+                        model.RegistrationNumber,
+                        model.Address,
+                        docId);
+                        
+                    await CompanyApi.UpdateAsync(companyId, updateDto);
+                }
+            }
+
+            // Navigate directly to the company detail page where they can add partners
+            NavManager.NavigateTo($"/companies/{companyId}");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred while saving the company: " + ex.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo("/companies");
+    }
+}

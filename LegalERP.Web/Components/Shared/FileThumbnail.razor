@@ -1,0 +1,161 @@
+@using LegalERP.Application.Companies
+@inject IJSRuntime JSRuntime
+
+@if (Document != null)
+{
+    <div class="file-thumbnail" @onclick="ShowViewer">
+        @if (IsImage)
+        {
+            <img src="@GetFileUrl()" alt="@Document.FileName" class="thumbnail-img" />
+        }
+        else if (IsPdf)
+        {
+            <div class="pdf-icon">
+                <span class="oi oi-document" aria-hidden="true"></span>
+                <span class="file-ext">PDF</span>
+            </div>
+        }
+        else
+        {
+            <div class="unknown-icon">
+                <span class="oi oi-file" aria-hidden="true"></span>
+            </div>
+        }
+        <div class="file-name" title="@Document.FileName">@Document.FileName</div>
+    </div>
+
+    @if (showViewer)
+    {
+        <div class="modal-backdrop fade show"></div>
+        <div class="modal fade show d-block" tabindex="-1" @onclick="CloseViewer">
+            <div class="modal-dialog modal-xl modal-dialog-centered" @onclick:stopPropagation="true">
+                <div class="modal-content file-modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">@Document.FileName</h5>
+                        <button type="button" class="btn-close" @onclick="CloseViewer" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body file-modal-body text-center p-0">
+                        @if (IsImage)
+                        {
+                            <img src="@GetFileUrl()" class="img-fluid" alt="@Document.FileName" />
+                        }
+                        else if (IsPdf)
+                        {
+                            <iframe src="@GetFileUrl()" class="pdf-viewer"></iframe>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public DocumentDto? Document { get; set; }
+
+    [Parameter]
+    public string OwnerType { get; set; } = string.Empty;
+
+    [Parameter]
+    public Guid OwnerId { get; set; }
+
+    private bool showViewer = false;
+
+    private bool IsImage => Document?.ContentType.StartsWith("image/") == true;
+    private bool IsPdf => Document?.ContentType == "application/pdf";
+
+    // Assuming the API is running on https://localhost:7148 (standard dev port)
+    // In a real app, this base URL should come from config.
+    private string GetFileUrl()
+    {
+        if (Document == null) return string.Empty;
+        // Point to the API download endpoint
+        return $"https://localhost:7148/api/documents/{Document.Id}/download";
+    }
+
+    private void ShowViewer()
+    {
+        showViewer = true;
+    }
+
+    private void CloseViewer()
+    {
+        showViewer = false;
+    }
+}
+
+<style>
+    .file-thumbnail {
+        width: 100px;
+        height: 120px;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 5px;
+        text-align: center;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        background: #f8f9fa;
+        overflow: hidden;
+    }
+
+    .file-thumbnail:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .thumbnail-img {
+        width: 100%;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+
+    .pdf-icon, .unknown-icon {
+        width: 100%;
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #dc3545;
+        font-size: 2rem;
+    }
+    
+    .unknown-icon {
+        color: #6c757d;
+    }
+
+    .file-ext {
+        font-size: 0.8rem;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+
+    .file-name {
+        font-size: 0.75rem;
+        margin-top: 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .file-modal-content {
+        background-color: #f8f9fa;
+        height: 90vh;
+    }
+
+    .file-modal-body {
+        height: calc(90vh - 60px);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pdf-viewer {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+</style>
