@@ -71,14 +71,21 @@ public class CompaniesController : ControllerBase
             a.DocumentId,
             a.Document == null ? null : new DocumentDto(a.Document.Id, a.Document.FileName, a.Document.StoredFileName, a.Document.ContentType, a.Document.FileSizeBytes)
         )).ToList(),
-        c.Partners.Select(p => new CompanyPartnerDto(
-            p.Id, 
-            p.FullName, 
-            p.NationalIdNumber, 
-            p.OwnershipPercentage, 
-            p.NationalIdDocumentId,
-            p.NationalIdDocument == null ? null : new DocumentDto(p.NationalIdDocument.Id, p.NationalIdDocument.FileName, p.NationalIdDocument.StoredFileName, p.NationalIdDocument.ContentType, p.NationalIdDocument.FileSizeBytes)
-        )).ToList()
+        c.Partners.Select(p => {
+            var fullName = p.Client?.FullName ?? p.FullName;
+            var nationalId = p.Client?.NationalIdNumber ?? p.NationalIdNumber;
+            var doc = p.Client?.NationalIdDocument ?? p.NationalIdDocument;
+            var docDto = doc == null ? null : new DocumentDto(doc.Id, doc.FileName, doc.StoredFileName, doc.ContentType, doc.FileSizeBytes);
+            return new CompanyPartnerDto(
+                p.Id, 
+                p.ClientId,
+                fullName, 
+                nationalId, 
+                p.OwnershipPercentage, 
+                doc?.Id ?? p.NationalIdDocumentId,
+                docDto
+            );
+        }).ToList()
     );
 
     // GET /api/companies/{id}
@@ -234,7 +241,8 @@ public class CompaniesController : ControllerBase
         var partner = new CompanyPartner
         {
             CompanyId = companyId,
-            FullName = dto.FullName,
+            ClientId = dto.ClientId,
+            FullName = dto.FullName ?? "",
             NationalIdNumber = dto.NationalIdNumber,
             OwnershipPercentage = dto.OwnershipPercentage,
             NationalIdDocumentId = dto.NationalIdDocumentId
@@ -243,8 +251,29 @@ public class CompaniesController : ControllerBase
         await _repository.AddPartnerAsync(partner, ct);
         await _repository.SaveChangesAsync(ct);
 
+        var updatedCompany = await _repository.GetByIdAsync(companyId, ct);
+        var createdPartner = updatedCompany?.Partners.FirstOrDefault(p => p.Id == partner.Id);
+
+        if (createdPartner != null)
+        {
+            var fullName = createdPartner.Client?.FullName ?? createdPartner.FullName;
+            var nationalId = createdPartner.Client?.NationalIdNumber ?? createdPartner.NationalIdNumber;
+            var doc = createdPartner.Client?.NationalIdDocument ?? createdPartner.NationalIdDocument;
+            var docDto = doc == null ? null : new DocumentDto(doc.Id, doc.FileName, doc.StoredFileName, doc.ContentType, doc.FileSizeBytes);
+
+            return Ok(new CompanyPartnerDto(
+                createdPartner.Id,
+                createdPartner.ClientId,
+                fullName,
+                nationalId,
+                createdPartner.OwnershipPercentage,
+                doc?.Id ?? createdPartner.NationalIdDocumentId,
+                docDto
+            ));
+        }
+
         return Ok(new CompanyPartnerDto(
-            partner.Id, partner.FullName, partner.NationalIdNumber, partner.OwnershipPercentage, partner.NationalIdDocumentId, null));
+            partner.Id, partner.ClientId, partner.FullName, partner.NationalIdNumber, partner.OwnershipPercentage, partner.NationalIdDocumentId, null));
     }
 
     // PUT /api/companies/{companyId}/partners/{partnerId}

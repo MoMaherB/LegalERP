@@ -23,6 +23,7 @@ public class CompanyRepository : ICompanyRepository
             .Include(c => c.IncorporationDocument)
             .Include(c => c.Amendments).ThenInclude(a => a.Document)
             .Include(c => c.Partners).ThenInclude(p => p.NationalIdDocument)
+            .Include(c => c.Partners).ThenInclude(p => p.Client).ThenInclude(cl => cl.NationalIdDocument)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
     public async Task<List<Company>> GetAllAsync(CancellationToken ct = default) =>

@@ -1,0 +1,226 @@
+@page "/cases/new"
+@page "/cases/edit/{id:guid}"
+@using LegalERP.Application.Cases
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Services
+@inject CaseApiClient CaseApi
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+
+<PageTitle>@(IsEditMode ? "Edit Case" : "Add New Case")</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>@(IsEditMode ? "Edit Case" : "Add New Case")</h1>
+    <a href="/cases" class="btn btn-outline-secondary">Cancel</a>
+</div>
+
+@if (isLoading)
+{
+    <p>Loading case information...</p>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" />
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Case Number *</label>
+                        <InputText class="form-control" @bind-Value="model.CaseNumber" placeholder="e.g. 1234/2026" />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Title / Subject *</label>
+                        <InputText class="form-control" @bind-Value="model.Title" placeholder="e.g. Commercial Dispute / Real Estate Contract" />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">Case Type *</label>
+                        <InputSelect class="form-select" @bind-Value="model.CaseType">
+                            @foreach (var type in Enum.GetValues<CaseType>())
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Status *</label>
+                        <InputSelect class="form-select" @bind-Value="model.Status">
+                            @foreach (var status in Enum.GetValues<CaseStatus>())
+                            {
+                                <option value="@status">@status</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    @if (model.Status == CaseStatus.Closed)
+                    {
+                        <div class="col-md-3">
+                            <label class="form-label">Outcome (Judgment) *</label>
+                            <InputSelect class="form-select" @bind-Value="model.Outcome">
+                                <option value="">Select Outcome...</option>
+                                @foreach (var outcome in Enum.GetValues<CaseOutcome>())
+                                {
+                                    <option value="@outcome">@outcome</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Filing Date</label>
+                            <InputDate class="form-control" @bind-Value="model.FilingDate" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-md-5">
+                            <label class="form-label">Filing Date</label>
+                            <InputDate class="form-control" @bind-Value="model.FilingDate" />
+                        </div>
+                    }
+
+                    <div class="col-md-6">
+                        <label class="form-label">Court Name</label>
+                        <InputText class="form-control" @bind-Value="model.CourtName" placeholder="e.g. Cairo Primary Court" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Judge / Circuit Name</label>
+                        <InputText class="form-control" @bind-Value="model.JudgeName" placeholder="e.g. 5th Civil Circuit" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Notes & Remarks</label>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" placeholder="Additional details or background information..." />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mb-3">@errorMessage</div>
+        }
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                @(isSubmitting ? "Saving..." : (IsEditMode ? "Save Changes" : "Create Case"))
+            </button>
+            <a href="/cases" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private bool IsEditMode => Id.HasValue;
+    private CaseFormModel model = new();
+    private bool isLoading = true;
+    private bool isSubmitting;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode)
+        {
+            var existing = await CaseApi.GetByIdAsync(Id!.Value);
+            if (existing != null)
+            {
+                model = new CaseFormModel
+                {
+                    CaseNumber = existing.CaseNumber,
+                    Title = existing.Title,
+                    CaseType = existing.CaseType,
+                    Status = existing.Status,
+                    Outcome = existing.Outcome,
+                    FilingDate = existing.FilingDate,
+                    CourtName = existing.CourtName,
+                    JudgeName = existing.JudgeName,
+                    Notes = existing.Notes
+                };
+            }
+            else
+            {
+                errorMessage = "Case not found.";
+            }
+        }
+        isLoading = false;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(model.CaseNumber) || string.IsNullOrWhiteSpace(model.Title))
+        {
+            errorMessage = "Case Number and Title are required.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            if (IsEditMode)
+            {
+                var updateDto = new UpdateCaseDto(
+                    model.CaseNumber,
+                    model.Title,
+                    model.CaseType,
+                    model.Status,
+                    model.Outcome,
+                    model.FilingDate,
+                    model.CourtName,
+                    model.JudgeName,
+                    model.Notes
+                );
+                await CaseApi.UpdateAsync(Id!.Value, updateDto);
+                NavManager.NavigateTo($"/cases/{Id.Value}");
+            }
+            else
+            {
+                var createDto = new CreateCaseDto(
+                    model.CaseNumber,
+                    model.Title,
+                    model.CaseType,
+                    model.Status,
+                    model.Outcome,
+                    model.FilingDate,
+                    model.CourtName,
+                    model.JudgeName,
+                    model.Notes
+                );
+                var created = await CaseApi.CreateAsync(createDto);
+                if (created != null)
+                {
+                    NavManager.NavigateTo($"/cases/{created.Id}");
+                }
+                else
+                {
+                    NavManager.NavigateTo("/cases");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to save case: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private class CaseFormModel
+    {
+        public string CaseNumber { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public CaseType CaseType { get; set; } = CaseType.Civil;
+        public CaseStatus Status { get; set; } = CaseStatus.Active;
+        public CaseOutcome? Outcome { get; set; }
+        public DateOnly? FilingDate { get; set; }
+        public string? CourtName { get; set; }
+        public string? JudgeName { get; set; }
+        public string? Notes { get; set; }
+    }
+}

@@ -3,6 +3,7 @@ using System;
 using LegalERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LegalERP.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260728153251_AddCasesTable")]
+    partial class AddCasesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,10 +63,6 @@ namespace LegalERP.Infrastructure.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<string>("Outcome")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -90,135 +89,6 @@ namespace LegalERP.Infrastructure.Migrations
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Title"), new[] { "gin_trgm_ops" });
 
                     b.ToTable("cases", (string)null);
-                });
-
-            modelBuilder.Entity("LegalERP.Domain.Entities.CaseParty", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CaseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ClientId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("DocumentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsOurClient")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("NationalIdNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CaseId");
-
-                    b.HasIndex("ClientId");
-
-                    b.HasIndex("DocumentId");
-
-                    b.ToTable("case_parties", (string)null);
-                });
-
-            modelBuilder.Entity("LegalERP.Domain.Entities.Client", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid?>("AttorneyDocumentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("FullNameEn")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid?>("NationalIdDocumentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("NationalIdNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("PhoneNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AttorneyDocumentId");
-
-                    b.HasIndex("FullName");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("FullName"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("FullName"), new[] { "gin_trgm_ops" });
-
-                    b.HasIndex("FullNameEn");
-
-                    NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("FullNameEn"), "gin");
-                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("FullNameEn"), new[] { "gin_trgm_ops" });
-
-                    b.HasIndex("NationalIdDocumentId");
-
-                    b.ToTable("clients", (string)null);
                 });
 
             modelBuilder.Entity("LegalERP.Domain.Entities.Company", b =>
@@ -338,9 +208,6 @@ namespace LegalERP.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid?>("ClientId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid");
 
@@ -369,8 +236,6 @@ namespace LegalERP.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ClientId");
 
                     b.HasIndex("CompanyId");
 
@@ -427,48 +292,6 @@ namespace LegalERP.Infrastructure.Migrations
                     b.ToTable("documents", (string)null);
                 });
 
-            modelBuilder.Entity("LegalERP.Domain.Entities.CaseParty", b =>
-                {
-                    b.HasOne("LegalERP.Domain.Entities.Case", "Case")
-                        .WithMany("Parties")
-                        .HasForeignKey("CaseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("LegalERP.Domain.Entities.Client", "Client")
-                        .WithMany("CaseParties")
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("LegalERP.Domain.Entities.Document", "Document")
-                        .WithMany()
-                        .HasForeignKey("DocumentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Case");
-
-                    b.Navigation("Client");
-
-                    b.Navigation("Document");
-                });
-
-            modelBuilder.Entity("LegalERP.Domain.Entities.Client", b =>
-                {
-                    b.HasOne("LegalERP.Domain.Entities.Document", "AttorneyDocument")
-                        .WithMany()
-                        .HasForeignKey("AttorneyDocumentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("LegalERP.Domain.Entities.Document", "NationalIdDocument")
-                        .WithMany()
-                        .HasForeignKey("NationalIdDocumentId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("AttorneyDocument");
-
-                    b.Navigation("NationalIdDocument");
-                });
-
             modelBuilder.Entity("LegalERP.Domain.Entities.Company", b =>
                 {
                     b.HasOne("LegalERP.Domain.Entities.Document", "IncorporationDocument")
@@ -496,12 +319,7 @@ namespace LegalERP.Infrastructure.Migrations
 
             modelBuilder.Entity("LegalERP.Domain.Entities.CompanyPartner", b =>
                 {
-                    b.HasOne("LegalERP.Domain.Entities.Client", "Client")
-                        .WithMany("CompanyPartnerships")
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("LegalERP.Domain.Entities.Company", "Company")
+                    b.HasOne("LegalERP.Domain.Entities.Company", null)
                         .WithMany("Partners")
                         .HasForeignKey("CompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -511,23 +329,7 @@ namespace LegalERP.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("NationalIdDocumentId");
 
-                    b.Navigation("Client");
-
-                    b.Navigation("Company");
-
                     b.Navigation("NationalIdDocument");
-                });
-
-            modelBuilder.Entity("LegalERP.Domain.Entities.Case", b =>
-                {
-                    b.Navigation("Parties");
-                });
-
-            modelBuilder.Entity("LegalERP.Domain.Entities.Client", b =>
-                {
-                    b.Navigation("CaseParties");
-
-                    b.Navigation("CompanyPartnerships");
                 });
 
             modelBuilder.Entity("LegalERP.Domain.Entities.Company", b =>

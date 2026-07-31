@@ -139,6 +139,9 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 | BR-2.9 | After a hearing occurs, the user shall log an outcome: either a final Judgment (حكم) or a Postponement (تأجيل). |
 | BR-2.10 | If postponed, the system shall capture the next hearing date and automatically schedule a new 1-day-prior reminder. |
 | BR-2.11 | The full history of postponements for a case shall be retrievable as an audit trail (no hearing record is overwritten or lost). |
+| BR-2.12 | Every document uploaded to a case or case party shall support a custom user-defined title/label for identification. |
+| BR-2.13 | Closing a case shall capture the final Case Outcome (Won / Lost / Settled) and render distinct color badges (Green = Won, Red = Lost, Blue = Settled/Dismissed). |
+| BR-2.14 | Every person added to a case (whether our client or opponent) **must** be a registered Client record in the system. The UI shall provide a quick-search selector to pick an existing Client, or a "Client not found — Add new" option that redirects to create a new Client record and then returns to pick them. No manual inline name entry is allowed for case parties. |
 
 ### BR-3: Financials & Fees Management
 | ID | Requirement |
@@ -165,6 +168,18 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 | BR-5.4 | The user's theme and language preference shall persist across sessions and devices (stored against the user's profile), while also rendering instantly on app startup from local device storage. |
 | BR-5.5 | The UI shall use a modern **glassmorphism** design language (translucent, blurred, layered surfaces) across all screens, correctly adapted for both Light and Dark themes. See Section 13 for full design specification. |
 | BR-5.6 | The Web App shall be fully **responsive/mobile-friendly**: all screens (dashboards, forms, tables, document viewers) shall remain usable and legible on phone-sized screens, without requiring a separate native mobile app. |
+
+### BR-6: Clients Management (الموكلين)
+| ID | Requirement |
+|----|-------------|
+| BR-6.1 | The system shall maintain a central **Clients (الموكلين)** registry — every person the firm deals with (whether represented by the firm or an opposing party) must have a Client record before they can be linked to a case or company. |
+| BR-6.2 | Each Client record shall capture: Full Name (Arabic, required), Full Name (English, optional), **National ID Number (رقم الهوية, mandatory / required)**, Phone Number, Email, Address, and Notes. |
+| BR-6.3 | Each Client record shall support uploading two key documents: a **National ID scan** (صورة الهوية) and an **Attorney/Power of Attorney document** (صورة الوكالة — the lawyer's authorization paper). |
+| BR-6.4 | The Client detail page shall display all **related Cases** (every case where this Client is a party, with case number, title, role, client/opponent status, and case status badge). |
+| BR-6.5 | The Client detail page shall display all **related Companies** (every company where this Client is a partner, with company name and ownership percentage). |
+| BR-6.6 | Client quick-search shall require **all query terms to match** (strict multi-word search) so searching for "محمد عيسي" does not match unrelated clients who only share "محمد". |
+| BR-6.7 | When adding a party to a Case, the UI shall provide a **quick-search dropdown** displaying `Full Name (National ID)` for clear disambiguation. The dropdown shall always include a **"➕ Client not found — Add new client"** option that redirects to `/clients/new`. |
+| BR-6.8 | When adding a Partner to a Company, the UI shall use the same **Client quick-search dropdown** (BR-6.7) to pick an existing Client record (or redirect to create a new Client if not found). The partner's name, National ID, and ID document shall be pulled directly from the central Client record to eliminate duplicate data entry. |
 
 ---
 
@@ -251,13 +266,13 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 ## 5. Module Specifications
 
 ### 5.1 Companies Module
-- **Entities:** Company, CompanyAmendment (ordered, dynamic), CompanyPartner, Document (linked)
+- **Entities:** Company, CompanyAmendment (ordered, dynamic), CompanyPartner (linked to Client), Document (linked)
 - **Key behavior:** Amendments are modeled as a child table with a sequence number — not as fixed columns — so any number of amendments can be added without schema changes.
 - **Search:** Fuzzy search across `company_name` (Arabic) and `company_name_en` (English equivalent, optional).
 
 ### 5.2 Cases Module
-- **Entities:** Case, CaseParty, CaseMemo, CaseHearing, Document (linked)
-- **Key behavior:** Party color (Green/Client, Red/Opponent) is derived from the `is_our_client` boolean at render time — never stored as a literal color value. Case status color (Active/Amber, Closed/Green) is derived the same way from the `status` enum.
+- **Entities:** Case, CaseParty (linked to Client), CaseMemo, CaseHearing, Document (linked)
+- **Key behavior:** Party color (Green/Client, Red/Opponent) is derived from the `is_our_client` boolean at render time — never stored as a literal color value. Case status color (Active/Amber, Closed/Green) is derived the same way from the `status` enum. Every party in a case must reference a registered Client record — no inline manual entry.
 - **Hearings:** Each hearing is an independent record; postponements create a new record linked to the prior one via `previous_hearing_id`, preserving a complete, non-destructive history.
 
 ### 5.3 Financials Module
@@ -275,6 +290,12 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 
 ### 5.6 Notifications Module
 - **Key behavior:** Hangfire schedules a reminder exactly 1 day before each hearing; postponement cancels and reschedules automatically; delivery goes out over FCM to whichever devices the user is logged into.
+
+### 5.7 Clients Module (الموكلين)
+- **Entities:** Client (central person record), linked from CaseParty (via `client_id` FK) and CompanyPartner (via `client_id` FK)
+- **Key behavior:** Every person the firm interacts with — whether represented as "our client" (موكلنا) or as an opponent (خصمنا) — must be a registered Client. The Client record is the single source of truth for personal data (name, national ID, phone, email, address), National ID document (صورة الهوية), and Attorney/Power of Attorney document (صورة الوكالة). The Client detail page aggregates all related Cases and Companies for a 360° view of the person.
+- **Search:** Fuzzy search across `full_name` (Arabic) and `full_name_en` (English equivalent, optional).
+- **UI Pattern:** Quick-search dropdown selector when adding a party to a Case or a partner to a Company. If the person doesn't exist, a "Client not found — Add new" option redirects to the Client creation form.
 
 ---
 
@@ -320,11 +341,16 @@ This is a conceptual entity map for reference — see prior technical discussion
 ```
 User ──< (preferences: role, theme, language)
 
+Client ──> NationalIdDocument (Document)
+       ──> AttorneyDocument (Document)
+       ──< CaseParty (via client_id)
+       ──< CompanyPartner (via client_id)
+
 Company ──< CompanyAmendment (ordered, sequence_number)
-        ──< CompanyPartner
+        ──< CompanyPartner ──> Client (via client_id)
         ──< Document (via owner_type='Company')
 
-Case ──< CaseParty (role: Defendant/Victim; is_our_client: bool)
+Case ──< CaseParty (role: Defendant/Victim; is_our_client: bool) ──> Client (via client_id)
      ──< CaseMemo ──> Document
      ──< CaseHearing (chained via previous_hearing_id)
      ──1 CaseFee ──< FeeTransaction (append-only ledger)
@@ -377,6 +403,11 @@ Document (polymorphic: owner_type + owner_id) ──> Local VPS Storage Path
 | المتفق عليه | Agreed Fee | `agreed_fee` |
 | المحصل | Collected Amount | Computed from `fee_transactions` |
 | المتبقي | Remaining Balance | Computed (`agreed_fee` − collected) |
+| الموكلين | Clients (People Registry) | `clients` table |
+| الموكل | Client (Our Represented) | `client` record where `is_our_client = true` on the CaseParty |
+| الخصم | Opponent | `client` record where `is_our_client = false` on the CaseParty |
+| صورة الهوية | National ID Scan | `client.national_id_document_id` |
+| صورة الوكالة | Attorney / Power of Attorney | `client.attorney_document_id` |
 
 ---
 
@@ -420,7 +451,8 @@ This is a starting point — order may be adjusted, but each item should be trea
 5. Companies: fuzzy search + category filter
 6. Cases: core CRUD + case types
 7. Cases: parties (Defendant/Victim) + client/opponent color-coding logic
-8. Cases: legal memos + document uploads
+8. **Clients: central person registry (الموكلين) — Client CRUD, ID & attorney document uploads, quick-search selector for case parties**
+9. Cases: legal memos + document uploads
 9. Cases: hearings, postponement chain, and audit trail
 10. Cases: 1-day-prior reminder scheduling (Hangfire) + FCM delivery
 11. Financials: agreed fee + append-only fee transaction ledger
@@ -570,21 +602,44 @@ User tested the following endpoints via Swagger and confirmed working:
 - **API:** Created `DocumentsController` (POST/GET/DELETE). Added `Partners` CRUD endpoints to `CompaniesController`. Updated `Company` endpoints to map new fields. Implemented auto-generating Arabic ordinal sequence titles (عقد التعديل الأول).
 - **Web UI:** Created `FileThumbnail.razor` component with modal popups for PDFs and Images. Rewrote `CompanyForm.razor` to handle new fields and initial file upload. Rewrote `CompanyDetail.razor` to include interactive Partner Management, Amendment Management, and direct Incorporation Contract Upload/Preview/Replacement with integrated document uploads. All deletions include `confirm()` JS dialogs.
 
-- **Bug Fixes (2026-07-26 & 2026-07-28):** Fixed `500 Internal Server Error` on recreating soft-deleted amendments by making the `SequenceNumber` database unique index a Partial Index (ignoring soft-deleted rows). Fixed UI placeholder to dynamically reflect correct Arabic ordinal based on active amendments. Added direct Incorporation Contract uploading and preview thumbnails to `CompanyDetail.razor`.
+- **Bug Fixes (2026-07-26 & 2026-07-28):** Fixed `500 Internal Server Error` on recreating soft-deleted amendments by making the `SequenceNumber` database unique index a Partial Index (ignoring soft-deleted rows). Fixed UI placeholder to dynamically reflect correct Arabic ordinal based on active amendments. Added direct Incorporation Contract uploading and preview thumbnails to `CompanyDetail.razor`. Fixed Client Status dropdown in `CaseDetail.razor` (BUG-006) to use explicit string selection binding so selecting "Opponent" correctly sets `IsOurClient = false` (Red badge).
 
 **Feature 5: Fuzzy Search (pg_trgm) + Category Filter — ✅ COMPLETED (2026-07-28)**
 - **Infrastructure:** Enabled `pg_trgm` extension in `ApplicationDbContext`. Added GIN trigram indexes (`gin_trgm_ops`) on `CompanyName`, `CompanyNameEn`, and `TradeName` in `CompanyConfiguration`.
 - **API/Repository:** Updated `CompanyRepository.SearchAsync` to use `EF.Functions.TrigramsAreSimilar` and `ILike` pattern matching.
 - **Web UI:** Added `SearchAsync` to `CompanyApiClient`. Added Search bar (with Enter key binding), Category filter dropdown, and Reset button to `CompanyList.razor`.
 
+**Feature 6: Cases Core CRUD & Case Types — ✅ COMPLETED (2026-07-28)**
+- **Domain/Infrastructure:** Created `Case` entity, `CaseType` enum, `CaseStatus` enum, `CaseConfiguration` with GIN trigram indexes on `CaseNumber` and `Title`.
+- **API:** Created `CasesController` (CRUD + Search).
+- **Web UI:** Created `CaseApiClient`, `CaseList.razor`, `CaseForm.razor`, `CaseDetail.razor`, updated `NavMenu.razor`.
+
+**Feature 7 & 8: Case Parties, Color Coding, Custom Document Titles & Closing Outcomes — ✅ COMPLETED (2026-07-28)**
+- Domain/Infrastructure: `CaseParty` entity, `PartyRole` enum (Defendant/Victim), `CaseOutcome` enum (Won/Lost/Settled), `CasePartyConfiguration`.
+- API: Party endpoints (`POST/PUT/DELETE /api/cases/{caseId}/parties`).
+- Web UI: Updated `CaseDetail.razor` with Parties management, Client/Opponent color badges (Client=Green, Opponent=Red), Party document uploads, custom document titles for case files, and outcome badges on case closing (Won=Green, Lost=Red, Settled=Blue).
+- Bug Fix (BUG-006): Fixed Client Status dropdown binding to correctly select Opponent.
+
+**Feature 9: Clients Module (الموكلين) — Central Person Registry — ✅ COMPLETED (2026-07-31)**
+- Domain: New `Client` entity (name, national ID, phone, email, address, notes, National ID document FK, Attorney document FK). Added `ClientId` FK to `CaseParty` and `CompanyPartner`.
+- Infrastructure: `ClientConfiguration`, `ClientRepository`, updated `CasePartyConfiguration` and `CompanyPartnerConfiguration` with Client FK.
+- API: `ClientsController` (CRUD + search). Registered `IClientRepository` in DI.
+- Web UI: `ClientList.razor`, `ClientForm.razor`, `ClientDetail.razor` (with related cases & companies). Updated `CaseDetail.razor` with Client quick-search selector when adding parties. Added "Clients (الموكلين)" nav link.
+- Migration: `20260731092545_AddClientsModule` applied to database.
+- Company Partner Refactor (BR-6.8): Refactored `CompanyDetail.razor` "+ Add Partner" form to use Client Quick-Search Selector. Partner name, National ID, and ID document are now pulled directly from the central `Client` record. `CompanyPartnerDto` and `CompaniesController.cs` map `partner.Client`. `CompanyRepository.cs` includes `p.Client.NationalIdDocument`.
+
 ### In Progress
 
-*(No active features being built. Feature 5 complete & confirmed by user)*
+**Feature 10: Cases Legal Memos (مذكرات) & Document Management**
+- Domain: Create `CaseMemo` entity (Title, Content/Notes, Date, CaseId, DocumentId FK).
+- Infrastructure: `CaseMemoConfiguration`, update `ApplicationDbContext`, update `CaseRepository`.
+- API: Memo CRUD endpoints on `CasesController` (`POST/GET/DELETE /api/cases/{caseId}/memos`).
+- Web UI: Update `CaseDetail.razor` with a dedicated **Legal Memos & Briefs (المذكرات القانونية)** section supporting title, text content, file upload attachment with thumbnails + preview popups, and delete dialogs.
 
 ### Current Position
 
-**Feature Sequence Position: Ready for Feature 6 (Cases Module: Core CRUD + Case Types)**
-Agent has completed Feature 5. Ready to proceed to Feature 6 upon user confirmation.
+**Feature Sequence Position: Ready for Feature 10 (Cases: Legal Memos & Documents)**
+Clients Module is tested and approved. Awaiting user green light to build Feature 10.
 
 ### Active Agent Instructions
 

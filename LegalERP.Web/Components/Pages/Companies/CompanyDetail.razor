@@ -1,9 +1,11 @@
 @page "/companies/{Id:guid}"
 @using LegalERP.Application.Companies
+@using LegalERP.Application.Clients
 @using LegalERP.Web.Services
 @using LegalERP.Web.Components.Shared
 @using Microsoft.AspNetCore.Components.Forms
 @inject CompanyApiClient CompanyApi
+@inject ClientApiClient ClientApi
 @inject NavigationManager NavManager
 @inject IJSRuntime JS
 @rendermode InteractiveServer
@@ -107,28 +109,57 @@ else
     {
         <div class="card mb-3 border-success">
             <div class="card-body">
-                <h5 class="card-title text-success">New Partner</h5>
+                <h5 class="card-title text-success">Add Company Partner (from Clients Registry)</h5>
                 <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label">Search Client by Name (بحث عن الموكل) *</label>
+                        <input class="form-control" @bind="clientSearchTerm" @bind:event="oninput"
+                               @onkeyup="HandleClientSearch" placeholder="Type client name to search..." />
+                        @if (clientSearchResults != null)
+                        {
+                            <div class="list-group mt-1 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100;">
+                                @if (clientSearchResults.Count > 0)
+                                {
+                                    @foreach (var c in clientSearchResults)
+                                    {
+                                        <button type="button" class="list-group-item list-group-item-action @(selectedClientId == c.Id ? "active" : "")"
+                                                @onclick="() => SelectClient(c)">
+                                            <strong>@c.FullName</strong>
+                                            @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
+                                            {
+                                                <span class="ms-1 text-muted">(ID: @c.NationalIdNumber)</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
+                                            {
+                                                <small class="ms-2 text-muted">📞 @c.PhoneNumber</small>
+                                            }
+                                        </button>
+                                    }
+                                }
+                                <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning text-center">
+                                    <strong>➕ Client not found — Add new client (إضافة موكل جديد)</strong>
+                                </a>
+                            </div>
+                        }
+                        @if (selectedClientId.HasValue)
+                        {
+                            <div class="alert alert-success mt-2 mb-0 py-2 d-flex justify-content-between align-items-center">
+                                <span>✅ Selected: <strong>@selectedClientName</strong></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearClientSelection">Clear</button>
+                            </div>
+                        }
+                    </div>
+
                     <div class="col-md-4">
-                        <label class="form-label">Full Name</label>
-                        <input class="form-control" @bind="newPartnerName" />
+                        <label class="form-label">Ownership % (نسبة الملكية)</label>
+                        <input type="number" step="0.01" class="form-control" @bind="newPartnerOwnership" placeholder="e.g. 25.5" />
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">National ID</label>
-                        <input class="form-control" @bind="newPartnerNationalId" />
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Ownership %</label>
-                        <input type="number" step="0.01" class="form-control" @bind="newPartnerOwnership" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">ID Document</label>
-                        <InputFile class="form-control" OnChange="LoadPartnerFile" accept=".pdf,.jpg,.jpeg,.png" />
-                    </div>
+
                     <div class="col-12 mt-3">
-                        <button class="btn btn-success" @onclick="AddPartner" disabled="@isSavingPartner">
+                        <button class="btn btn-success me-2" @onclick="AddPartner" disabled="@isSavingPartner">
                             @(isSavingPartner ? "Saving..." : "Save Partner")
                         </button>
+                        <button class="btn btn-outline-secondary" @onclick="ToggleAddPartnerForm">Cancel</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(partnerErrorMessage))
@@ -338,12 +369,15 @@ else
 
     // Partner state
     private bool showAddPartnerForm;
-    private string? newPartnerName;
-    private string? newPartnerNationalId;
     private decimal? newPartnerOwnership;
-    private IBrowserFile? newPartnerFile;
     private bool isSavingPartner;
     private string? partnerErrorMessage;
+
+    // Client Search state for Partner selection
+    private string? clientSearchTerm;
+    private List<ClientSummaryDto>? clientSearchResults;
+    private Guid? selectedClientId;
+    private string? selectedClientName;
 
     protected override async Task OnInitializedAsync()
     {
@@ -419,50 +453,63 @@ else
 
     // ── Partners ──
 
+    private async Task HandleClientSearch(KeyboardEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(clientSearchTerm))
+        {
+            clientSearchResults = null;
+            return;
+        }
+
+        clientSearchResults = await ClientApi.SearchAsync(clientSearchTerm);
+    }
+
+    private void SelectClient(ClientSummaryDto client)
+    {
+        selectedClientId = client.Id;
+        selectedClientName = string.IsNullOrWhiteSpace(client.NationalIdNumber) 
+            ? client.FullName 
+            : $"{client.FullName} (ID: {client.NationalIdNumber})";
+        clientSearchResults = null;
+        clientSearchTerm = client.FullName;
+    }
+
+    private void ClearClientSelection()
+    {
+        selectedClientId = null;
+        selectedClientName = null;
+        clientSearchTerm = null;
+        clientSearchResults = null;
+    }
+
     private void ToggleAddPartnerForm()
     {
         showAddPartnerForm = !showAddPartnerForm;
         partnerErrorMessage = null;
-        newPartnerName = null;
-        newPartnerNationalId = null;
         newPartnerOwnership = null;
-        newPartnerFile = null;
-    }
-
-    private void LoadPartnerFile(InputFileChangeEventArgs e)
-    {
-        newPartnerFile = e.File;
+        ClearClientSelection();
     }
 
     private async Task AddPartner()
     {
         partnerErrorMessage = null;
-        isSavingPartner = true;
 
-        if (string.IsNullOrWhiteSpace(newPartnerName))
+        if (!selectedClientId.HasValue)
         {
-            partnerErrorMessage = "Name is required.";
-            isSavingPartner = false;
+            partnerErrorMessage = "You must select a Client from the search results. If the person is not in the system, click 'Add new client' to register them first.";
             return;
         }
 
+        isSavingPartner = true;
+
         try
         {
-            var dto = new CreateCompanyPartnerDto(newPartnerName, newPartnerNationalId, newPartnerOwnership, null);
-            var result = await CompanyApi.AddPartnerAsync(Id, dto);
-
-            if (result != null && newPartnerFile != null)
-            {
-                var docId = await CompanyApi.UploadDocumentAsync("partner", result.Id, newPartnerFile);
-                var updateDto = new UpdateCompanyPartnerDto(result.FullName, result.NationalIdNumber, result.OwnershipPercentage, docId);
-                await CompanyApi.UpdatePartnerAsync(Id, result.Id, updateDto);
-            }
+            var dto = new CreateCompanyPartnerDto(selectedClientId.Value, newPartnerOwnership);
+            await CompanyApi.AddPartnerAsync(Id, dto);
 
             showAddPartnerForm = false;
-            newPartnerName = null;
-            newPartnerNationalId = null;
             newPartnerOwnership = null;
-            newPartnerFile = null;
+            ClearClientSelection();
             await LoadCompany();
         }
         catch (Exception ex)

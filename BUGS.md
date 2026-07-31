@@ -84,3 +84,71 @@ Created a `NextAmendmentPlaceholder` property in `CompanyDetail.razor` that dyna
 
 ### Files Changed
 - `LegalERP.Web/Components/Pages/Companies/CompanyDetail.razor`
+
+---
+
+## BUG-005: 500 Internal Server Error navigating to /cases (Missing Database Table / Migration)
+
+| Field | Detail |
+|-------|--------|
+| **Date** | 2026-07-28 18:36 |
+| **Endpoint** | `GET /api/cases/search` |
+| **Error** | `HttpRequestException: Response status code does not indicate success: 500 (Internal Server Error)` |
+| **Status** | ✅ RESOLVING (Awaiting Migration Execution) |
+
+### Root Cause
+The `cases` database table has not been created in PostgreSQL yet. When the frontend `CaseList.razor` loads, it calls `SearchAsync` which queries `_db.Cases`. Because the `cases` table does not exist in PostgreSQL prior to running `dotnet ef database update`, PostgreSQL throws `relation "cases" does not exist` (500 Internal Server Error).
+
+### Fix
+Execute `dotnet ef migrations add AddCasesTable` and `dotnet ef database update` in the terminal to generate and apply the `cases` table and its GIN trigram indexes to PostgreSQL.
+
+### Files Changed
+- `LegalERP.Infrastructure/Migrations/` — Add `AddCasesTable` migration.
+
+---
+
+## BUG-006: Client Status Select Dropdown always defaulted to "Our Client"
+
+| Field | Detail |
+|-------|--------|
+| **Date** | 2026-07-28 18:55 |
+| **Component** | `CaseDetail.razor` |
+| **Error** | Selecting "Opponent" in the Client Status dropdown was ignored and saved as "Our Client" (Green) anyway. |
+| **Status** | ✅ FIXED |
+
+### Root Cause
+The `<select>` element bound directly to `newPartyIsOurClient` (a `bool`) using string option values `<option value="true">` and `<option value="false">`. HTML `<select>` value bindings in Blazor do not automatically coerce string `"false"` to boolean `false`, causing the model to remain at its default value `true`.
+
+### Fix
+Refactored the Client Status dropdown in `CaseDetail.razor` to bind to an explicit string property `newPartyClientType` (`"client"` vs `"opponent"`), converting it to boolean `IsOurClient = newPartyClientType == "client"` during submission.
+
+### Files Changed
+- `LegalERP.Web/Components/Pages/Cases/CaseDetail.razor` — Changed binding to explicit string `newPartyClientType`.
+
+---
+
+## BUG-007: Client Quick-Search Over-matching & Missing ID Disambiguation
+
+| Field | Detail |
+|-------|--------|
+| **Date** | 2026-07-31 13:22 |
+| **Component** | `ClientRepository.cs`, `CaseDetail.razor`, `ClientForm.razor` |
+| **Error** | Searching for "محمد عيسي" returned "محمد ماهر" due to trigram fuzzy similarity. Also, client dropdown lacked National ID display for same-name disambiguation, and National ID was not mandatory. |
+| **Status** | ✅ FIXED |
+
+### Root Cause
+1. `ClientRepository.SearchAsync` used `EF.Functions.TrigramsAreSimilar`, which fuzzy matched any name sharing common sub-words (like "محمد").
+2. `CaseDetail.razor` party dropdown rendered only `FullName` without showing `NationalIdNumber` in parentheses `()`.
+3. `ClientForm.razor` allowed saving a Client without entering `NationalIdNumber`.
+
+### Fix
+1. Refactored `ClientRepository.SearchAsync` to split search terms by spaces and enforce strict `ILike` matching on ALL words. Searching "محمد عيسي" now only returns clients matching both "محمد" AND "عيسي".
+2. Updated `CaseDetail.razor` quick-search dropdown to display `FullName (ID: NationalId)` for clear disambiguation.
+3. Updated `CaseDetail.razor` dropdown to always render the **"➕ Client not found — Add new client"** button at the bottom of search results.
+4. Made `NationalIdNumber` a required field in `ClientForm.razor`.
+
+### Files Changed
+- `LegalERP.Infrastructure/Repositories/ClientRepository.cs`
+- `LegalERP.Web/Components/Pages/Cases/CaseDetail.razor`
+- `LegalERP.Web/Components/Pages/Clients/ClientForm.razor`
+

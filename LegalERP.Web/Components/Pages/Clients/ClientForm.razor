@@ -1,0 +1,263 @@
+@page "/clients/new"
+@page "/clients/edit/{Id:guid}"
+@using LegalERP.Application.Clients
+@using LegalERP.Application.Companies
+@using LegalERP.Web.Services
+@inject ClientApiClient ClientApi
+@inject CompanyApiClient CompanyApi
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+
+<PageTitle>@(IsEditMode ? "Edit Client" : "Add New Client")</PageTitle>
+
+<h1 class="mb-4">@(IsEditMode ? "Edit Client" : "Add New Client (إضافة موكل جديد)")</h1>
+
+@if (isLoading)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Personal Information (البيانات الشخصية)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name (Arabic) *</label>
+                        <InputText class="form-control" @bind-Value="model.FullName" placeholder="الاسم الكامل بالعربي..." />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Full Name (English)</label>
+                        <InputText class="form-control" @bind-Value="model.FullNameEn" placeholder="Full name in English..." />
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label">National ID Number (رقم الهوية) *</label>
+                        <InputText class="form-control" @bind-Value="model.NationalIdNumber" placeholder="National ID number..." />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Phone Number (رقم الهاتف)</label>
+                        <InputText class="form-control" @bind-Value="model.PhoneNumber" placeholder="Phone number..." />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Email (البريد الإلكتروني)</label>
+                        <InputText class="form-control" @bind-Value="model.Email" placeholder="Email address..." />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Address (العنوان)</label>
+                        <InputText class="form-control" @bind-Value="model.Address" placeholder="Address..." />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Notes (ملاحظات)</label>
+                        <InputTextArea class="form-control" @bind-Value="model.Notes" rows="3" placeholder="Additional notes about this client..." />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Documents (المستندات)</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">National ID Scan (صورة الهوية)</label>
+                        <InputFile class="form-control" OnChange="LoadNationalIdFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        @if (existingNationalIdDoc != null)
+                        {
+                            <small class="text-success mt-1 d-block">Current: @existingNationalIdDoc.FileName</small>
+                        }
+                        @if (nationalIdFile != null)
+                        {
+                            <small class="text-primary mt-1 d-block">New file: @nationalIdFile.Name</small>
+                        }
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Attorney / Power of Attorney (صورة الوكالة)</label>
+                        <InputFile class="form-control" OnChange="LoadAttorneyFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        @if (existingAttorneyDoc != null)
+                        {
+                            <small class="text-success mt-1 d-block">Current: @existingAttorneyDoc.FileName</small>
+                        }
+                        @if (attorneyFile != null)
+                        {
+                            <small class="text-primary mt-1 d-block">New file: @attorneyFile.Name</small>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger mb-3">@errorMessage</div>
+        }
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                @(isSubmitting ? "Saving..." : (IsEditMode ? "Save Changes" : "Create Client"))
+            </button>
+            <a href="/clients" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private bool IsEditMode => Id.HasValue;
+    private ClientFormModel model = new();
+    private bool isLoading = true;
+    private bool isSubmitting;
+    private string? errorMessage;
+
+    private IBrowserFile? nationalIdFile;
+    private IBrowserFile? attorneyFile;
+    private DocumentDto? existingNationalIdDoc;
+    private DocumentDto? existingAttorneyDoc;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode)
+        {
+            var existing = await ClientApi.GetByIdAsync(Id!.Value);
+            if (existing != null)
+            {
+                model = new ClientFormModel
+                {
+                    FullName = existing.FullName,
+                    FullNameEn = existing.FullNameEn,
+                    NationalIdNumber = existing.NationalIdNumber,
+                    PhoneNumber = existing.PhoneNumber,
+                    Email = existing.Email,
+                    Address = existing.Address,
+                    Notes = existing.Notes,
+                    NationalIdDocumentId = existing.NationalIdDocument?.Id,
+                    AttorneyDocumentId = existing.AttorneyDocument?.Id
+                };
+                existingNationalIdDoc = existing.NationalIdDocument;
+                existingAttorneyDoc = existing.AttorneyDocument;
+            }
+            else
+            {
+                errorMessage = "Client not found.";
+            }
+        }
+        isLoading = false;
+    }
+
+    private void LoadNationalIdFile(InputFileChangeEventArgs e)
+    {
+        nationalIdFile = e.File;
+    }
+
+    private void LoadAttorneyFile(InputFileChangeEventArgs e)
+    {
+        attorneyFile = e.File;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(model.FullName))
+        {
+            errorMessage = "Full Name is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(model.NationalIdNumber))
+        {
+            errorMessage = "National ID Number (رقم الهوية) is required.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            // Upload new documents if provided
+            Guid? natIdDocId = model.NationalIdDocumentId;
+            Guid? attDocId = model.AttorneyDocumentId;
+
+            if (nationalIdFile != null)
+            {
+                natIdDocId = await CompanyApi.UploadDocumentAsync("client", IsEditMode ? Id!.Value : Guid.NewGuid(), nationalIdFile);
+            }
+
+            if (attorneyFile != null)
+            {
+                attDocId = await CompanyApi.UploadDocumentAsync("client", IsEditMode ? Id!.Value : Guid.NewGuid(), attorneyFile);
+            }
+
+            if (IsEditMode)
+            {
+                var updateDto = new UpdateClientDto(
+                    model.FullName,
+                    model.FullNameEn,
+                    model.NationalIdNumber,
+                    model.PhoneNumber,
+                    model.Email,
+                    model.Address,
+                    model.Notes,
+                    natIdDocId,
+                    attDocId
+                );
+                await ClientApi.UpdateAsync(Id!.Value, updateDto);
+                NavManager.NavigateTo($"/clients/{Id.Value}");
+            }
+            else
+            {
+                var createDto = new CreateClientDto(
+                    model.FullName,
+                    model.FullNameEn,
+                    model.NationalIdNumber,
+                    model.PhoneNumber,
+                    model.Email,
+                    model.Address,
+                    model.Notes,
+                    natIdDocId,
+                    attDocId
+                );
+                var created = await ClientApi.CreateAsync(createDto);
+                if (created != null)
+                {
+                    NavManager.NavigateTo($"/clients/{created.Id}");
+                }
+                else
+                {
+                    NavManager.NavigateTo("/clients");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Failed to save client: " + ex.Message;
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private class ClientFormModel
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string? FullNameEn { get; set; }
+        public string? NationalIdNumber { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Email { get; set; }
+        public string? Address { get; set; }
+        public string? Notes { get; set; }
+        public Guid? NationalIdDocumentId { get; set; }
+        public Guid? AttorneyDocumentId { get; set; }
+    }
+}

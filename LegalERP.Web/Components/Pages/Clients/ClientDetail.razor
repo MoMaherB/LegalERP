@@ -1,0 +1,252 @@
+@page "/clients/{Id:guid}"
+@using LegalERP.Application.Clients
+@using LegalERP.Application.Companies
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Services
+@using LegalERP.Web.Components.Shared
+@inject ClientApiClient ClientApi
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Client Details - @(client?.FullName ?? "Loading")</PageTitle>
+
+@if (client is null)
+{
+    @if (notFound)
+    {
+        <div class="alert alert-warning">
+            Client not found. <a href="/clients">Back to Clients</a>
+        </div>
+    }
+    else
+    {
+        <p>Loading client details...</p>
+    }
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="/clients" class="btn btn-outline-secondary me-2">Back to List</a>
+            <a href="/clients/edit/@client.Id" class="btn btn-primary me-2">Edit Client</a>
+        </div>
+        <button class="btn btn-danger" @onclick="DeleteClient">Delete Client</button>
+    </div>
+
+    @* ── Personal Information Card ── *@
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">@client.FullName</h3>
+            @if (!string.IsNullOrWhiteSpace(client.FullNameEn))
+            {
+                <small class="text-muted">@client.FullNameEn</small>
+            }
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <strong>National ID (رقم الهوية):</strong>
+                    <p class="mb-0">@(string.IsNullOrWhiteSpace(client.NationalIdNumber) ? "—" : client.NationalIdNumber)</p>
+                </div>
+                <div class="col-md-4">
+                    <strong>Phone (رقم الهاتف):</strong>
+                    <p class="mb-0">@(string.IsNullOrWhiteSpace(client.PhoneNumber) ? "—" : client.PhoneNumber)</p>
+                </div>
+                <div class="col-md-4">
+                    <strong>Email (البريد الإلكتروني):</strong>
+                    <p class="mb-0">@(string.IsNullOrWhiteSpace(client.Email) ? "—" : client.Email)</p>
+                </div>
+                <div class="col-12">
+                    <strong>Address (العنوان):</strong>
+                    <p class="mb-0">@(string.IsNullOrWhiteSpace(client.Address) ? "—" : client.Address)</p>
+                </div>
+                <div class="col-12">
+                    <strong>Notes (ملاحظات):</strong>
+                    <p class="border p-3 rounded bg-light mb-0">
+                        @(string.IsNullOrWhiteSpace(client.Notes) ? "No notes recorded." : client.Notes)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Documents Card ── *@
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Documents (المستندات)</h4>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h5>National ID (صورة الهوية)</h5>
+                    @if (client.NationalIdDocument != null)
+                    {
+                        <FileThumbnail Document="client.NationalIdDocument" OwnerType="client" OwnerId="client.Id" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border">No National ID uploaded. <a href="/clients/edit/@client.Id">Upload now</a>.</div>
+                    }
+                </div>
+                <div class="col-md-6">
+                    <h5>Attorney / Power of Attorney (صورة الوكالة)</h5>
+                    @if (client.AttorneyDocument != null)
+                    {
+                        <FileThumbnail Document="client.AttorneyDocument" OwnerType="client" OwnerId="client.Id" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border">No Attorney document uploaded. <a href="/clients/edit/@client.Id">Upload now</a>.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Related Cases ── *@
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Related Cases (القضايا المرتبطة)</h4>
+        </div>
+        <div class="card-body">
+            @if (client.RelatedCases.Count == 0)
+            {
+                <div class="alert alert-light border mb-0">This client is not linked to any cases yet.</div>
+            }
+            else
+            {
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Case Number</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Role</th>
+                            <th>Representation</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in client.RelatedCases)
+                        {
+                            <tr>
+                                <td><strong>@c.CaseNumber</strong></td>
+                                <td>@c.CaseTitle</td>
+                                <td><span class="badge bg-secondary">@c.CaseType</span></td>
+                                <td>
+                                    <span class="badge bg-secondary">
+                                        @(c.PartyRole == PartyRole.Defendant ? "Defendant (المتهم)" : "Victim (المجني عليه)")
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (c.IsOurClient)
+                                    {
+                                        <span class="badge bg-success px-3 py-2">Client (موكلنا)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger px-3 py-2">Opponent (خصمنا)</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (c.CaseStatus == CaseStatus.Active)
+                                    {
+                                        <span class="badge bg-warning text-dark">Active</span>
+                                    }
+                                    else
+                                    {
+                                        @if (c.CaseOutcome == CaseOutcome.Won)
+                                        {
+                                            <span class="badge bg-success">Closed (Won)</span>
+                                        }
+                                        else if (c.CaseOutcome == CaseOutcome.Lost)
+                                        {
+                                            <span class="badge bg-danger">Closed (Lost)</span>
+                                        }
+                                        else if (c.CaseOutcome == CaseOutcome.Settled)
+                                        {
+                                            <span class="badge bg-info text-dark">Closed (Settled)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Closed</span>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    <a href="/cases/@c.CaseId" class="btn btn-sm btn-info">View Case</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    @* ── Related Companies ── *@
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4 class="mb-0">Related Companies (الشركات المرتبطة)</h4>
+        </div>
+        <div class="card-body">
+            @if (client.RelatedCompanies.Count == 0)
+            {
+                <div class="alert alert-light border mb-0">This client is not linked to any companies yet.</div>
+            }
+            else
+            {
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Company Name</th>
+                            <th>Ownership %</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var co in client.RelatedCompanies)
+                        {
+                            <tr>
+                                <td><strong>@co.CompanyName</strong></td>
+                                <td>@(co.OwnershipPercentage.HasValue ? $"{co.OwnershipPercentage.Value:F2}%" : "—")</td>
+                                <td>
+                                    <a href="/companies/@co.CompanyId" class="btn btn-sm btn-info">View Company</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private ClientDto? client;
+    private bool notFound;
+
+    protected override async Task OnInitializedAsync()
+    {
+        client = await ClientApi.GetByIdAsync(Id);
+        if (client is null)
+        {
+            notFound = true;
+        }
+    }
+
+    private async Task DeleteClient()
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this client? This action cannot be undone.");
+        if (confirmed)
+        {
+            await ClientApi.DeleteAsync(Id);
+            NavManager.NavigateTo("/clients");
+        }
+    }
+}

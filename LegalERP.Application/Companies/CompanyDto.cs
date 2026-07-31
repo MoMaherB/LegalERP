@@ -42,6 +42,7 @@ public record CompanyAmendmentDto(
 
 public record CompanyPartnerDto(
     Guid Id,
+    Guid? ClientId,
     string FullName,
     string? NationalIdNumber,
     decimal? OwnershipPercentage,
@@ -84,15 +85,17 @@ public record UpdateCompanyAmendmentDto(
 );
 
 public record CreateCompanyPartnerDto(
-    string FullName,
-    string? NationalIdNumber,
+    Guid ClientId,
     decimal? OwnershipPercentage,
-    Guid? NationalIdDocumentId
+    string? FullName = null,
+    string? NationalIdNumber = null,
+    Guid? NationalIdDocumentId = null
 );
 
 public record UpdateCompanyPartnerDto(
-    string FullName,
-    string? NationalIdNumber,
+    Guid ClientId,
     decimal? OwnershipPercentage,
-    Guid? NationalIdDocumentId
+    string? FullName = null,
+    string? NationalIdNumber = null,
+    Guid? NationalIdDocumentId = null
 );

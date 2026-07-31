@@ -14,6 +14,8 @@ builder.Services.AddHttpClient("LegalErpApi", client =>
     client.BaseAddress = new Uri("https://localhost:7148/");
 });
 builder.Services.AddScoped<CompanyApiClient>();
+builder.Services.AddScoped<CaseApiClient>();
+builder.Services.AddScoped<ClientApiClient>();
 
 var app = builder.Build();
 

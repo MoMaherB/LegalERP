@@ -12,6 +12,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // Repositories (Application interface -> Infrastructure implementation)
 builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
+builder.Services.AddScoped<LegalERP.Application.Cases.ICaseRepository, CaseRepository>();
+builder.Services.AddScoped<LegalERP.Application.Clients.IClientRepository, ClientRepository>();
 builder.Services.AddScoped<LegalERP.Application.Storage.IFileStorageService, LegalERP.Infrastructure.Storage.LocalFileStorageService>();
 
 // Controllers + Swagger

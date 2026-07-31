@@ -1,0 +1,116 @@
+@page "/clients"
+@using LegalERP.Application.Clients
+@using LegalERP.Web.Services
+@inject ClientApiClient ClientApi
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Clients Management (الموكلين)</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Clients (الموكلين)</h1>
+    <a href="/clients/new" class="btn btn-primary">Add New Client</a>
+</div>
+
+<!-- Search Controls -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label font-weight-bold">Search by Name (Arabic or English)</label>
+                <input type="text" class="form-control" placeholder="Search clients by name..." 
+                       @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-secondary w-100" @onclick="PerformSearch">Search</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetSearch">Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (clients is null)
+{
+    <p>Loading...</p>
+}
+else if (clients.Count == 0)
+{
+    <div class="alert alert-info">
+        No clients found. <a href="/clients/new">Add your first client</a>.
+    </div>
+}
+else
+{
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Full Name</th>
+                <th>National ID</th>
+                <th>Phone</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in clients)
+            {
+                <tr>
+                    <td><strong>@c.FullName</strong></td>
+                    <td>@(c.NationalIdNumber ?? "—")</td>
+                    <td>@(c.PhoneNumber ?? "—")</td>
+                    <td>
+                        <a href="/clients/@c.Id" class="btn btn-sm btn-info me-1">View</a>
+                        <a href="/clients/edit/@c.Id" class="btn btn-sm btn-secondary me-1">Edit</a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteClient(c.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ClientSummaryDto>? clients;
+    private string? searchTerm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await PerformSearch();
+    }
+
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            clients = await ClientApi.GetAllAsync();
+        }
+        else
+        {
+            clients = await ClientApi.SearchAsync(searchTerm);
+        }
+    }
+
+    private async Task ResetSearch()
+    {
+        searchTerm = null;
+        await PerformSearch();
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+        }
+    }
+
+    private async Task DeleteClient(Guid id)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this client? This action cannot be undone.");
+        if (confirmed)
+        {
+            await ClientApi.DeleteAsync(id);
+            await PerformSearch();
+        }
+    }
+}

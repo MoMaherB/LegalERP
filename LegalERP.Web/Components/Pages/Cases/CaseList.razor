@@ -1,0 +1,171 @@
+@page "/cases"
+@using LegalERP.Application.Cases
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Services
+@inject CaseApiClient CaseApi
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Cases Management</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Cases Management</h1>
+    <a href="/cases/new" class="btn btn-primary">Add New Case</a>
+</div>
+
+<!-- Search & Filter Controls -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label font-weight-bold">Search (Case Number / Title / Court)</label>
+                <input type="text" class="form-control" placeholder="Search by case # or title..." 
+                       @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label font-weight-bold">Case Type</label>
+                <select class="form-select" @bind="selectedType">
+                    <option value="">All Types</option>
+                    @foreach (var t in Enum.GetValues<CaseType>())
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label font-weight-bold">Status</label>
+                <select class="form-select" @bind="selectedStatus">
+                    <option value="">All Statuses</option>
+                    @foreach (var s in Enum.GetValues<CaseStatus>())
+                    {
+                        <option value="@s">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button class="btn btn-secondary w-100" @onclick="PerformSearch">Search</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetSearch">Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (cases is null)
+{
+    <p>Loading...</p>
+}
+else if (cases.Count == 0)
+{
+    <div class="alert alert-info">
+        No cases found.
+    </div>
+}
+else
+{
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Case Number</th>
+                <th>Title / Subject</th>
+                <th>Type</th>
+                <th>Court</th>
+                <th>Status</th>
+                <th>Filing Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in cases)
+            {
+                <tr>
+                    <td><strong>@c.CaseNumber</strong></td>
+                    <td>@c.Title</td>
+                    <td><span class="badge bg-secondary">@c.CaseType</span></td>
+                    <td>@(string.IsNullOrWhiteSpace(c.CourtName) ? "—" : c.CourtName)</td>
+                    <td>
+                        @if (c.Status == CaseStatus.Active)
+                        {
+                            <span class="badge bg-warning text-dark">Active</span>
+                        }
+                        else
+                        {
+                            @if (c.Outcome == CaseOutcome.Won)
+                            {
+                                <span class="badge bg-success">Closed (Won - ربح)</span>
+                            }
+                            else if (c.Outcome == CaseOutcome.Lost)
+                            {
+                                <span class="badge bg-danger">Closed (Lost - خسارة)</span>
+                            }
+                            else if (c.Outcome == CaseOutcome.Settled)
+                            {
+                                <span class="badge bg-info text-dark">Closed (Settled - صلح)</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Closed</span>
+                            }
+                        }
+                    </td>
+                    <td>@(c.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                    <td>
+                        <a href="/cases/@c.Id" class="btn btn-sm btn-info me-1">View</a>
+                        <a href="/cases/edit/@c.Id" class="btn btn-sm btn-secondary me-1">Edit</a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCase(c.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<CaseDto>? cases;
+    private string? searchTerm;
+    private CaseType? selectedType;
+    private CaseStatus? selectedStatus;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await PerformSearch();
+    }
+
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm) && !selectedType.HasValue && !selectedStatus.HasValue)
+        {
+            cases = await CaseApi.GetAllAsync();
+        }
+        else
+        {
+            cases = await CaseApi.SearchAsync(searchTerm, selectedType, selectedStatus);
+        }
+    }
+
+    private async Task ResetSearch()
+    {
+        searchTerm = null;
+        selectedType = null;
+        selectedStatus = null;
+        await PerformSearch();
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+        }
+    }
+
+    private async Task DeleteCase(Guid id)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this case? This action cannot be undone.");
+        if (confirmed)
+        {
+            await CaseApi.DeleteAsync(id);
+            await PerformSearch();
+        }
+    }
+}

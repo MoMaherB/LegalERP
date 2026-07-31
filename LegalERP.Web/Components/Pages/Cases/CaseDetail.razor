@@ -1,0 +1,539 @@
+@page "/cases/{id:guid}"
+@using LegalERP.Application.Cases
+@using LegalERP.Application.Clients
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Services
+@inject CaseApiClient CaseApi
+@inject CompanyApiClient CompanyApi
+@inject ClientApiClient ClientApi
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Case Details - @(caseDto?.CaseNumber ?? "Loading")</PageTitle>
+
+@if (caseDto is null)
+{
+    @if (notFound)
+    {
+        <div class="alert alert-warning">
+            Case not found. <a href="/cases">Back to Cases</a>
+        </div>
+    }
+    else
+    {
+        <p>Loading case details...</p>
+    }
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="/cases" class="btn btn-outline-secondary me-2">Back to List</a>
+            <a href="/cases/edit/@caseDto.Id" class="btn btn-primary me-2">Edit Case</a>
+        </div>
+        <button class="btn btn-danger" @onclick="DeleteCase">Delete Case</button>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">@caseDto.Title</h3>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="badge bg-secondary fs-6">@caseDto.CaseType</span>
+                @if (caseDto.Status == CaseStatus.Active)
+                {
+                    <span class="badge bg-warning text-dark fs-6">Active</span>
+                }
+                else
+                {
+                    <span class="badge bg-success fs-6">Closed</span>
+                    @if (caseDto.Outcome == CaseOutcome.Won)
+                    {
+                        <span class="badge bg-success fs-6">Won (ربح القضية)</span>
+                    }
+                    else if (caseDto.Outcome == CaseOutcome.Lost)
+                    {
+                        <span class="badge bg-danger fs-6">Lost (خسارة القضية)</span>
+                    }
+                    else if (caseDto.Outcome == CaseOutcome.Settled)
+                    {
+                        <span class="badge bg-info text-dark fs-6">Settled (صلح / تسوية)</span>
+                    }
+                }
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <strong>Case Number:</strong>
+                    <p class="fs-5 text-primary mb-0">@caseDto.CaseNumber</p>
+                </div>
+                <div class="col-md-4">
+                    <strong>Court Name:</strong>
+                    <p class="mb-0">@(string.IsNullOrWhiteSpace(caseDto.CourtName) ? "—" : caseDto.CourtName)</p>
+                </div>
+                <div class="col-md-4">
+                    <strong>Judge / Circuit:</strong>
+                    <p class="mb-0">@(string.IsNullOrWhiteSpace(caseDto.JudgeName) ? "—" : caseDto.JudgeName)</p>
+                </div>
+                <div class="col-md-4">
+                    <strong>Filing Date:</strong>
+                    <p class="mb-0">@(caseDto.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</p>
+                </div>
+                <div class="col-12 mt-3">
+                    <strong>Notes & Remarks:</strong>
+                    <p class="border p-3 rounded bg-light mb-0">
+                        @(string.IsNullOrWhiteSpace(caseDto.Notes) ? "No notes recorded." : caseDto.Notes)
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Parties Section (Defendants vs Victims / Client vs Opponent) ── *@
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h3 class="mb-0">Case Parties (أطراف القضية)</h3>
+        <button class="btn btn-sm btn-success" @onclick="ToggleAddPartyForm">
+            @(showAddPartyForm ? "Cancel" : "+ Add Party")
+        </button>
+    </div>
+
+    @if (showAddPartyForm)
+    {
+        <div class="card mb-4 border-success">
+            <div class="card-body">
+                <h5 class="card-title text-success mb-3">Add Case Party (from Clients Registry)</h5>
+                <div class="row g-3">
+                    @* ── Client Quick-Search Selector ── *@
+                    <div class="col-md-6">
+                        <label class="form-label">Search Client by Name (بحث عن الموكل) *</label>
+                        <input class="form-control" @bind="clientSearchTerm" @bind:event="oninput"
+                               @onkeyup="HandleClientSearch" placeholder="Type client name to search..." />
+                        @if (clientSearchResults != null)
+                        {
+                            <div class="list-group mt-1 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100;">
+                                @if (clientSearchResults.Count > 0)
+                                {
+                                    @foreach (var c in clientSearchResults)
+                                    {
+                                        <button type="button" class="list-group-item list-group-item-action @(selectedClientId == c.Id ? "active" : "")"
+                                                @onclick="() => SelectClient(c)">
+                                            <strong>@c.FullName</strong>
+                                            @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
+                                            {
+                                                <span class="ms-1 text-muted">(ID: @c.NationalIdNumber)</span>
+                                            }
+                                            @if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
+                                            {
+                                                <small class="ms-2 text-muted">📞 @c.PhoneNumber</small>
+                                            }
+                                        </button>
+                                    }
+                                }
+                                <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning text-center">
+                                    <strong>➕ Client not found — Add new client (إضافة موكل جديد)</strong>
+                                </a>
+                            </div>
+                        }
+                        @if (selectedClientId.HasValue)
+                        {
+                            <div class="alert alert-success mt-2 mb-0 py-2 d-flex justify-content-between align-items-center">
+                                <span>✅ Selected: <strong>@selectedClientName</strong></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearClientSelection">Clear</button>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Party Position (الصفة القانونية) *</label>
+                        <select class="form-select" @bind="newPartyRole">
+                            <option value="@PartyRole.Defendant">Defendant (المتهم)</option>
+                            <option value="@PartyRole.Victim">Victim (المجني عليه)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Client Status (صفة التوكيل) *</label>
+                        <select class="form-select" @bind="newPartyClientStatus">
+                            <option value="client">Our Client - موكلنا (Green)</option>
+                            <option value="opponent">Opponent - خصمنا (Red)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Notes (for this case only)</label>
+                        <input class="form-control" @bind="newPartyNotes" placeholder="Additional notes about this party in this case..." />
+                    </div>
+
+                    <div class="col-12">
+                        <button class="btn btn-success me-2" @onclick="AddParty" disabled="@isSavingParty">
+                            @(isSavingParty ? "Saving..." : "Save Party")
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="ToggleAddPartyForm">Cancel</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(partyErrorMessage))
+                {
+                    <p class="text-danger mt-2 mb-0">@partyErrorMessage</p>
+                }
+            </div>
+        </div>
+    }
+
+    @if (caseDto.Parties.Count == 0)
+    {
+        <div class="alert alert-light border mb-4">No parties recorded for this case yet.</div>
+    }
+    else
+    {
+        <table class="table table-hover align-middle mb-4">
+            <thead>
+                <tr>
+                    <th>Party Name</th>
+                    <th>Legal Role</th>
+                    <th>Representation</th>
+                    <th>National ID</th>
+                    <th>Phone</th>
+                    <th>Attached Document</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var party in caseDto.Parties)
+                {
+                    <tr>
+                        <td><strong>@party.FullName</strong></td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                @(party.Role == PartyRole.Defendant ? "Defendant (المتهم)" : "Victim (المجني عليه)")
+                            </span>
+                        </td>
+                        <td>
+                            @if (party.IsOurClient)
+                            {
+                                <span class="badge bg-success px-3 py-2 fs-6">Client (موكلنا)</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger px-3 py-2 fs-6">Opponent (خصمنا)</span>
+                            }
+                        </td>
+                        <td>@(party.NationalIdNumber ?? "—")</td>
+                        <td>@(party.PhoneNumber ?? "—")</td>
+                        <td>
+                            @if (party.Document != null)
+                            {
+                                <FileThumbnail Document="party.Document" OwnerType="caseparty" OwnerId="party.Id" />
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteParty(party.Id)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    @* ── Case Documents / Files (With Custom Document Titles) ── *@
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h3 class="mb-0">Case Documents & Memos (مستندات القضية)</h3>
+        <button class="btn btn-sm btn-primary" @onclick="ToggleAddDocForm">
+            @(showAddDocForm ? "Cancel" : "+ Upload Document")
+        </button>
+    </div>
+
+    @if (showAddDocForm)
+    {
+        <div class="card mb-4 border-primary">
+            <div class="card-body">
+                <h5 class="card-title text-primary mb-3">Upload Document with Custom Title</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Document Title / Description *</label>
+                        <input class="form-control" @bind="newDocTitle" placeholder="e.g. Legal Memo #1, Evidence Photo, Court Notification..." />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">File (PDF / Image) *</label>
+                        <InputFile class="form-control" OnChange="LoadDocFile" accept=".pdf,.jpg,.jpeg,.png" />
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary me-2" @onclick="UploadCaseDocument" disabled="@isUploadingDoc">
+                            @(isUploadingDoc ? "Uploading..." : "Upload & Save Document")
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="ToggleAddDocForm">Cancel</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(docErrorMessage))
+                {
+                    <p class="text-danger mt-2 mb-0">@docErrorMessage</p>
+                }
+            </div>
+        </div>
+    }
+
+    @if (caseDocuments is null)
+    {
+        <p>Loading documents...</p>
+    }
+    else if (caseDocuments.Count == 0)
+    {
+        <div class="alert alert-light border">No general documents uploaded for this case yet.</div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+            @foreach (var doc in caseDocuments)
+            {
+                <div class="col">
+                    <div class="card h-100 border shadow-sm">
+                        <div class="card-body text-center d-flex flex-column align-items-center justify-content-between">
+                            <h6 class="card-title text-start w-100 text-truncate font-weight-bold" title="@doc.FileName">
+                                @doc.FileName
+                            </h6>
+                            <div class="my-2">
+                                <FileThumbnail Document="doc" OwnerType="case" OwnerId="caseDto.Id" />
+                            </div>
+                            <div class="mt-2 w-100 d-flex justify-content-between align-items-center">
+                                <small class="text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteCaseDocument(doc.Id)">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private CaseDto? caseDto;
+    private List<LegalERP.Application.Companies.DocumentDto>? caseDocuments;
+    private bool notFound;
+
+    // Party State
+    private bool showAddPartyForm;
+    private PartyRole newPartyRole = PartyRole.Defendant;
+    private string newPartyClientStatus = "client";
+    private string? newPartyNotes;
+    private bool isSavingParty;
+    private string? partyErrorMessage;
+
+    // Client Search State
+    private string? clientSearchTerm;
+    private List<ClientSummaryDto>? clientSearchResults;
+    private bool showNoClientFound;
+    private Guid? selectedClientId;
+    private string? selectedClientName;
+
+    // General Document State
+    private bool showAddDocForm;
+    private string? newDocTitle;
+    private IBrowserFile? newDocFile;
+    private bool isUploadingDoc;
+    private string? docErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCase();
+    }
+
+    private async Task LoadCase()
+    {
+        caseDto = await CaseApi.GetByIdAsync(Id);
+        if (caseDto is null)
+        {
+            notFound = true;
+        }
+        else
+        {
+            await LoadCaseDocuments();
+        }
+    }
+
+    private async Task LoadCaseDocuments()
+    {
+        try
+        {
+            caseDocuments = new List<LegalERP.Application.Companies.DocumentDto>();
+        }
+        catch
+        {
+            caseDocuments = new List<LegalERP.Application.Companies.DocumentDto>();
+        }
+    }
+
+    private void ToggleAddPartyForm()
+    {
+        showAddPartyForm = !showAddPartyForm;
+        partyErrorMessage = null;
+        ClearClientSelection();
+        clientSearchTerm = null;
+        clientSearchResults = null;
+        showNoClientFound = false;
+    }
+
+    // --- Client Quick-Search ---
+
+    private async Task HandleClientSearch(KeyboardEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(clientSearchTerm))
+        {
+            clientSearchResults = null;
+            showNoClientFound = false;
+            return;
+        }
+
+        var results = await ClientApi.SearchAsync(clientSearchTerm);
+        clientSearchResults = results;
+        showNoClientFound = results.Count == 0;
+    }
+
+    private void SelectClient(ClientSummaryDto client)
+    {
+        selectedClientId = client.Id;
+        selectedClientName = string.IsNullOrWhiteSpace(client.NationalIdNumber) 
+            ? client.FullName 
+            : $"{client.FullName} (ID: {client.NationalIdNumber})";
+        clientSearchResults = null;
+        showNoClientFound = false;
+        clientSearchTerm = client.FullName;
+    }
+
+    private void ClearClientSelection()
+    {
+        selectedClientId = null;
+        selectedClientName = null;
+        clientSearchTerm = null;
+        clientSearchResults = null;
+        showNoClientFound = false;
+    }
+
+    // --- Add Party (from Client) ---
+
+    private async Task AddParty()
+    {
+        if (!selectedClientId.HasValue)
+        {
+            partyErrorMessage = "You must select a Client from the search results. If the person is not in the system, click 'Add new client' to register them first.";
+            return;
+        }
+
+        isSavingParty = true;
+        partyErrorMessage = null;
+
+        try
+        {
+            var dto = new CreateCasePartyDto(
+                selectedClientId.Value,
+                selectedClientName ?? "",
+                newPartyRole,
+                newPartyClientStatus == "client",
+                null,  // NationalIdNumber comes from Client record
+                null,  // PhoneNumber comes from Client record
+                newPartyNotes,
+                null   // DocumentId — documents are on the Client record
+            );
+
+            await CaseApi.AddPartyAsync(Id, dto);
+
+            showAddPartyForm = false;
+            ClearClientSelection();
+            newPartyClientStatus = "client";
+            newPartyNotes = null;
+
+            await LoadCase();
+        }
+        catch (Exception ex)
+        {
+            partyErrorMessage = "Failed to add party: " + ex.Message;
+        }
+        finally
+        {
+            isSavingParty = false;
+        }
+    }
+
+    private async Task DeleteParty(Guid partyId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this party?");
+        if (confirmed)
+        {
+            await CaseApi.DeletePartyAsync(Id, partyId);
+            await LoadCase();
+        }
+    }
+
+    // --- Case Document Methods ---
+
+    private void ToggleAddDocForm()
+    {
+        showAddDocForm = !showAddDocForm;
+        docErrorMessage = null;
+    }
+
+    private void LoadDocFile(InputFileChangeEventArgs e)
+    {
+        newDocFile = e.File;
+        if (string.IsNullOrWhiteSpace(newDocTitle))
+        {
+            newDocTitle = e.File.Name;
+        }
+    }
+
+    private async Task UploadCaseDocument()
+    {
+        if (newDocFile == null)
+        {
+            docErrorMessage = "Please select a file to upload.";
+            return;
+        }
+
+        isUploadingDoc = true;
+        docErrorMessage = null;
+
+        try
+        {
+            var docId = await CompanyApi.UploadDocumentAsync("case", Id, newDocFile);
+            showAddDocForm = false;
+            newDocTitle = null;
+            newDocFile = null;
+            await LoadCase();
+        }
+        catch (Exception ex)
+        {
+            docErrorMessage = "Failed to upload document: " + ex.Message;
+        }
+        finally
+        {
+            isUploadingDoc = false;
+        }
+    }
+
+    private async Task DeleteCaseDocument(Guid docId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this document?");
+        if (confirmed)
+        {
+            await CompanyApi.DeleteDocumentAsync(docId);
+            await LoadCase();
+        }
+    }
+
+    private async Task DeleteCase()
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this case? This action cannot be undone.");
+        if (confirmed)
+        {
+            await CaseApi.DeleteAsync(Id);
+            NavManager.NavigateTo("/cases");
+        }
+    }
+}
+

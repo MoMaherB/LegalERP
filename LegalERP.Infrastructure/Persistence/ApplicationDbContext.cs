@@ -18,6 +18,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<CompanyAmendment> CompanyAmendments => Set<CompanyAmendment>();
     public DbSet<CompanyPartner> CompanyPartners => Set<CompanyPartner>();
     public DbSet<Document> Documents => Set<Document>();
+    public DbSet<Case> Cases => Set<Case>();
+    public DbSet<CaseParty> CaseParties => Set<CaseParty>();
+    public DbSet<Client> Clients => Set<Client>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
