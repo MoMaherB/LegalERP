@@ -1,0 +1,25 @@
+@inject IJSRuntime JSRuntime
+@using System.Globalization
+@using Microsoft.AspNetCore.Localization
+@inject NavigationManager Navigation
+
+<div class="dropdown">
+    <button class="btn btn-outline-secondary glass-panel dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-globe me-1"></i> @(CultureInfo.CurrentCulture.TwoLetterISOLanguageName.ToUpper())
+    </button>
+    <ul class="dropdown-menu glass-panel" aria-labelledby="languageDropdown">
+        <li><button class="dropdown-item @(CultureInfo.CurrentCulture.Name == "en-US" ? "active" : "")" @onclick='() => ChangeLanguage("en-US")'>English</button></li>
+        <li><button class="dropdown-item @(CultureInfo.CurrentCulture.Name == "ar-EG" ? "active" : "")" @onclick='() => ChangeLanguage("ar-EG")'>العربية</button></li>
+    </ul>
+</div>
+
+@code {
+    private async Task ChangeLanguage(string culture)
+    {
+        if (CultureInfo.CurrentCulture.Name != culture)
+        {
+            await JSRuntime.InvokeVoidAsync("cultureManager.set", culture);
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+        }
+    }
+}

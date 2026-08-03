@@ -1,0 +1,35 @@
+@inject IJSRuntime JSRuntime
+
+<button class="btn btn-outline-secondary glass-panel ms-2" @onclick="ToggleTheme">
+    @if (isDarkMode)
+    {
+        <i class="bi bi-moon-stars-fill"></i>
+    }
+    else
+    {
+        <i class="bi bi-sun-fill"></i>
+    }
+</button>
+
+@code {
+    private bool isDarkMode = false;
+    private bool isInitialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var currentTheme = await JSRuntime.InvokeAsync<string>("themeManager.getTheme");
+            isDarkMode = currentTheme == "dark";
+            isInitialized = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ToggleTheme()
+    {
+        isDarkMode = !isDarkMode;
+        var newTheme = isDarkMode ? "dark" : "light";
+        await JSRuntime.InvokeVoidAsync("themeManager.setTheme", newTheme);
+    }
+}

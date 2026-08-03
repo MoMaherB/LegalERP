@@ -1,15 +1,26 @@
+@using System.Globalization
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@CultureInfo.CurrentCulture.TwoLetterISOLanguageName" dir="@(CultureInfo.CurrentCulture.TextInfo.IsRightToLeft ? "rtl" : "ltr")">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="/" />
-    <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    @if (CultureInfo.CurrentCulture.TextInfo.IsRightToLeft)
+    {
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" />
+    }
+    else
+    {
+        <link rel="stylesheet" href="bootstrap/bootstrap.min.css" />
+    }
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="app.css" />
+    <link rel="stylesheet" href="css/glassmorphism.css" />
     <link rel="stylesheet" href="LegalERP.Web.styles.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <script src="js/theme-manager.js"></script>
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 

@@ -1,15 +1,16 @@
 @inherits LayoutComponentBase
 
 <div class="page">
-    <div class="sidebar">
+    <div class="sidebar glass-navbar">
         <NavMenu />
     </div>
 
     <main>
-        <div class="top-row px-4 d-flex justify-content-end align-items-center gap-3">
+        <div class="top-row px-4 d-flex justify-content-end align-items-center gap-2 glass-navbar">
             <LegalERP.Web.Components.Shared.RoleSwitcher />
             <LegalERP.Web.Components.Shared.NotificationBell />
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <LegalERP.Web.Components.Shared.LanguageSwitcher />
+            <LegalERP.Web.Components.Shared.ThemeSwitcher />
         </div>
 
         <article class="content px-4">

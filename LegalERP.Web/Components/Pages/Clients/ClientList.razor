@@ -6,25 +6,28 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>Clients Management (الموكلين)</PageTitle>
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
+
+<PageTitle>@Loc["ClientsManagement"]</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Clients (الموكلين)</h1>
-    <a href="/clients/new" class="btn btn-primary">Add New Client</a>
+    <h1>@Loc["Clients"]</h1>
+    <a href="/clients/new" class="btn btn-primary">@Loc["AddClient"]</a>
 </div>
 
 <!-- Search Controls -->
-<div class="card mb-4">
+<div class="glass-card mb-4">
     <div class="card-body">
         <div class="row g-3 align-items-end">
             <div class="col-md-8">
-                <label class="form-label font-weight-bold">Search by Name (Arabic or English)</label>
-                <input type="text" class="form-control" placeholder="Search clients by name..." 
+                <label class="form-label font-weight-bold">@Loc["SearchByName"]</label>
+                <input type="text" class="form-control" placeholder="@Loc["SearchClientsPlaceholder"]" 
                        @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
             </div>
             <div class="col-md-4 d-flex gap-2">
-                <button class="btn btn-secondary w-100" @onclick="PerformSearch">Search</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetSearch">Reset</button>
+                <button class="btn btn-secondary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
             </div>
         </div>
     </div>
@@ -32,23 +35,23 @@
 
 @if (clients is null)
 {
-    <p>Loading...</p>
+    <p>@Loc["Loading"]</p>
 }
 else if (clients.Count == 0)
 {
     <div class="alert alert-info">
-        No clients found. <a href="/clients/new">Add your first client</a>.
+        @Loc["NoClientsFound"] <a href="/clients/new">@Loc["AddFirstClient"]</a>.
     </div>
 }
 else
 {
-    <table class="table table-hover align-middle">
+    <table class="table table-hover align-middle table-glass">
         <thead>
             <tr>
-                <th>Full Name</th>
-                <th>National ID</th>
-                <th>Phone</th>
-                <th>Actions</th>
+                <th>@Loc["FullName"]</th>
+                <th>@Loc["NationalId"]</th>
+                <th>@Loc["Phone"]</th>
+                <th>@Loc["Actions"]</th>
             </tr>
         </thead>
         <tbody>
@@ -59,9 +62,9 @@ else
                     <td>@(c.NationalIdNumber ?? "—")</td>
                     <td>@(c.PhoneNumber ?? "—")</td>
                     <td>
-                        <a href="/clients/@c.Id" class="btn btn-sm btn-info me-1">View</a>
-                        <a href="/clients/edit/@c.Id" class="btn btn-sm btn-secondary me-1">Edit</a>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteClient(c.Id)">Delete</button>
+                        <a href="/clients/@c.Id" class="btn btn-sm btn-info me-1">@Loc["View"]</a>
+                        <a href="/clients/edit/@c.Id" class="btn btn-sm btn-secondary me-1">@Loc["Edit"]</a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteClient(c.Id)">@Loc["Delete"]</button>
                     </td>
                 </tr>
             }
@@ -106,7 +109,7 @@ else
 
     private async Task DeleteClient(Guid id)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this client? This action cannot be undone.");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteClient"]);
         if (confirmed)
         {
             await ClientApi.DeleteAsync(id);

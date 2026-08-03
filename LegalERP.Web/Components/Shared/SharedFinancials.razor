@@ -1,33 +1,35 @@
 @using LegalERP.Application.Financials
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
+@using Microsoft.Extensions.Localization
 @inject CaseApiClient CaseApi
 @inject CompanyApiClient CompanyApi
+@inject IStringLocalizer<SharedResources> Loc
 
 @if (financials == null)
 {
-    <p>Loading financials...</p>
+    <p>@Loc["Loading"]...</p>
 }
 else
 {
     <div class="row">
         <!-- Summary Cards -->
         <div class="col-md-4 mb-3">
-            <div class="card bg-light border-0 shadow-sm h-100">
+            <div class="glass-card h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-muted">Agreed Fee (المتفق عليه)</h5>
+                    <h5 class="card-title text-muted">@Loc["AgreedFee"]</h5>
                     <div class="d-flex align-items-center">
                         <h3 class="mb-0 me-2">@(financials.AgreedFee?.ToString("N2") ?? "—")</h3>
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="ToggleEditFee">
+                        <button class="btn btn-sm btn-outline-secondary glass-panel" @onclick="ToggleEditFee">
                             <i class="bi bi-pencil"></i>
                         </button>
                     </div>
                     @if (isEditingFee)
                     {
                         <div class="mt-2 d-flex gap-2">
-                            <input type="number" class="form-control form-control-sm" @bind="editFeeAmount" />
-                            <button class="btn btn-sm btn-success" @onclick="SaveFee">Save</button>
-                            <button class="btn btn-sm btn-secondary" @onclick="ToggleEditFee">Cancel</button>
+                            <input type="number" class="form-control glass-input form-control-sm" @bind="editFeeAmount" />
+                            <button class="btn btn-sm btn-success" @onclick="SaveFee">@Loc["Save"]</button>
+                            <button class="btn btn-sm btn-secondary" @onclick="ToggleEditFee">@Loc["Cancel"]</button>
                         </div>
                     }
                 </div>
@@ -35,24 +37,24 @@ else
         </div>
 
         <div class="col-md-4 mb-3">
-            <div class="card bg-light border-0 shadow-sm h-100">
+            <div class="glass-card h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-muted">Total Collected (المحصل)</h5>
+                    <h5 class="card-title text-muted">@Loc["CollectedAmount"]</h5>
                     <h3 class="mb-0 text-success">@financials.TotalCollected.ToString("N2")</h3>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4 mb-3">
-            <div class="card bg-light border-0 shadow-sm h-100">
+            <div class="glass-card h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-muted">Remaining Balance (المتبقي)</h5>
+                    <h5 class="card-title text-muted">@Loc["RemainingBalance"]</h5>
                     <h3 class="mb-0 @GetBalanceColor(financials.PaymentStatus)">
                         @financials.RemainingBalance.ToString("N2")
                     </h3>
                     <div class="mt-2">
-                        <span class="badge @GetBadgeColor(financials.PaymentStatus)">
-                            @financials.PaymentStatus
+                        <span class="glass-badge @GetBadgeColor(financials.PaymentStatus)">
+                            @TranslatePaymentStatus(financials.PaymentStatus)
                         </span>
                     </div>
                 </div>
@@ -61,37 +63,33 @@ else
     </div>
 
     <!-- Transactions Ledger -->
-    <div class="card mt-2 border-0 shadow-sm">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Fee Transactions (سجل الدفعات)</h5>
-            <button class="btn btn-sm btn-primary" @onclick="ToggleAddTransaction">
-                @(showAddTransaction ? "Cancel" : "+ Add Payment")
+    <div class="glass-card mt-4">
+        <div class="glass-card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">@Loc["FeeTransactions"]</h5>
+            <button class="btn btn-sm btn-primary glass-panel" @onclick="ToggleAddTransaction">
+                @(showAddTransaction ? Loc["Cancel"] : Loc["Add"])
             </button>
         </div>
         <div class="card-body">
             @if (showAddTransaction)
             {
-                <div class="bg-light p-3 rounded mb-3">
+                <div class="glass-panel p-3 rounded mb-3">
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <label class="form-label">Amount *</label>
-                            <input type="number" class="form-control" @bind="newTransaction.Amount" />
+                            <label class="form-label">@Loc["Amount"] *</label>
+                            <input type="number" class="form-control glass-input" @bind="newTransaction.Amount" />
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Date *</label>
-                            <input type="date" class="form-control" @bind="newTransaction.TransactionDate" />
+                            <input type="date" class="form-control glass-input" @bind="newTransaction.TransactionDate" />
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Receipt Number</label>
-                            <input type="text" class="form-control" @bind="newTransaction.ReceiptNumber" />
+                        <div class="col-md-4">
+                            <label class="form-label">@Loc["ReceiptNumber"]</label>
+                            <input type="text" class="form-control glass-input" @bind="newTransaction.ReceiptNumber" />
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Notes</label>
-                            <input type="text" class="form-control" @bind="newTransaction.Notes" />
-                        </div>
-                        <div class="col-12 text-end">
-                            <button class="btn btn-success" @onclick="SaveTransaction" disabled="@isSaving">
-                                @(isSaving ? "Saving..." : "Save Payment")
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-success w-100 glass-panel" @onclick="SaveTransaction" disabled="@isSaving">
+                                @Loc["Save"]
                             </button>
                         </div>
                     </div>
@@ -105,13 +103,12 @@ else
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover table-glass align-middle">
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Amount</th>
-                                <th>Receipt No.</th>
-                                <th>Notes</th>
+                                <th>@Loc["ReceiptNumber"]</th>
+                                <th class="text-end">@Loc["Amount"]</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
@@ -120,11 +117,10 @@ else
                             {
                                 <tr>
                                     <td>@tx.TransactionDate.ToString("yyyy-MM-dd")</td>
-                                    <td class="fw-bold text-success">@tx.Amount.ToString("N2")</td>
-                                    <td>@tx.ReceiptNumber</td>
-                                    <td>@tx.Notes</td>
+                                    <td>@(tx.ReceiptNumber ?? "—")</td>
+                                    <td class="text-end fw-bold text-success">@tx.Amount.ToString("N2")</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteTransaction(tx.Id)">
+                                        <button class="btn btn-sm btn-outline-danger glass-panel" @onclick="() => DeleteTransaction(tx.Id)">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </td>
@@ -234,9 +230,17 @@ else
 
     private string GetBadgeColor(PaymentStatus status) => status switch
     {
-        PaymentStatus.Paid => "bg-success",
-        PaymentStatus.PartiallyPaid => "bg-warning text-dark",
-        PaymentStatus.Unpaid => "bg-danger",
+        PaymentStatus.Paid => "glass-badge-success",
+        PaymentStatus.PartiallyPaid => "glass-badge-warning",
+        PaymentStatus.Unpaid => "glass-badge-danger",
         _ => "bg-secondary"
+    };
+
+    private string TranslatePaymentStatus(PaymentStatus status) => status switch
+    {
+        PaymentStatus.Paid => Loc["Paid"],
+        PaymentStatus.PartiallyPaid => Loc["PartiallyPaid"],
+        PaymentStatus.Unpaid => Loc["Unpaid"],
+        _ => status.ToString()
     };
 }

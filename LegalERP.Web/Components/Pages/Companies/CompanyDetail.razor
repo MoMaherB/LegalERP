@@ -9,20 +9,22 @@
 @inject NavigationManager NavManager
 @inject IJSRuntime JS
 @inject MockAuthService Auth
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
 @implements IDisposable
 
 @if (company is null)
 {
-    <p>Loading...</p>
+    <p>@Loc["Loading"]</p>
 }
 else
 {
-    <PageTitle>@company.CompanyName - Details</PageTitle>
+    <PageTitle>@company.CompanyName - @Loc["Details"]</PageTitle>
 
     <div class="mb-4">
-        <button class="btn btn-outline-secondary" @onclick="GoBack">Back to List</button>
-        <a href="/companies/edit/@company.Id" class="btn btn-primary ms-2">Edit</a>
+        <button class="btn btn-outline-secondary" @onclick="GoBack">@Loc["BackToList"]</button>
+        <a href="/companies/edit/@company.Id" class="btn btn-primary ms-2">@Loc["Edit"]</a>
     </div>
 
     <h1>@company.CompanyName</h1>
@@ -30,26 +32,26 @@ else
     <div class="row">
         @* ── Company Info Card ── *@
         <div class="col-md-8">
-            <div class="card mb-4 h-100">
+            <div class="glass-card mb-4 h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Company Info</h5>
+                    <h5 class="card-title">@Loc["CompanyInfo"]</h5>
                     <dl class="row">
-                        <dt class="col-sm-4">English Name</dt>
+                        <dt class="col-sm-4">@Loc["EnglishName"]</dt>
                         <dd class="col-sm-8">@(company.CompanyNameEn ?? "—")</dd>
 
-                        <dt class="col-sm-4">Trade Name</dt>
+                        <dt class="col-sm-4">@Loc["TradeName"]</dt>
                         <dd class="col-sm-8">@(company.TradeName ?? "—")</dd>
 
-                        <dt class="col-sm-4">Category</dt>
+                        <dt class="col-sm-4">@Loc["Category"]</dt>
                         <dd class="col-sm-8">@company.Category</dd>
 
-                        <dt class="col-sm-4">Establishment Date</dt>
+                        <dt class="col-sm-4">@Loc["EstablishmentDate"]</dt>
                         <dd class="col-sm-8">@(company.EstablishmentDate?.ToString("yyyy-MM-dd") ?? "—")</dd>
 
-                        <dt class="col-sm-4">Registration Number</dt>
+                        <dt class="col-sm-4">@Loc["RegistrationNumber"]</dt>
                         <dd class="col-sm-8">@(company.RegistrationNumber ?? "—")</dd>
 
-                        <dt class="col-sm-4">Address</dt>
+                        <dt class="col-sm-4">@Loc["Address"]</dt>
                         <dd class="col-sm-8">@(company.Address ?? "—")</dd>
                     </dl>
                 </div>
@@ -58,34 +60,34 @@ else
 
         @* ── Incorporation Contract Card ── *@
         <div class="col-md-4">
-            <div class="card mb-4 h-100">
+            <div class="glass-card mb-4 h-100">
                 <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                    <h5 class="card-title w-100 text-start">Incorporation Contract</h5>
+                    <h5 class="card-title w-100 text-start">@Loc["IncorporationContract"]</h5>
                     @if (company.IncorporationDocument != null)
                     {
                         <div class="mb-2">
                             <FileThumbnail Document="company.IncorporationDocument" OwnerType="company" OwnerId="company.Id" />
                         </div>
                         <div class="mt-2 w-100">
-                            <label class="form-label text-muted small">Replace Contract</label>
+                            <label class="form-label text-muted small">@Loc["ReplaceContract"]</label>
                             <InputFile class="form-control form-control-sm mb-2" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
                             @if (incorporationContractFile != null)
                             {
                                 <button class="btn btn-sm btn-primary w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
-                                    @(isUploadingIncorporationContract ? "Uploading..." : "Save New Contract")
+                                    @(isUploadingIncorporationContract ? Loc["Uploading"] : Loc["SaveNewContract"])
                                 </button>
                             }
                         </div>
                     }
                     else
                     {
-                        <p class="text-muted mb-2">No contract uploaded yet.</p>
+                        <p class="text-muted mb-2">@Loc["NoContractUploaded"]</p>
                         <div class="w-100">
                             <InputFile class="form-control form-control-sm mb-2" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
                             @if (incorporationContractFile != null)
                             {
                                 <button class="btn btn-sm btn-success w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
-                                    @(isUploadingIncorporationContract ? "Uploading..." : "Upload Contract")
+                                    @(isUploadingIncorporationContract ? Loc["Uploading"] : Loc["UploadContract"])
                                 </button>
                             }
                         </div>
@@ -101,22 +103,22 @@ else
 
     @* ── Partners Section ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">Partners</h3>
+        <h3 class="mb-0">@Loc["Partners"]</h3>
         <button class="btn btn-sm btn-success" @onclick="ToggleAddPartnerForm">
-            @(showAddPartnerForm ? "Cancel" : "+ Add Partner")
+            @(showAddPartnerForm ? Loc["Cancel"] : Loc["AddPartner"])
         </button>
     </div>
 
     @if (showAddPartnerForm)
     {
-        <div class="card mb-3 border-success">
+        <div class="glass-card mb-3 border-success">
             <div class="card-body">
-                <h5 class="card-title text-success">Add Company Partner (from Clients Registry)</h5>
+                <h5 class="card-title text-success">@Loc["AddCompanyPartner"]</h5>
                 <div class="row g-3">
                     <div class="col-md-8">
-                        <label class="form-label">Search Client by Name (بحث عن الموكل) *</label>
+                        <label class="form-label">@Loc["SearchClientByName"] *</label>
                         <input class="form-control" @bind="clientSearchTerm" @bind:event="oninput"
-                               @onkeyup="HandleClientSearch" placeholder="Type client name to search..." />
+                               @onkeyup="HandleClientSearch" placeholder="@Loc["TypeClientNameSearch"]" />
                         @if (clientSearchResults != null)
                         {
                             <div class="list-group mt-1 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100;">
@@ -139,29 +141,29 @@ else
                                     }
                                 }
                                 <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning text-center">
-                                    <strong>➕ Client not found — Add new client (إضافة موكل جديد)</strong>
+                                    <strong>➕ @Loc["ClientNotFoundAddNew"]</strong>
                                 </a>
                             </div>
                         }
                         @if (selectedClientId.HasValue)
                         {
                             <div class="alert alert-success mt-2 mb-0 py-2 d-flex justify-content-between align-items-center">
-                                <span>✅ Selected: <strong>@selectedClientName</strong></span>
-                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearClientSelection">Clear</button>
+                                <span>✅ @Loc["Selected"]: <strong>@selectedClientName</strong></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearClientSelection">@Loc["Clear"]</button>
                             </div>
                         }
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label">Ownership % (نسبة الملكية)</label>
+                        <label class="form-label">@Loc["OwnershipPercentage"]</label>
                         <input type="number" step="0.01" class="form-control" @bind="newPartnerOwnership" placeholder="e.g. 25.5" />
                     </div>
 
                     <div class="col-12 mt-3">
                         <button class="btn btn-success me-2" @onclick="AddPartner" disabled="@isSavingPartner">
-                            @(isSavingPartner ? "Saving..." : "Save Partner")
+                            @(isSavingPartner ? Loc["Saving"] : Loc["SavePartner"])
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ToggleAddPartnerForm">Cancel</button>
+                        <button class="btn btn-outline-secondary" @onclick="ToggleAddPartnerForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(partnerErrorMessage))
@@ -174,18 +176,18 @@ else
 
     @if (company.Partners.Count == 0)
     {
-        <p class="text-muted">No partners recorded yet.</p>
+        <p class="text-muted">@Loc["NoPartnersRecorded"]</p>
     }
     else
     {
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle table-glass">
             <thead>
                 <tr>
-                    <th>Name</th>
-                    <th>National ID</th>
-                    <th>Ownership %</th>
-                    <th>ID Document</th>
-                    <th>Actions</th>
+                    <th>@Loc["Name"]</th>
+                    <th>@Loc["NationalID"]</th>
+                    <th>@Loc["OwnershipPercentage"]</th>
+                    <th>@Loc["IDDocument"]</th>
+                    <th>@Loc["Actions"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -206,7 +208,7 @@ else
                             }
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeletePartner(partner.Id)">Delete</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button>
                         </td>
                     </tr>
                 }
@@ -216,33 +218,33 @@ else
 
     @* ── Amendments Section ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">Amendments</h3>
+        <h3 class="mb-0">@Loc["Amendments"]</h3>
         <button class="btn btn-sm btn-success" @onclick="ToggleAddAmendmentForm">
-            @(showAddAmendmentForm ? "Cancel" : "+ Add Amendment")
+            @(showAddAmendmentForm ? Loc["Cancel"] : Loc["AddAmendment"])
         </button>
     </div>
 
     @if (showAddAmendmentForm)
     {
-        <div class="card mb-3 border-success">
+        <div class="glass-card mb-3 border-success">
             <div class="card-body">
-                <h5 class="card-title text-success">New Amendment</h5>
+                <h5 class="card-title text-success">@Loc["NewAmendment"]</h5>
                 <div class="row g-3">
                     <div class="col-md-5">
-                        <label class="form-label">Title (Leave blank for auto-generation)</label>
+                        <label class="form-label">@Loc["TitleLeaveBlankAuto"]</label>
                         <input class="form-control" @bind="newAmendmentTitle" placeholder="@NextAmendmentPlaceholder" />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Date</label>
+                        <label class="form-label">@Loc["Date"]</label>
                         <input type="date" class="form-control" @bind="newAmendmentDate" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Amendment Contract</label>
+                        <label class="form-label">@Loc["AmendmentContract"]</label>
                         <InputFile class="form-control" OnChange="LoadAmendmentFile" accept=".pdf,.jpg,.jpeg,.png" />
                     </div>
                     <div class="col-12 mt-3">
                         <button class="btn btn-success" @onclick="AddAmendment" disabled="@isSavingAmendment">
-                            @(isSavingAmendment ? "Saving..." : "Save Amendment")
+                            @(isSavingAmendment ? Loc["Saving"] : Loc["SaveAmendment"])
                         </button>
                     </div>
                 </div>
@@ -256,18 +258,18 @@ else
 
     @if (company.Amendments.Count == 0)
     {
-        <p class="text-muted">No amendments recorded yet.</p>
+        <p class="text-muted">@Loc["NoAmendmentsRecorded"]</p>
     }
     else
     {
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle table-glass">
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Title</th>
-                    <th>Date</th>
-                    <th>Contract</th>
-                    <th>Actions</th>
+                    <th>@Loc["Title"]</th>
+                    <th>@Loc["Date"]</th>
+                    <th>@Loc["Contract"]</th>
+                    <th>@Loc["Actions"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -288,7 +290,7 @@ else
                             }
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteAmendment(amendment.Id)">Delete</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteAmendment(amendment.Id)">@Loc["Delete"]</button>
                         </td>
                     </tr>
                 }
@@ -299,9 +301,9 @@ else
     @if (Auth.IsAdmin)
     {
         <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
-            <h3 class="mb-0 text-success">Financials (الماليات)</h3>
+            <h3 class="mb-0 text-success">@Loc["Financials"]</h3>
         </div>
-        <div class="card border-success mb-5">
+        <div class="glass-card border-success mb-5">
             <div class="card-body">
                 <SharedFinancials OwnerId="company.Id" OwnerType="company" />
             </div>

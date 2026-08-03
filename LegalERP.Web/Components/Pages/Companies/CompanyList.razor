@@ -5,28 +5,30 @@
 @inject CompanyApiClient CompanyApi
 @inject NavigationManager NavManager
 @inject IJSRuntime JS
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
 
-<PageTitle>Companies Management</PageTitle>
+<PageTitle>@Loc["CompaniesManagement"]</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Companies Management</h1>
-    <a href="/companies/new" class="btn btn-primary">Add New Company</a>
+    <h1>@Loc["CompaniesManagement"]</h1>
+    <a href="/companies/new" class="btn btn-primary">@Loc["AddNewCompany"]</a>
 </div>
 
 <!-- Search & Filter Controls -->
-<div class="card mb-4">
+<div class="glass-card mb-4">
     <div class="card-body">
         <div class="row g-3 align-items-end">
             <div class="col-md-5">
-                <label class="form-label font-weight-bold">Search (Name / Trade Name / English)</label>
-                <input type="text" class="form-control" placeholder="Search by name, English name, or trade name..." 
+                <label class="form-label font-weight-bold">@Loc["SearchNameTradeNameEnglish"]</label>
+                <input type="text" class="form-control" placeholder="@Loc["SearchCompaniesPlaceholder"]" 
                        @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
             </div>
             <div class="col-md-4">
-                <label class="form-label font-weight-bold">Category Filter</label>
+                <label class="form-label font-weight-bold">@Loc["CategoryFilter"]</label>
                 <select class="form-select" @bind="selectedCategory">
-                    <option value="">All Categories</option>
+                    <option value="">@Loc["AllCategories"]</option>
                     @foreach (var cat in Enum.GetValues<CompanyCategory>())
                     {
                         <option value="@cat">@cat</option>
@@ -34,8 +36,8 @@
                 </select>
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-secondary w-100" @onclick="PerformSearch">Search</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetSearch">Reset</button>
+                <button class="btn btn-secondary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
             </div>
         </div>
     </div>
@@ -43,23 +45,23 @@
 
 @if (companies is null)
 {
-    <p>Loading...</p>
+    <p>@Loc["Loading"]</p>
 }
 else if (companies.Count == 0)
 {
     <div class="alert alert-info">
-        No companies match the specified search or filter criteria.
+        @Loc["NoCompaniesMatch"]
     </div>
 }
 else
 {
-    <table class="table table-hover align-middle">
+    <table class="table table-hover align-middle table-glass">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Trade Name</th>
-                <th>Category</th>
-                <th>Actions</th>
+                <th>@Loc["Name"]</th>
+                <th>@Loc["TradeName"]</th>
+                <th>@Loc["Category"]</th>
+                <th>@Loc["Actions"]</th>
             </tr>
         </thead>
         <tbody>
@@ -76,9 +78,9 @@ else
                     <td>@(string.IsNullOrWhiteSpace(c.TradeName) ? "—" : c.TradeName)</td>
                     <td><span class="badge bg-secondary">@c.Category</span></td>
                     <td>
-                        <a href="/companies/@c.Id" class="btn btn-sm btn-info me-2">View</a>
-                        <a href="/companies/edit/@c.Id" class="btn btn-sm btn-secondary me-2">Edit</a>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCompany(c.Id)">Delete</button>
+                        <a href="/companies/@c.Id" class="btn btn-sm btn-info me-2">@Loc["View"]</a>
+                        <a href="/companies/edit/@c.Id" class="btn btn-sm btn-secondary me-2">@Loc["Edit"]</a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCompany(c.Id)">@Loc["Delete"]</button>
                     </td>
                 </tr>
             }

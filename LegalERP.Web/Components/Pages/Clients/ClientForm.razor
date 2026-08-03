@@ -8,88 +8,91 @@
 @inject NavigationManager NavManager
 @rendermode InteractiveServer
 
-<PageTitle>@(IsEditMode ? "Edit Client" : "Add New Client")</PageTitle>
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 
-<h1 class="mb-4">@(IsEditMode ? "Edit Client" : "Add New Client (إضافة موكل جديد)")</h1>
+<PageTitle>@(IsEditMode ? Loc["EditClient"] : Loc["AddNewClient"])</PageTitle>
+
+<h1 class="mb-4">@(IsEditMode ? Loc["EditClient"] : Loc["AddNewClient"])</h1>
 
 @if (isLoading)
 {
-    <p>Loading...</p>
+    <p>@Loc["Loading"]</p>
 }
 else
 {
     <EditForm Model="model" OnValidSubmit="HandleSubmit">
         <DataAnnotationsValidator />
 
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Personal Information (البيانات الشخصية)</h5>
+        <div class="glass-card mb-4">
+            <div class="glass-card-header">
+                <h5 class="mb-0">@Loc["PersonalInformation"]</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Full Name (Arabic) *</label>
-                        <InputText class="form-control" @bind-Value="model.FullName" placeholder="الاسم الكامل بالعربي..." />
+                        <label class="form-label">@Loc["FullNameArabic"] *</label>
+                        <InputText class="form-control" @bind-Value="model.FullName" placeholder="@Loc["FullNameArabicPlaceholder"]" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Full Name (English)</label>
-                        <InputText class="form-control" @bind-Value="model.FullNameEn" placeholder="Full name in English..." />
+                        <label class="form-label">@Loc["FullNameEnglish"]</label>
+                        <InputText class="form-control" @bind-Value="model.FullNameEn" placeholder="@Loc["FullNameEnglishPlaceholder"]" />
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label">National ID Number (رقم الهوية) *</label>
-                        <InputText class="form-control" @bind-Value="model.NationalIdNumber" placeholder="National ID number..." />
+                        <label class="form-label">@Loc["NationalIdNumber"] *</label>
+                        <InputText class="form-control" @bind-Value="model.NationalIdNumber" placeholder="@Loc["NationalIdNumberPlaceholder"]" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Phone Number (رقم الهاتف)</label>
-                        <InputText class="form-control" @bind-Value="model.PhoneNumber" placeholder="Phone number..." />
+                        <label class="form-label">@Loc["PhoneNumber"]</label>
+                        <InputText class="form-control" @bind-Value="model.PhoneNumber" placeholder="@Loc["PhoneNumberPlaceholder"]" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Email (البريد الإلكتروني)</label>
-                        <InputText class="form-control" @bind-Value="model.Email" placeholder="Email address..." />
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label">Address (العنوان)</label>
-                        <InputText class="form-control" @bind-Value="model.Address" placeholder="Address..." />
+                        <label class="form-label">@Loc["Email"]</label>
+                        <InputText class="form-control" @bind-Value="model.Email" placeholder="@Loc["EmailPlaceholder"]" />
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label">Notes (ملاحظات)</label>
-                        <InputTextArea class="form-control" @bind-Value="model.Notes" rows="3" placeholder="Additional notes about this client..." />
+                        <label class="form-label">@Loc["Address"]</label>
+                        <InputText class="form-control" @bind-Value="model.Address" placeholder="@Loc["AddressPlaceholder"]" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">@Loc["Notes"]</label>
+                        <InputTextArea class="form-control" @bind-Value="model.Notes" rows="3" placeholder="@Loc["NotesPlaceholder"]" />
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Documents (المستندات)</h5>
+        <div class="glass-card mb-4">
+            <div class="glass-card-header">
+                <h5 class="mb-0">@Loc["Documents"]</h5>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">National ID Scan (صورة الهوية)</label>
+                        <label class="form-label">@Loc["NationalIdScan"]</label>
                         <InputFile class="form-control" OnChange="LoadNationalIdFile" accept=".pdf,.jpg,.jpeg,.png" />
                         @if (existingNationalIdDoc != null)
                         {
-                            <small class="text-success mt-1 d-block">Current: @existingNationalIdDoc.FileName</small>
+                            <small class="text-success mt-1 d-block">@Loc["Current"]: @existingNationalIdDoc.FileName</small>
                         }
                         @if (nationalIdFile != null)
                         {
-                            <small class="text-primary mt-1 d-block">New file: @nationalIdFile.Name</small>
+                            <small class="text-primary mt-1 d-block">@Loc["NewFile"]: @nationalIdFile.Name</small>
                         }
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Attorney / Power of Attorney (صورة الوكالة)</label>
+                        <label class="form-label">@Loc["PowerOfAttorney"]</label>
                         <InputFile class="form-control" OnChange="LoadAttorneyFile" accept=".pdf,.jpg,.jpeg,.png" />
                         @if (existingAttorneyDoc != null)
                         {
-                            <small class="text-success mt-1 d-block">Current: @existingAttorneyDoc.FileName</small>
+                            <small class="text-success mt-1 d-block">@Loc["Current"]: @existingAttorneyDoc.FileName</small>
                         }
                         @if (attorneyFile != null)
                         {
-                            <small class="text-primary mt-1 d-block">New file: @attorneyFile.Name</small>
+                            <small class="text-primary mt-1 d-block">@Loc["NewFile"]: @attorneyFile.Name</small>
                         }
                     </div>
                 </div>
@@ -103,9 +106,9 @@ else
 
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                @(isSubmitting ? "Saving..." : (IsEditMode ? "Save Changes" : "Create Client"))
+                @(isSubmitting ? Loc["Saving"] : (IsEditMode ? Loc["SaveChanges"] : Loc["CreateClient"]))
             </button>
-            <a href="/clients" class="btn btn-outline-secondary">Cancel</a>
+            <a href="/clients" class="btn btn-outline-secondary">@Loc["Cancel"]</a>
         </div>
     </EditForm>
 }

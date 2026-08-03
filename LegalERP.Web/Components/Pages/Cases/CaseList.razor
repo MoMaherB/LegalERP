@@ -5,28 +5,30 @@
 @inject CaseApiClient CaseApi
 @inject NavigationManager NavManager
 @inject IJSRuntime JS
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
 
-<PageTitle>Cases Management</PageTitle>
+<PageTitle>@Loc["CasesManagement"]</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Cases Management</h1>
-    <a href="/cases/new" class="btn btn-primary">Add New Case</a>
+    <h1>@Loc["CasesManagement"]</h1>
+    <a href="/cases/new" class="btn btn-primary">@Loc["AddNewCase"]</a>
 </div>
 
 <!-- Search & Filter Controls -->
-<div class="card mb-4">
+<div class="glass-card mb-4">
     <div class="card-body">
         <div class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label font-weight-bold">Search (Case Number / Title / Court)</label>
-                <input type="text" class="form-control" placeholder="Search by case # or title..." 
+                <label class="form-label font-weight-bold">@Loc["Search"]</label>
+                <input type="text" class="form-control" placeholder="@Loc["SearchPlaceholder"]" 
                        @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
             </div>
             <div class="col-md-3">
-                <label class="form-label font-weight-bold">Case Type</label>
+                <label class="form-label font-weight-bold">@Loc["CaseType"]</label>
                 <select class="form-select" @bind="selectedType">
-                    <option value="">All Types</option>
+                    <option value="">@Loc["AllTypes"]</option>
                     @foreach (var t in Enum.GetValues<CaseType>())
                     {
                         <option value="@t">@t</option>
@@ -34,9 +36,9 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label font-weight-bold">Status</label>
+                <label class="form-label font-weight-bold">@Loc["Status"]</label>
                 <select class="form-select" @bind="selectedStatus">
-                    <option value="">All Statuses</option>
+                    <option value="">@Loc["AllStatuses"]</option>
                     @foreach (var s in Enum.GetValues<CaseStatus>())
                     {
                         <option value="@s">@s</option>
@@ -44,8 +46,8 @@
                 </select>
             </div>
             <div class="col-md-2 d-flex gap-2">
-                <button class="btn btn-secondary w-100" @onclick="PerformSearch">Search</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetSearch">Reset</button>
+                <button class="btn btn-secondary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
             </div>
         </div>
     </div>
@@ -53,26 +55,26 @@
 
 @if (cases is null)
 {
-    <p>Loading...</p>
+    <p>@Loc["Loading"]</p>
 }
 else if (cases.Count == 0)
 {
     <div class="alert alert-info">
-        No cases found.
+        @Loc["NoCasesFound"]
     </div>
 }
 else
 {
-    <table class="table table-hover align-middle">
+    <table class="table table-hover align-middle table-glass">
         <thead>
             <tr>
-                <th>Case Number</th>
-                <th>Title / Subject</th>
-                <th>Type</th>
-                <th>Court</th>
-                <th>Status</th>
-                <th>Filing Date</th>
-                <th>Actions</th>
+                <th>@Loc["CaseNumber"]</th>
+                <th>@Loc["TitleSubject"]</th>
+                <th>@Loc["Type"]</th>
+                <th>@Loc["Court"]</th>
+                <th>@Loc["Status"]</th>
+                <th>@Loc["FilingDate"]</th>
+                <th>@Loc["Actions"]</th>
             </tr>
         </thead>
         <tbody>
@@ -86,33 +88,33 @@ else
                     <td>
                         @if (c.Status == CaseStatus.Active)
                         {
-                            <span class="badge bg-warning text-dark">Active</span>
+                            <span class="badge bg-warning text-dark">@Loc["Active"]</span>
                         }
                         else
                         {
                             @if (c.Outcome == CaseOutcome.Won)
                             {
-                                <span class="badge bg-success">Closed (Won - ربح)</span>
+                                <span class="badge bg-success">@Loc["ClosedWon"]</span>
                             }
                             else if (c.Outcome == CaseOutcome.Lost)
                             {
-                                <span class="badge bg-danger">Closed (Lost - خسارة)</span>
+                                <span class="badge bg-danger">@Loc["ClosedLost"]</span>
                             }
                             else if (c.Outcome == CaseOutcome.Settled)
                             {
-                                <span class="badge bg-info text-dark">Closed (Settled - صلح)</span>
+                                <span class="badge bg-info text-dark">@Loc["ClosedSettled"]</span>
                             }
                             else
                             {
-                                <span class="badge bg-success">Closed</span>
+                                <span class="badge bg-success">@Loc["Closed"]</span>
                             }
                         }
                     </td>
                     <td>@(c.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</td>
                     <td>
-                        <a href="/cases/@c.Id" class="btn btn-sm btn-info me-1">View</a>
-                        <a href="/cases/edit/@c.Id" class="btn btn-sm btn-secondary me-1">Edit</a>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCase(c.Id)">Delete</button>
+                        <a href="/cases/@c.Id" class="btn btn-sm btn-info me-1">@Loc["View"]</a>
+                        <a href="/cases/edit/@c.Id" class="btn btn-sm btn-secondary me-1">@Loc["Edit"]</a>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCase(c.Id)">@Loc["Delete"]</button>
                     </td>
                 </tr>
             }

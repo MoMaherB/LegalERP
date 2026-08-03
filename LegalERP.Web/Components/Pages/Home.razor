@@ -1,19 +1,20 @@
 @page "/"
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 
-<PageTitle>LegalERP Dashboard</PageTitle>
+<PageTitle>LegalERP | @Loc["Home"]</PageTitle>
 
-<h1>Dashboard</h1>
+<div class="glass-card mb-4">
+    <h1>@Loc["Home"]</h1>
+    <p>Welcome to LegalERP.</p>
+</div>
 
-<p>Welcome to LegalERP. Use the navigation menu to manage companies and cases.</p>
-
-<div class="row mt-4">
+<div class="row">
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Companies</h5>
-                <p class="card-text">Manage company records, partners, and amendments.</p>
-                <a href="/companies" class="btn btn-primary">Go to Companies</a>
-            </div>
+        <div class="glass-card">
+            <h5 class="glass-card-header">@Loc["Companies"]</h5>
+            <p>Manage company records, partners, and amendments.</p>
+            <a href="/companies" class="btn btn-primary glass-panel">@Loc["Companies"]</a>
         </div>
     </div>
 </div>

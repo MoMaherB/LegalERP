@@ -5,18 +5,20 @@
 @using LegalERP.Web.Services
 @inject CaseApiClient CaseApi
 @inject NavigationManager NavManager
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
 
-<PageTitle>@(IsEditMode ? "Edit Case" : "Add New Case")</PageTitle>
+<PageTitle>@(IsEditMode ? Loc["EditCase"] : Loc["AddNewCase"])</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>@(IsEditMode ? "Edit Case" : "Add New Case")</h1>
-    <a href="/cases" class="btn btn-outline-secondary">Cancel</a>
+    <h1>@(IsEditMode ? Loc["EditCase"] : Loc["AddNewCase"])</h1>
+    <a href="/cases" class="btn btn-outline-secondary">@Loc["Cancel"]</a>
 </div>
 
 @if (isLoading)
 {
-    <p>Loading case information...</p>
+    <p>@Loc["LoadingCaseInfo"]</p>
 }
 else
 {
@@ -24,20 +26,20 @@ else
         <DataAnnotationsValidator />
         <ValidationSummary class="text-danger" />
 
-        <div class="card mb-4">
+        <div class="glass-card mb-4">
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">Case Number *</label>
-                        <InputText class="form-control" @bind-Value="model.CaseNumber" placeholder="e.g. 1234/2026" />
+                        <label class="form-label">@Loc["CaseNumber"] *</label>
+                        <InputText class="form-control" @bind-Value="model.CaseNumber" placeholder="@Loc["CaseNumberPlaceholder"]" />
                     </div>
                     <div class="col-md-8">
-                        <label class="form-label">Title / Subject *</label>
-                        <InputText class="form-control" @bind-Value="model.Title" placeholder="e.g. Commercial Dispute / Real Estate Contract" />
+                        <label class="form-label">@Loc["TitleSubject"] *</label>
+                        <InputText class="form-control" @bind-Value="model.Title" placeholder="@Loc["TitleSubjectPlaceholder"]" />
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label">Case Type *</label>
+                        <label class="form-label">@Loc["CaseType"] *</label>
                         <InputSelect class="form-select" @bind-Value="model.CaseType">
                             @foreach (var type in Enum.GetValues<CaseType>())
                             {
@@ -46,7 +48,7 @@ else
                         </InputSelect>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Status *</label>
+                        <label class="form-label">@Loc["Status"] *</label>
                         <InputSelect class="form-select" @bind-Value="model.Status">
                             @foreach (var status in Enum.GetValues<CaseStatus>())
                             {
@@ -57,9 +59,9 @@ else
                     @if (model.Status == CaseStatus.Closed)
                     {
                         <div class="col-md-3">
-                            <label class="form-label">Outcome (Judgment) *</label>
+                            <label class="form-label">@Loc["Outcome"] *</label>
                             <InputSelect class="form-select" @bind-Value="model.Outcome">
-                                <option value="">Select Outcome...</option>
+                                <option value="">@Loc["SelectOutcome"]</option>
                                 @foreach (var outcome in Enum.GetValues<CaseOutcome>())
                                 {
                                     <option value="@outcome">@outcome</option>
@@ -67,30 +69,30 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Filing Date</label>
+                            <label class="form-label">@Loc["FilingDate"]</label>
                             <InputDate class="form-control" @bind-Value="model.FilingDate" />
                         </div>
                     }
                     else
                     {
                         <div class="col-md-5">
-                            <label class="form-label">Filing Date</label>
+                            <label class="form-label">@Loc["FilingDate"]</label>
                             <InputDate class="form-control" @bind-Value="model.FilingDate" />
                         </div>
                     }
 
                     <div class="col-md-6">
-                        <label class="form-label">Court Name</label>
-                        <InputText class="form-control" @bind-Value="model.CourtName" placeholder="e.g. Cairo Primary Court" />
+                        <label class="form-label">@Loc["CourtName"]</label>
+                        <InputText class="form-control" @bind-Value="model.CourtName" placeholder="@Loc["CourtNamePlaceholder"]" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Judge / Circuit Name</label>
-                        <InputText class="form-control" @bind-Value="model.JudgeName" placeholder="e.g. 5th Civil Circuit" />
+                        <label class="form-label">@Loc["JudgeName"]</label>
+                        <InputText class="form-control" @bind-Value="model.JudgeName" placeholder="@Loc["JudgeNamePlaceholder"]" />
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label">Notes & Remarks</label>
-                        <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" placeholder="Additional details or background information..." />
+                        <label class="form-label">@Loc["NotesRemarks"]</label>
+                        <InputTextArea class="form-control" rows="4" @bind-Value="model.Notes" placeholder="@Loc["NotesRemarksPlaceholder"]" />
                     </div>
                 </div>
             </div>
@@ -103,9 +105,9 @@ else
 
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
-                @(isSubmitting ? "Saving..." : (IsEditMode ? "Save Changes" : "Create Case"))
+                @(isSubmitting ? Loc["Saving"] : (IsEditMode ? Loc["SaveChanges"] : Loc["CreateCase"]))
             </button>
-            <a href="/cases" class="btn btn-outline-secondary">Cancel</a>
+            <a href="/cases" class="btn btn-outline-secondary">@Loc["Cancel"]</a>
         </div>
     </EditForm>
 }

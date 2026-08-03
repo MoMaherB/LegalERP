@@ -5,90 +5,92 @@
 @inject FinancialsApiClient FinancialsApi
 @inject MockAuthService Auth
 @inject NavigationManager NavManager
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>Firm Financials Overview (الماليات العامة)</PageTitle>
+<PageTitle>@Loc["FirmFinancialsOverview"]</PageTitle>
 
 @if (!Auth.IsAdmin)
 {
     <div class="alert alert-danger">
-        Access Denied. You do not have permission to view firm-wide financials.
+        @Loc["AccessDeniedFirmFinancials"]
     </div>
 }
 else if (summary == null)
 {
-    <p>Loading financial data...</p>
+    <p>@Loc["LoadingFinancialData"]</p>
 }
 else
 {
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0 text-success">Firm Financials Overview (الماليات العامة)</h2>
+        <h2 class="mb-0 text-success">@Loc["FirmFinancialsOverview"]</h2>
     </div>
 
     <!-- Top Level Metrics -->
     <div class="row mb-5">
         <div class="col-md-4">
-            <div class="card bg-light border-0 shadow-sm h-100">
+            <div class="glass-card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-muted">Cases Total (إجمالي القضايا)</h5>
+                    <h5 class="card-title text-muted">@Loc["CasesTotal"]</h5>
                     <div class="mb-2">
-                        <small class="text-muted">Agreed: @summary.TotalCaseAgreedFees.ToString("N2")</small>
+                        <small class="text-muted">@Loc["Agreed"]: @summary.TotalCaseAgreedFees.ToString("N2")</small>
                     </div>
-                    <h3 class="mb-0 text-primary">@summary.TotalCaseCollected.ToString("N2") Collected</h3>
+                    <h3 class="mb-0 text-primary">@summary.TotalCaseCollected.ToString("N2") @Loc["Collected"]</h3>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card bg-light border-0 shadow-sm h-100">
+            <div class="glass-card border-0 shadow-sm h-100">
                 <div class="card-body">
-                    <h5 class="card-title text-muted">Companies Total (إجمالي الشركات)</h5>
+                    <h5 class="card-title text-muted">@Loc["CompaniesTotal"]</h5>
                     <div class="mb-2">
-                        <small class="text-muted">Agreed: @summary.TotalCompanyAgreedFees.ToString("N2")</small>
+                        <small class="text-muted">@Loc["Agreed"]: @summary.TotalCompanyAgreedFees.ToString("N2")</small>
                     </div>
-                    <h3 class="mb-0 text-primary">@summary.TotalCompanyCollected.ToString("N2") Collected</h3>
+                    <h3 class="mb-0 text-primary">@summary.TotalCompanyCollected.ToString("N2") @Loc["Collected"]</h3>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card border-success shadow h-100">
+            <div class="glass-card border-success shadow h-100">
                 <div class="card-body bg-success bg-opacity-10">
-                    <h5 class="card-title text-success fw-bold">Firm Grand Total (الإجمالي العام)</h5>
+                    <h5 class="card-title text-success fw-bold">@Loc["FirmGrandTotal"]</h5>
                     <div class="mb-2">
-                        <small class="text-success fw-bold">Total Expected: @summary.FirmTotalAgreedFees.ToString("N2")</small>
+                        <small class="text-success fw-bold">@Loc["TotalExpected"]: @summary.FirmTotalAgreedFees.ToString("N2")</small>
                     </div>
-                    <h2 class="mb-0 text-success fw-bold">@summary.FirmTotalCollected.ToString("N2") Collected</h2>
+                    <h2 class="mb-0 text-success fw-bold">@summary.FirmTotalCollected.ToString("N2") @Loc["Collected"]</h2>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Unified Data Table -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header bg-white">
-            <h5 class="mb-0">All Financial Records (سجل كل التعاملات)</h5>
+    <div class="glass-card border-0 shadow-sm">
+        <div class="glass-card-header">
+            <h5 class="mb-0">@Loc["AllFinancialRecords"]</h5>
         </div>
         <div class="card-body">
             @if (!summary.Records.Any())
             {
-                <p class="text-muted mb-0">No financial records found.</p>
+                <p class="text-muted mb-0">@Loc["NoFinancialRecordsFound"]</p>
             }
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle table-glass">
                         <thead class="table-light">
                             <tr>
-                                <th>Type</th>
-                                <th>Name</th>
-                                <th>Reference No.</th>
-                                <th>Agreed Fee</th>
-                                <th>Collected</th>
-                                <th>Remaining</th>
-                                <th>Status</th>
-                                <th class="text-end">Actions</th>
+                                <th>@Loc["Type"]</th>
+                                <th>@Loc["Name"]</th>
+                                <th>@Loc["ReferenceNo"]</th>
+                                <th>@Loc["AgreedFee"]</th>
+                                <th>@Loc["Collected"]</th>
+                                <th>@Loc["Remaining"]</th>
+                                <th>@Loc["Status"]</th>
+                                <th class="text-end">@Loc["Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -98,11 +100,11 @@ else
                                     <td>
                                         @if (record.OwnerType == "Case")
                                         {
-                                            <span class="badge bg-primary">Case</span>
+                                            <span class="badge bg-primary">@Loc["Case"]</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-info text-dark">Company</span>
+                                            <span class="badge bg-info text-dark">@Loc["Company"]</span>
                                         }
                                     </td>
                                     <td class="fw-bold">@record.OwnerName</td>
@@ -114,17 +116,17 @@ else
                                     </td>
                                     <td>
                                         <span class="badge @GetBadgeColor(record.PaymentStatus)">
-                                            @record.PaymentStatus
+                                            @Loc[record.PaymentStatus.ToString()]
                                         </span>
                                     </td>
                                     <td class="text-end">
                                         @if (record.OwnerType == "Case")
                                         {
-                                            <a href="/cases/@record.OwnerId" class="btn btn-sm btn-outline-secondary">View Case</a>
+                                            <a href="/cases/@record.OwnerId" class="btn btn-sm btn-outline-secondary">@Loc["ViewCase"]</a>
                                         }
                                         else
                                         {
-                                            <a href="/companies/@record.OwnerId" class="btn btn-sm btn-outline-secondary">View Company</a>
+                                            <a href="/companies/@record.OwnerId" class="btn btn-sm btn-outline-secondary">@Loc["ViewCompany"]</a>
                                         }
                                     </td>
                                 </tr>

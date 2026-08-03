@@ -5,19 +5,21 @@
 @using LegalERP.Web.Services
 @inject CompanyApiClient CompanyApi
 @inject NavigationManager NavManager
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
 
-<PageTitle>@(IsEdit ? "Edit Company" : "Add Company")</PageTitle>
+<PageTitle>@(IsEdit ? Loc["EditCompany"] : Loc["AddCompany"])</PageTitle>
 
 <div class="mb-4">
-    <button class="btn btn-outline-secondary" @onclick="GoBack">Back</button>
+    <button class="btn btn-outline-secondary" @onclick="GoBack">@Loc["Back"]</button>
 </div>
 
-<h1>@(IsEdit ? "Edit Company" : "Add Company")</h1>
+<h1>@(IsEdit ? Loc["EditCompany"] : Loc["AddCompany"])</h1>
 
 @if (IsEdit && isInitializing)
 {
-    <p>Loading...</p>
+    <p>@Loc["Loading"]</p>
 }
 else
 {
@@ -27,7 +29,7 @@ else
 
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">Category</label>
+                <label class="form-label">@Loc["Category"]</label>
                 <InputSelect class="form-select" @bind-Value="model.Category">
                     @foreach (var category in Enum.GetValues<CompanyCategory>())
                     {
@@ -37,60 +39,60 @@ else
             </div>
             
             <div class="col-md-6 mb-3">
-                <label class="form-label">Establishment Date</label>
+                <label class="form-label">@Loc["EstablishmentDate"]</label>
                 <InputDate class="form-control" @bind-Value="model.EstablishmentDate" />
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">Company Name (Arabic)</label>
+                <label class="form-label">@Loc["CompanyNameArabic"]</label>
                 <InputText class="form-control" @bind-Value="model.CompanyName" />
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label">Company Name (English)</label>
+                <label class="form-label">@Loc["CompanyNameEnglish"]</label>
                 <InputText class="form-control" @bind-Value="model.CompanyNameEn" />
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-6 mb-3">
-                <label class="form-label">Trade Name</label>
+                <label class="form-label">@Loc["TradeName"]</label>
                 <InputText class="form-control" @bind-Value="model.TradeName" />
             </div>
             <div class="col-md-6 mb-3">
-                <label class="form-label">Registration Number</label>
+                <label class="form-label">@Loc["RegistrationNumber"]</label>
                 <InputText class="form-control" @bind-Value="model.RegistrationNumber" />
             </div>
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Address</label>
+            <label class="form-label">@Loc["Address"]</label>
             <InputTextArea class="form-control" @bind-Value="model.Address" rows="2" />
         </div>
 
         <div class="mb-3">
-            <label class="form-label">Incorporation Contract (عقد التأسيس)</label>
+            <label class="form-label">@Loc["IncorporationContract"]</label>
             @if (IsEdit && model.ExistingIncorporationDocument != null)
             {
                 <div class="mb-2">
-                    <span class="badge bg-success">Contract Uploaded</span> 
+                    <span class="badge bg-success">@Loc["ContractUploaded"]</span> 
                     @model.ExistingIncorporationDocument.FileName
                 </div>
             }
             <InputFile class="form-control" OnChange="LoadFile" accept=".pdf,.jpg,.jpeg,.png" />
-            <div class="form-text">Allowed types: PDF, JPG, PNG.</div>
+            <div class="form-text">@Loc["AllowedTypes"]</div>
         </div>
 
         <button type="submit" class="btn btn-primary btn-lg" disabled="@isSaving">
             @if (isSaving)
             {
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                <span> Saving...</span>
+                <span> @Loc["Saving"]</span>
             }
             else
             {
-                <span>Save Company</span>
+                <span>@Loc["SaveCompany"]</span>
             }
         </button>
     </EditForm>

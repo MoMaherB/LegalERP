@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddLocalization();
 
 builder.Services.AddHttpClient("LegalErpApi", client =>
 {
@@ -34,6 +35,14 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+var supportedCultures = new[] { "ar-EG", "en-US" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture(supportedCultures[0])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

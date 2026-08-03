@@ -9,34 +9,37 @@
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
-<PageTitle>Client Details - @(client?.FullName ?? "Loading")</PageTitle>
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
+
+<PageTitle>@Loc["ClientDetails"] - @(client?.FullName ?? Loc["Loading"])</PageTitle>
 
 @if (client is null)
 {
     @if (notFound)
     {
         <div class="alert alert-warning">
-            Client not found. <a href="/clients">Back to Clients</a>
+            @Loc["ClientNotFound"] <a href="/clients">@Loc["BackToClients"]</a>
         </div>
     }
     else
     {
-        <p>Loading client details...</p>
+        <p>@Loc["LoadingClientDetails"]</p>
     }
 }
 else
 {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="/clients" class="btn btn-outline-secondary me-2">Back to List</a>
-            <a href="/clients/edit/@client.Id" class="btn btn-primary me-2">Edit Client</a>
+            <a href="/clients" class="btn btn-outline-secondary me-2">@Loc["BackToList"]</a>
+            <a href="/clients/edit/@client.Id" class="btn btn-primary me-2">@Loc["EditClient"]</a>
         </div>
-        <button class="btn btn-danger" @onclick="DeleteClient">Delete Client</button>
+        <button class="btn btn-danger" @onclick="DeleteClient">@Loc["DeleteClient"]</button>
     </div>
 
     @* ── Personal Information Card ── *@
-    <div class="card mb-4">
-        <div class="card-header">
+    <div class="glass-card mb-4">
+        <div class="glass-card-header">
             <h3 class="mb-0">@client.FullName</h3>
             @if (!string.IsNullOrWhiteSpace(client.FullNameEn))
             {
@@ -46,25 +49,25 @@ else
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4">
-                    <strong>National ID (رقم الهوية):</strong>
+                    <strong>@Loc["NationalId"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.NationalIdNumber) ? "—" : client.NationalIdNumber)</p>
                 </div>
                 <div class="col-md-4">
-                    <strong>Phone (رقم الهاتف):</strong>
+                    <strong>@Loc["Phone"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.PhoneNumber) ? "—" : client.PhoneNumber)</p>
                 </div>
                 <div class="col-md-4">
-                    <strong>Email (البريد الإلكتروني):</strong>
+                    <strong>@Loc["Email"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.Email) ? "—" : client.Email)</p>
                 </div>
                 <div class="col-12">
-                    <strong>Address (العنوان):</strong>
+                    <strong>@Loc["Address"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.Address) ? "—" : client.Address)</p>
                 </div>
                 <div class="col-12">
-                    <strong>Notes (ملاحظات):</strong>
+                    <strong>@Loc["Notes"]:</strong>
                     <p class="border p-3 rounded bg-light mb-0">
-                        @(string.IsNullOrWhiteSpace(client.Notes) ? "No notes recorded." : client.Notes)
+                        @(string.IsNullOrWhiteSpace(client.Notes) ? Loc["NoNotesRecorded"] : client.Notes)
                     </p>
                 </div>
             </div>
@@ -72,32 +75,32 @@ else
     </div>
 
     @* ── Documents Card ── *@
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4 class="mb-0">Documents (المستندات)</h4>
+    <div class="glass-card mb-4">
+        <div class="glass-card-header">
+            <h4 class="mb-0">@Loc["Documents"]</h4>
         </div>
         <div class="card-body">
             <div class="row g-4">
                 <div class="col-md-6">
-                    <h5>National ID (صورة الهوية)</h5>
+                    <h5>@Loc["NationalIdScan"]</h5>
                     @if (client.NationalIdDocument != null)
                     {
                         <FileThumbnail Document="client.NationalIdDocument" OwnerType="client" OwnerId="client.Id" />
                     }
                     else
                     {
-                        <div class="alert alert-light border">No National ID uploaded. <a href="/clients/edit/@client.Id">Upload now</a>.</div>
+                        <div class="alert alert-light border">@Loc["NoNationalIdUploaded"] <a href="/clients/edit/@client.Id">@Loc["UploadNow"]</a>.</div>
                     }
                 </div>
                 <div class="col-md-6">
-                    <h5>Attorney / Power of Attorney (صورة الوكالة)</h5>
+                    <h5>@Loc["PowerOfAttorney"]</h5>
                     @if (client.AttorneyDocument != null)
                     {
                         <FileThumbnail Document="client.AttorneyDocument" OwnerType="client" OwnerId="client.Id" />
                     }
                     else
                     {
-                        <div class="alert alert-light border">No Attorney document uploaded. <a href="/clients/edit/@client.Id">Upload now</a>.</div>
+                        <div class="alert alert-light border">@Loc["NoAttorneyDocumentUploaded"] <a href="/clients/edit/@client.Id">@Loc["UploadNow"]</a>.</div>
                     }
                 </div>
             </div>
@@ -105,27 +108,27 @@ else
     </div>
 
     @* ── Related Cases ── *@
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4 class="mb-0">Related Cases (القضايا المرتبطة)</h4>
+    <div class="glass-card mb-4">
+        <div class="glass-card-header">
+            <h4 class="mb-0">@Loc["RelatedCases"]</h4>
         </div>
         <div class="card-body">
             @if (client.RelatedCases.Count == 0)
             {
-                <div class="alert alert-light border mb-0">This client is not linked to any cases yet.</div>
+                <div class="alert alert-light border mb-0">@Loc["ClientNoRelatedCases"]</div>
             }
             else
             {
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-glass">
                     <thead>
                         <tr>
-                            <th>Case Number</th>
-                            <th>Title</th>
-                            <th>Type</th>
-                            <th>Role</th>
-                            <th>Representation</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>@Loc["CaseNumber"]</th>
+                            <th>@Loc["Title"]</th>
+                            <th>@Loc["Type"]</th>
+                            <th>@Loc["Role"]</th>
+                            <th>@Loc["Representation"]</th>
+                            <th>@Loc["Status"]</th>
+                            <th>@Loc["Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -137,46 +140,46 @@ else
                                 <td><span class="badge bg-secondary">@c.CaseType</span></td>
                                 <td>
                                     <span class="badge bg-secondary">
-                                        @(c.PartyRole == PartyRole.Defendant ? "Defendant (المتهم)" : "Victim (المجني عليه)")
+                                        @(c.PartyRole == PartyRole.Defendant ? Loc["Defendant"] : Loc["Victim"])
                                     </span>
                                 </td>
                                 <td>
                                     @if (c.IsOurClient)
                                     {
-                                        <span class="badge bg-success px-3 py-2">Client (موكلنا)</span>
+                                        <span class="badge bg-success px-3 py-2">@Loc["Client"]</span>
                                     }
                                     else
                                     {
-                                        <span class="badge bg-danger px-3 py-2">Opponent (خصمنا)</span>
+                                        <span class="badge bg-danger px-3 py-2">@Loc["Opponent"]</span>
                                     }
                                 </td>
                                 <td>
                                     @if (c.CaseStatus == CaseStatus.Active)
                                     {
-                                        <span class="badge bg-warning text-dark">Active</span>
+                                        <span class="badge bg-warning text-dark">@Loc["Active"]</span>
                                     }
                                     else
                                     {
                                         @if (c.CaseOutcome == CaseOutcome.Won)
                                         {
-                                            <span class="badge bg-success">Closed (Won)</span>
+                                            <span class="badge bg-success">@Loc["ClosedWon"]</span>
                                         }
                                         else if (c.CaseOutcome == CaseOutcome.Lost)
                                         {
-                                            <span class="badge bg-danger">Closed (Lost)</span>
+                                            <span class="badge bg-danger">@Loc["ClosedLost"]</span>
                                         }
                                         else if (c.CaseOutcome == CaseOutcome.Settled)
                                         {
-                                            <span class="badge bg-info text-dark">Closed (Settled)</span>
+                                            <span class="badge bg-info text-dark">@Loc["ClosedSettled"]</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-success">Closed</span>
+                                            <span class="badge bg-success">@Loc["Closed"]</span>
                                         }
                                     }
                                 </td>
                                 <td>
-                                    <a href="/cases/@c.CaseId" class="btn btn-sm btn-info">View Case</a>
+                                    <a href="/cases/@c.CaseId" class="btn btn-sm btn-info">@Loc["ViewCase"]</a>
                                 </td>
                             </tr>
                         }
@@ -187,23 +190,23 @@ else
     </div>
 
     @* ── Related Companies ── *@
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4 class="mb-0">Related Companies (الشركات المرتبطة)</h4>
+    <div class="glass-card mb-4">
+        <div class="glass-card-header">
+            <h4 class="mb-0">@Loc["RelatedCompanies"]</h4>
         </div>
         <div class="card-body">
             @if (client.RelatedCompanies.Count == 0)
             {
-                <div class="alert alert-light border mb-0">This client is not linked to any companies yet.</div>
+                <div class="alert alert-light border mb-0">@Loc["ClientNoRelatedCompanies"]</div>
             }
             else
             {
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0 table-glass">
                     <thead>
                         <tr>
-                            <th>Company Name</th>
-                            <th>Ownership %</th>
-                            <th>Actions</th>
+                            <th>@Loc["CompanyName"]</th>
+                            <th>@Loc["OwnershipPercentage"]</th>
+                            <th>@Loc["Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -213,7 +216,7 @@ else
                                 <td><strong>@co.CompanyName</strong></td>
                                 <td>@(co.OwnershipPercentage.HasValue ? $"{co.OwnershipPercentage.Value:F2}%" : "—")</td>
                                 <td>
-                                    <a href="/companies/@co.CompanyId" class="btn btn-sm btn-info">View Company</a>
+                                    <a href="/companies/@co.CompanyId" class="btn btn-sm btn-info">@Loc["ViewCompany"]</a>
                                 </td>
                             </tr>
                         }
@@ -242,7 +245,7 @@ else
 
     private async Task DeleteClient()
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this client? This action cannot be undone.");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteClient"]);
         if (confirmed)
         {
             await ClientApi.DeleteAsync(Id);

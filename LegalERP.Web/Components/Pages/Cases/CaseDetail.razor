@@ -9,10 +9,12 @@
 @inject MockAuthService Auth
 @inject NavigationManager NavManager
 @inject IJSRuntime JS
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
 @implements IDisposable
 
-<PageTitle>Case Details - @(caseDto?.CaseNumber ?? "Loading")</PageTitle>
+<PageTitle>@Loc["CaseDetails"] - @(caseDto?.CaseNumber ?? Loc["Loading"].Value)</PageTitle>
 
 @if (caseDto is null)
 {
@@ -31,14 +33,14 @@ else
 {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="/cases" class="btn btn-outline-secondary me-2">Back to List</a>
-            <a href="/cases/edit/@caseDto.Id" class="btn btn-primary me-2">Edit Case</a>
+            <a href="/cases" class="btn btn-outline-secondary me-2">@Loc["Back"]</a>
+            <a href="/cases/edit/@caseDto.Id" class="btn btn-primary me-2">@Loc["Edit"]</a>
         </div>
-        <button class="btn btn-danger" @onclick="DeleteCase">Delete Case</button>
+        <button class="btn btn-danger" @onclick="DeleteCase">@Loc["Delete"]</button>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="glass-card mb-4">
+        <div class="glass-card-header d-flex justify-content-between align-items-center">
             <h3 class="mb-0">@caseDto.Title</h3>
             <div class="d-flex gap-2 align-items-center">
                 <span class="badge bg-secondary fs-6">@caseDto.CaseType</span>
@@ -64,7 +66,7 @@ else
                 }
             </div>
         </div>
-        <div class="card-body">
+        <div class="glass-card-body">
             <div class="row g-3">
                 <div class="col-md-4">
                     <strong>Case Number:</strong>
@@ -102,9 +104,9 @@ else
 
     @if (showAddPartyForm)
     {
-        <div class="card mb-4 border-success">
-            <div class="card-body">
-                <h5 class="card-title text-success mb-3">Add Case Party (from Clients Registry)</h5>
+        <div class="glass-card mb-4 border-success">
+            <div class="glass-card-body">
+                <h5 class="glass-card-title text-success mb-3">Add Case Party (from Clients Registry)</h5>
                 <div class="row g-3">
                     @* ── Client Quick-Search Selector ── *@
                     <div class="col-md-6">
@@ -187,7 +189,7 @@ else
     }
     else
     {
-        <table class="table table-hover align-middle mb-4">
+        <table class="table table-glass table-hover align-middle mb-4">
             <thead>
                 <tr>
                     <th>Party Name</th>
@@ -250,9 +252,9 @@ else
 
     @if (showAddMemoForm)
     {
-        <div class="card mb-4 border-info">
-            <div class="card-body">
-                <h5 class="card-title text-info mb-3">Add Legal Memo / Brief (إضافة مذكرة قانونية)</h5>
+        <div class="glass-card mb-4 border-info">
+            <div class="glass-card-body">
+                <h5 class="glass-card-title text-info mb-3">Add Legal Memo / Brief (إضافة مذكرة قانونية)</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Memo Title (عنوان المذكرة) *</label>
@@ -297,15 +299,15 @@ else
             @foreach (var memo in caseDto.Memos)
             {
                 <div class="col">
-                    <div class="card h-100 border shadow-sm">
-                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <div class="glass-card h-100 border shadow-sm">
+                        <div class="glass-card-header bg-light d-flex justify-content-between align-items-center">
                             <strong class="text-primary mb-0">@memo.Title</strong>
                             <span class="badge bg-secondary">📅 @memo.MemoDate.ToString("yyyy-MM-dd")</span>
                         </div>
-                        <div class="card-body d-flex flex-column justify-content-between">
+                        <div class="glass-card-body d-flex flex-column justify-content-between">
                             @if (!string.IsNullOrWhiteSpace(memo.Content))
                             {
-                                <p class="card-text text-dark border-start border-4 border-info ps-3 py-1 mb-3" style="white-space: pre-wrap;">@memo.Content</p>
+                                <p class="glass-card-text text-dark border-start border-4 border-info ps-3 py-1 mb-3" style="white-space: pre-wrap;">@memo.Content</p>
                             }
                             else
                             {
@@ -319,7 +321,7 @@ else
                                 </div>
                             }
                         </div>
-                        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                        <div class="glass-card-footer bg-transparent d-flex justify-content-between align-items-center">
                             @if (memo.Document != null)
                             {
                                 <label class="btn btn-sm btn-outline-primary mb-0">
@@ -349,9 +351,9 @@ else
 
     @if (showAddHearingForm)
     {
-        <div class="card mb-4 border-primary">
-            <div class="card-body">
-                <h5 class="card-title text-primary mb-3">Record New Hearing</h5>
+        <div class="glass-card mb-4 border-primary">
+            <div class="glass-card-body">
+                <h5 class="glass-card-title text-primary mb-3">Record New Hearing</h5>
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Hearing Date *</label>
@@ -390,9 +392,9 @@ else
     }
     else
     {
-        <div class="table-responsive mb-4">
-            <table class="table table-hover table-bordered align-middle">
-                <thead class="table-light">
+        <div class="table table-glass-responsive mb-4">
+            <table class="table table-glass table-hover table-bordered align-middle">
+                <thead class="table table-glass-light">
                     <tr>
                         <th>Date (التاريخ)</th>
                         <th>Purpose (السبب)</th>
@@ -429,9 +431,9 @@ else
 
     @if (showAddDocForm)
     {
-        <div class="card mb-4 border-primary">
-            <div class="card-body">
-                <h5 class="card-title text-primary mb-3">Upload Document with Custom Title</h5>
+        <div class="glass-card mb-4 border-primary">
+            <div class="glass-card-body">
+                <h5 class="glass-card-title text-primary mb-3">Upload Document with Custom Title</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Document Title / Description *</label>
@@ -470,9 +472,9 @@ else
             @foreach (var doc in caseDocuments)
             {
                 <div class="col">
-                    <div class="card h-100 border shadow-sm">
-                        <div class="card-body text-center d-flex flex-column align-items-center justify-content-between">
-                            <h6 class="card-title text-start w-100 text-truncate font-weight-bold" title="@doc.FileName">
+                    <div class="glass-card h-100 border shadow-sm">
+                        <div class="glass-card-body text-center d-flex flex-column align-items-center justify-content-between">
+                            <h6 class="glass-card-title text-start w-100 text-truncate font-weight-bold" title="@doc.FileName">
                                 @doc.FileName
                             </h6>
                             <div class="my-2">
@@ -493,8 +495,8 @@ else
         <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
             <h3 class="mb-0 text-success">Financials (الماليات)</h3>
         </div>
-        <div class="card border-success mb-5">
-            <div class="card-body">
+        <div class="glass-card border-success mb-5">
+            <div class="glass-card-body">
                 <SharedFinancials OwnerId="caseDto.Id" OwnerType="case" />
             </div>
         </div>
