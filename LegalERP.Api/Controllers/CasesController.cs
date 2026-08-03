@@ -169,6 +169,117 @@ public class CasesController : ControllerBase
         return NoContent();
     }
 
+    // --- Case Memos endpoints ---
+
+    // POST /api/cases/{caseId}/memos
+    [HttpPost("{caseId:guid}/memos")]
+    public async Task<ActionResult<CaseMemoDto>> AddMemo(Guid caseId, CreateCaseMemoDto dto, CancellationToken ct)
+    {
+        var c = await _repository.GetByIdAsync(caseId, ct);
+        if (c is null) return NotFound();
+
+        var memo = new CaseMemo
+        {
+            CaseId = caseId,
+            Title = dto.Title,
+            Content = dto.Content,
+            MemoDate = dto.MemoDate ?? DateOnly.FromDateTime(DateTime.UtcNow),
+            DocumentId = dto.DocumentId
+        };
+
+        await _repository.AddMemoAsync(memo, ct);
+        await _repository.SaveChangesAsync(ct);
+
+        var memoWithDoc = await _repository.GetMemoByIdAsync(memo.Id, ct);
+        return Ok(ToMemoDto(memoWithDoc ?? memo));
+    }
+
+    // PUT /api/cases/{caseId}/memos/{memoId}
+    [HttpPut("{caseId:guid}/memos/{memoId:guid}")]
+    public async Task<ActionResult> UpdateMemo(Guid caseId, Guid memoId, UpdateCaseMemoDto dto, CancellationToken ct)
+    {
+        var memo = await _repository.GetMemoByIdAsync(memoId, ct);
+        if (memo is null || memo.CaseId != caseId) return NotFound();
+
+        memo.Title = dto.Title;
+        memo.Content = dto.Content;
+        if (dto.MemoDate.HasValue) memo.MemoDate = dto.MemoDate.Value;
+        memo.DocumentId = dto.DocumentId;
+
+        _repository.UpdateMemo(memo);
+        await _repository.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
+    // DELETE /api/cases/{caseId}/memos/{memoId}
+    [HttpDelete("{caseId:guid}/memos/{memoId:guid}")]
+    public async Task<ActionResult> DeleteMemo(Guid caseId, Guid memoId, CancellationToken ct)
+    {
+        var memo = await _repository.GetMemoByIdAsync(memoId, ct);
+        if (memo is null || memo.CaseId != caseId) return NotFound();
+
+        _repository.SoftDeleteMemo(memo);
+        await _repository.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
+    // --- Case Hearings endpoints ---
+
+    // POST /api/cases/{caseId}/hearings
+    [HttpPost("{caseId:guid}/hearings")]
+    public async Task<ActionResult<CaseHearingDto>> AddHearing(Guid caseId, CreateCaseHearingDto dto, CancellationToken ct)
+    {
+        var c = await _repository.GetByIdAsync(caseId, ct);
+        if (c is null) return NotFound();
+
+        var hearing = new CaseHearing
+        {
+            CaseId = caseId,
+            HearingDate = dto.HearingDate,
+            Purpose = dto.Purpose,
+            JudgeDecision = dto.JudgeDecision,
+            PostponementReason = dto.PostponementReason
+        };
+
+        await _repository.AddHearingAsync(hearing, ct);
+        await _repository.SaveChangesAsync(ct);
+
+        return Ok(ToHearingDto(hearing));
+    }
+
+    // PUT /api/cases/{caseId}/hearings/{hearingId}
+    [HttpPut("{caseId:guid}/hearings/{hearingId:guid}")]
+    public async Task<ActionResult> UpdateHearing(Guid caseId, Guid hearingId, UpdateCaseHearingDto dto, CancellationToken ct)
+    {
+        var hearing = await _repository.GetHearingByIdAsync(hearingId, ct);
+        if (hearing is null || hearing.CaseId != caseId) return NotFound();
+
+        hearing.HearingDate = dto.HearingDate;
+        hearing.Purpose = dto.Purpose;
+        hearing.JudgeDecision = dto.JudgeDecision;
+        hearing.PostponementReason = dto.PostponementReason;
+
+        _repository.UpdateHearing(hearing);
+        await _repository.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
+    // DELETE /api/cases/{caseId}/hearings/{hearingId}
+    [HttpDelete("{caseId:guid}/hearings/{hearingId:guid}")]
+    public async Task<ActionResult> DeleteHearing(Guid caseId, Guid hearingId, CancellationToken ct)
+    {
+        var hearing = await _repository.GetHearingByIdAsync(hearingId, ct);
+        if (hearing is null || hearing.CaseId != caseId) return NotFound();
+
+        _repository.SoftDeleteHearing(hearing);
+        await _repository.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
     private static CaseDto ToDto(Case c) => new(
         c.Id,
         c.CaseNumber,
@@ -180,7 +291,9 @@ public class CasesController : ControllerBase
         c.CourtName,
         c.JudgeName,
         c.Notes,
-        c.Parties.Select(ToPartyDto).ToList()
+        c.Parties?.Select(ToPartyDto).ToList() ?? new List<CasePartyDto>(),
+        c.Memos?.OrderByDescending(m => m.MemoDate).Select(ToMemoDto).ToList() ?? new List<CaseMemoDto>(),
+        c.Hearings?.OrderBy(h => h.HearingDate).Select(ToHearingDto).ToList() ?? new List<CaseHearingDto>()
     );
 
     private static CasePartyDto ToPartyDto(CaseParty p) => new(
@@ -194,5 +307,22 @@ public class CasesController : ControllerBase
         p.Notes,
         p.DocumentId,
         p.Document == null ? null : new DocumentDto(p.Document.Id, p.Document.FileName, p.Document.StoredFileName, p.Document.ContentType, p.Document.FileSizeBytes)
+    );
+
+    private static CaseMemoDto ToMemoDto(CaseMemo m) => new(
+        m.Id,
+        m.Title,
+        m.Content,
+        m.MemoDate,
+        m.DocumentId,
+        m.Document == null ? null : new DocumentDto(m.Document.Id, m.Document.FileName, m.Document.StoredFileName, m.Document.ContentType, m.Document.FileSizeBytes)
+    );
+
+    private static CaseHearingDto ToHearingDto(CaseHearing h) => new(
+        h.Id,
+        h.HearingDate,
+        h.Purpose,
+        h.JudgeDecision,
+        h.PostponementReason
     );
 }

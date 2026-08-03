@@ -40,6 +40,51 @@ public record UpdateCasePartyDto(
     Guid? DocumentId
 );
 
+public record CaseMemoDto(
+    Guid Id,
+    string Title,
+    string? Content,
+    DateOnly MemoDate,
+    Guid? DocumentId,
+    DocumentDto? Document
+);
+
+public record CreateCaseMemoDto(
+    string Title,
+    string? Content,
+    DateOnly? MemoDate,
+    Guid? DocumentId
+);
+
+public record UpdateCaseMemoDto(
+    string Title,
+    string? Content,
+    DateOnly? MemoDate,
+    Guid? DocumentId
+);
+
+public record CaseHearingDto(
+    Guid Id,
+    DateOnly HearingDate,
+    string? Purpose,
+    string? JudgeDecision,
+    string? PostponementReason
+);
+
+public record CreateCaseHearingDto(
+    DateOnly HearingDate,
+    string? Purpose,
+    string? JudgeDecision,
+    string? PostponementReason
+);
+
+public record UpdateCaseHearingDto(
+    DateOnly HearingDate,
+    string? Purpose,
+    string? JudgeDecision,
+    string? PostponementReason
+);
+
 public record CaseDto(
     Guid Id,
     string CaseNumber,
@@ -51,7 +96,9 @@ public record CaseDto(
     string? CourtName,
     string? JudgeName,
     string? Notes,
-    List<CasePartyDto> Parties
+    List<CasePartyDto> Parties,
+    List<CaseMemoDto> Memos,
+    List<CaseHearingDto> Hearings
 );
 
 public record CreateCaseDto(

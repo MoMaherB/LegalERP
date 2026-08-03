@@ -107,6 +107,12 @@ public class CompanyApiClient
 
     // --- Document methods ---
 
+    public async Task<List<DocumentDto>> GetDocumentsAsync(string ownerType, Guid ownerId)
+    {
+        var result = await _http.GetFromJsonAsync<List<DocumentDto>>($"api/documents?ownerType={ownerType}&ownerId={ownerId}", JsonOptions);
+        return result ?? new List<DocumentDto>();
+    }
+
     public async Task<Guid> UploadDocumentAsync(string ownerType, Guid ownerId, Microsoft.AspNetCore.Components.Forms.IBrowserFile file)
     {
         using var content = new MultipartFormDataContent();

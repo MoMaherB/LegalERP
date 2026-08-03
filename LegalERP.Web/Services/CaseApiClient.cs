@@ -85,4 +85,46 @@ public class CaseApiClient
         var response = await _http.DeleteAsync($"api/cases/{caseId}/parties/{partyId}");
         response.EnsureSuccessStatusCode();
     }
+
+    // --- Case Memo methods ---
+
+    public async Task<CaseMemoDto?> AddMemoAsync(Guid caseId, CreateCaseMemoDto dto)
+    {
+        var response = await _http.PostAsJsonAsync($"api/cases/{caseId}/memos", dto, JsonOptions);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<CaseMemoDto>(JsonOptions);
+    }
+
+    public async Task UpdateMemoAsync(Guid caseId, Guid memoId, UpdateCaseMemoDto dto)
+    {
+        var response = await _http.PutAsJsonAsync($"api/cases/{caseId}/memos/{memoId}", dto, JsonOptions);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task DeleteMemoAsync(Guid caseId, Guid memoId)
+    {
+        var response = await _http.DeleteAsync($"api/cases/{caseId}/memos/{memoId}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    // --- Case Hearing methods ---
+
+    public async Task<CaseHearingDto?> AddHearingAsync(Guid caseId, CreateCaseHearingDto dto)
+    {
+        var response = await _http.PostAsJsonAsync($"api/cases/{caseId}/hearings", dto, JsonOptions);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<CaseHearingDto>(JsonOptions);
+    }
+
+    public async Task UpdateHearingAsync(Guid caseId, Guid hearingId, UpdateCaseHearingDto dto)
+    {
+        var response = await _http.PutAsJsonAsync($"api/cases/{caseId}/hearings/{hearingId}", dto, JsonOptions);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task DeleteHearingAsync(Guid caseId, Guid hearingId)
+    {
+        var response = await _http.DeleteAsync($"api/cases/{caseId}/hearings/{hearingId}");
+        response.EnsureSuccessStatusCode();
+    }
 }

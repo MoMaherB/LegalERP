@@ -238,9 +238,188 @@ else
         </table>
     }
 
+    @* ── Legal Memos & Briefs Section (المذكرات القانونية) ── *@
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h3 class="mb-0">Legal Memos & Briefs (المذكرات القانونية)</h3>
+        <button class="btn btn-sm btn-info text-white" @onclick="ToggleAddMemoForm">
+            @(showAddMemoForm ? "Cancel" : "+ Add Legal Memo")
+        </button>
+    </div>
+
+    @if (showAddMemoForm)
+    {
+        <div class="card mb-4 border-info">
+            <div class="card-body">
+                <h5 class="card-title text-info mb-3">Add Legal Memo / Brief (إضافة مذكرة قانونية)</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Memo Title (عنوان المذكرة) *</label>
+                        <input class="form-control" @bind="newMemoTitle" placeholder="e.g. مذكرة دفاع أولى, مذكرة شارحة..." />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Memo Date (تاريخ المذكرة) *</label>
+                        <input type="date" class="form-control" @bind="newMemoDate" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Attached Document (مستند المذكرة)</label>
+                        <InputFile class="form-control" OnChange="LoadMemoFile" accept=".pdf,.doc,.docx" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label">Memo Content / Text (نص المذكرة / الملاحظات)</label>
+                        <textarea class="form-control" @bind="newMemoContent" rows="4" placeholder="Enter full memo text or summary of arguments..."></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <button class="btn btn-info text-white me-2" @onclick="AddMemo" disabled="@isSavingMemo">
+                            @(isSavingMemo ? "Saving..." : "Save Legal Memo")
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="ToggleAddMemoForm">Cancel</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(memoErrorMessage))
+                {
+                    <p class="text-danger mt-2 mb-0">@memoErrorMessage</p>
+                }
+            </div>
+        </div>
+    }
+
+    @if (caseDto.Memos is null || caseDto.Memos.Count == 0)
+    {
+        <div class="alert alert-light border mb-4">No legal memos recorded for this case yet.</div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+            @foreach (var memo in caseDto.Memos)
+            {
+                <div class="col">
+                    <div class="card h-100 border shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <strong class="text-primary mb-0">@memo.Title</strong>
+                            <span class="badge bg-secondary">📅 @memo.MemoDate.ToString("yyyy-MM-dd")</span>
+                        </div>
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            @if (!string.IsNullOrWhiteSpace(memo.Content))
+                            {
+                                <p class="card-text text-dark border-start border-4 border-info ps-3 py-1 mb-3" style="white-space: pre-wrap;">@memo.Content</p>
+                            }
+                            else
+                            {
+                                <p class="text-muted italic mb-3">No content recorded.</p>
+                            }
+
+                            @if (memo.Document != null)
+                            {
+                                <div class="mt-2 p-2 rounded bg-light border text-center">
+                                    <FileThumbnail Document="memo.Document" OwnerType="casememo" OwnerId="memo.Id" />
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent d-flex justify-content-between align-items-center">
+                            @if (memo.Document != null)
+                            {
+                                <label class="btn btn-sm btn-outline-primary mb-0">
+                                    Update File (تحديث الملف)
+                                    <InputFile OnChange="@((e) => UpdateMemoFile(memo.Id, e))" style="display: none;" accept=".pdf,.doc,.docx" />
+                                </label>
+                            }
+                            else
+                            {
+                                <div></div>
+                            }
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteMemo(memo.Id)">Delete Memo</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* ── Hearings & Postponements (جلسات المحكمة وتسلسل التأجيلات) ── *@
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h3 class="mb-0">Hearings & Postponements (جلسات المحكمة)</h3>
+        <button class="btn btn-sm btn-primary" @onclick="ToggleAddHearingForm">
+            @(showAddHearingForm ? "Cancel" : "+ Add Hearing")
+        </button>
+    </div>
+
+    @if (showAddHearingForm)
+    {
+        <div class="card mb-4 border-primary">
+            <div class="card-body">
+                <h5 class="card-title text-primary mb-3">Record New Hearing</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Hearing Date *</label>
+                        <input type="date" class="form-control" @bind="newHearingDate" @bind:format="yyyy-MM-dd" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Purpose / Session Reason</label>
+                        <input class="form-control" @bind="newHearingPurpose" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Judge Decision</label>
+                        <input class="form-control" @bind="newHearingDecision" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Postponement Reason</label>
+                        <input class="form-control" @bind="newPostponementReason" />
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary me-2" @onclick="SaveHearing" disabled="@isSavingHearing">
+                            @(isSavingHearing ? "Saving..." : "Save Hearing")
+                        </button>
+                        <button class="btn btn-outline-secondary" @onclick="ToggleAddHearingForm">Cancel</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(hearingErrorMessage))
+                {
+                    <p class="text-danger mt-2 mb-0">@hearingErrorMessage</p>
+                }
+            </div>
+        </div>
+    }
+
+    @if (caseDto.Hearings == null || caseDto.Hearings.Count == 0)
+    {
+        <div class="alert alert-light border">No hearings recorded for this case yet.</div>
+    }
+    else
+    {
+        <div class="table-responsive mb-4">
+            <table class="table table-hover table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date (التاريخ)</th>
+                        <th>Purpose (السبب)</th>
+                        <th>Decision (القرار)</th>
+                        <th>Postponement Reason (سبب التأجيل)</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var hearing in caseDto.Hearings)
+                    {
+                        <tr>
+                            <td><strong>@hearing.HearingDate.ToString("yyyy-MM-dd")</strong></td>
+                            <td>@hearing.Purpose</td>
+                            <td>@hearing.JudgeDecision</td>
+                            <td>@hearing.PostponementReason</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteHearing(hearing.Id)">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
     @* ── Case Documents / Files (With Custom Document Titles) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">Case Documents & Memos (مستندات القضية)</h3>
+        <h3 class="mb-0">Case Documents & Files (مستندات القضية)</h3>
         <button class="btn btn-sm btn-primary" @onclick="ToggleAddDocForm">
             @(showAddDocForm ? "Cancel" : "+ Upload Document")
         </button>
@@ -258,7 +437,7 @@ else
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">File (PDF / Image) *</label>
-                        <InputFile class="form-control" OnChange="LoadDocFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        <InputFile class="form-control" OnChange="LoadDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                     </div>
                     <div class="col-12">
                         <button class="btn btn-primary me-2" @onclick="UploadCaseDocument" disabled="@isUploadingDoc">
@@ -332,6 +511,24 @@ else
     private Guid? selectedClientId;
     private string? selectedClientName;
 
+    // Memo State
+    private bool showAddMemoForm;
+    private string? newMemoTitle;
+    private string? newMemoContent;
+    private DateOnly newMemoDate = DateOnly.FromDateTime(DateTime.UtcNow);
+    private IBrowserFile? newMemoFile;
+    private bool isSavingMemo;
+    private string? memoErrorMessage;
+
+    // Hearing State
+    private bool showAddHearingForm;
+    private DateOnly newHearingDate = DateOnly.FromDateTime(DateTime.UtcNow);
+    private string? newHearingPurpose;
+    private string? newHearingDecision;
+    private string? newPostponementReason;
+    private bool isSavingHearing;
+    private string? hearingErrorMessage;
+
     // General Document State
     private bool showAddDocForm;
     private string? newDocTitle;
@@ -361,10 +558,11 @@ else
     {
         try
         {
-            caseDocuments = new List<LegalERP.Application.Companies.DocumentDto>();
+            caseDocuments = await CompanyApi.GetDocumentsAsync("case", Id);
         }
-        catch
+        catch (Exception ex)
         {
+            docErrorMessage = "Failed to load documents: " + ex.Message;
             caseDocuments = new List<LegalERP.Application.Companies.DocumentDto>();
         }
     }
@@ -466,6 +664,154 @@ else
         if (confirmed)
         {
             await CaseApi.DeletePartyAsync(Id, partyId);
+            await LoadCase();
+        }
+    }
+
+    // --- Case Memo Methods ---
+
+    private void ToggleAddMemoForm()
+    {
+        showAddMemoForm = !showAddMemoForm;
+        memoErrorMessage = null;
+        newMemoTitle = null;
+        newMemoContent = null;
+        newMemoDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        newMemoFile = null;
+    }
+
+    private void LoadMemoFile(InputFileChangeEventArgs e)
+    {
+        newMemoFile = e.File;
+    }
+
+    private async Task AddMemo()
+    {
+        if (string.IsNullOrWhiteSpace(newMemoTitle))
+        {
+            memoErrorMessage = "Memo Title (عنوان المذكرة) is required.";
+            return;
+        }
+
+        isSavingMemo = true;
+        memoErrorMessage = null;
+
+        try
+        {
+            Guid? docId = null;
+            if (newMemoFile != null)
+            {
+                docId = await CompanyApi.UploadDocumentAsync("casememo", Guid.NewGuid(), newMemoFile);
+            }
+
+            var dto = new CreateCaseMemoDto(newMemoTitle, newMemoContent, newMemoDate, docId);
+            await CaseApi.AddMemoAsync(Id, dto);
+
+            showAddMemoForm = false;
+            newMemoTitle = null;
+            newMemoContent = null;
+            newMemoDate = DateOnly.FromDateTime(DateTime.UtcNow);
+            newMemoFile = null;
+
+            await LoadCase();
+        }
+        catch (Exception ex)
+        {
+            memoErrorMessage = "Failed to add memo: " + ex.Message;
+        }
+        finally
+        {
+            isSavingMemo = false;
+        }
+    }
+
+    private async Task UpdateMemoFile(Guid memoId, InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+            
+            var existingMemo = caseDto!.Memos!.First(m => m.Id == memoId);
+            
+            // Upload new file
+            var newDocId = await CompanyApi.UploadDocumentAsync("casememo", memoId, file);
+            
+            var updateDto = new UpdateCaseMemoDto(
+                existingMemo.Title, 
+                existingMemo.Content, 
+                existingMemo.MemoDate, 
+                newDocId);
+                
+            await CaseApi.UpdateMemoAsync(Id, memoId, updateDto);
+            
+            // Reload case to see new doc
+            caseDto = await CaseApi.GetByIdAsync(Id);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            memoErrorMessage = "Failed to update memo file: " + ex.Message;
+        }
+    }
+
+    private async Task DeleteMemo(Guid memoId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this legal memo?");
+        if (confirmed)
+        {
+            await CaseApi.DeleteMemoAsync(Id, memoId);
+            await LoadCase();
+        }
+    }
+
+    // --- Hearing Methods ---
+
+    private void ToggleAddHearingForm()
+    {
+        showAddHearingForm = !showAddHearingForm;
+        hearingErrorMessage = null;
+    }
+
+    private async Task SaveHearing()
+    {
+        isSavingHearing = true;
+        hearingErrorMessage = null;
+
+        try
+        {
+            var dto = new CreateCaseHearingDto(
+                newHearingDate,
+                newHearingPurpose,
+                newHearingDecision,
+                newPostponementReason
+            );
+
+            await CaseApi.AddHearingAsync(Id, dto);
+            
+            showAddHearingForm = false;
+            newHearingPurpose = null;
+            newHearingDecision = null;
+            newPostponementReason = null;
+            
+            await LoadCase();
+        }
+        catch (Exception ex)
+        {
+            hearingErrorMessage = "Failed to record hearing: " + ex.Message;
+        }
+        finally
+        {
+            isSavingHearing = false;
+        }
+    }
+
+    private async Task DeleteHearing(Guid hearingId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this hearing record?");
+        if (confirmed)
+        {
+            await CaseApi.DeleteHearingAsync(Id, hearingId);
             await LoadCase();
         }
     }

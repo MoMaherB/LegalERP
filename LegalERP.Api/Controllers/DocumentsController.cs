@@ -36,9 +36,9 @@ public class DocumentsController : ControllerBase
             return BadRequest("No file provided.");
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+        var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
         if (Array.IndexOf(allowedExtensions, ext) < 0)
-            return BadRequest("Invalid file type. Only PDF and images are allowed.");
+            return BadRequest("Invalid file type. Only PDF, Word documents, and images are allowed.");
 
         using var stream = file.OpenReadStream();
         
@@ -70,6 +70,25 @@ public class DocumentsController : ControllerBase
         if (stream == null) return NotFound("File missing on disk.");
 
         return File(stream, doc.ContentType, doc.FileName);
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<List<LegalERP.Application.Companies.DocumentDto>>> GetByOwner(
+        [FromQuery] string ownerType,
+        [FromQuery] Guid ownerId,
+        CancellationToken ct)
+    {
+        var docs = await _db.Documents
+            .Where(d => d.OwnerType == ownerType && d.OwnerId == ownerId && !d.IsDeleted)
+            .Select(d => new LegalERP.Application.Companies.DocumentDto(
+                d.Id,
+                d.FileName,
+                d.StoredFileName,
+                d.ContentType,
+                d.FileSizeBytes))
+            .ToListAsync(ct);
+            
+        return Ok(docs);
     }
 
     [HttpDelete("{id:guid}")]

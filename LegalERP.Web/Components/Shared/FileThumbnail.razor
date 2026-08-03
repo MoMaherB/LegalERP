@@ -3,7 +3,7 @@
 
 @if (Document != null)
 {
-    <div class="file-thumbnail" @onclick="ShowViewer">
+    <a href="@GetFileUrl()" download target="_blank" class="file-thumbnail text-decoration-none text-dark">
         @if (IsImage)
         {
             <img src="@GetFileUrl()" alt="@Document.FileName" class="thumbnail-img" />
@@ -15,39 +15,22 @@
                 <span class="file-ext">PDF</span>
             </div>
         }
+        else if (IsWord)
+        {
+            <div class="pdf-icon" style="color: #0d6efd;">
+                <span class="oi oi-document" aria-hidden="true"></span>
+                <span class="file-ext">WORD</span>
+            </div>
+        }
         else
         {
             <div class="unknown-icon">
                 <span class="oi oi-file" aria-hidden="true"></span>
+                <span class="file-ext">FILE</span>
             </div>
         }
         <div class="file-name" title="@Document.FileName">@Document.FileName</div>
-    </div>
-
-    @if (showViewer)
-    {
-        <div class="modal-backdrop fade show"></div>
-        <div class="modal fade show d-block" tabindex="-1" @onclick="CloseViewer">
-            <div class="modal-dialog modal-xl modal-dialog-centered" @onclick:stopPropagation="true">
-                <div class="modal-content file-modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">@Document.FileName</h5>
-                        <button type="button" class="btn-close" @onclick="CloseViewer" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body file-modal-body text-center p-0">
-                        @if (IsImage)
-                        {
-                            <img src="@GetFileUrl()" class="img-fluid" alt="@Document.FileName" />
-                        }
-                        else if (IsPdf)
-                        {
-                            <iframe src="@GetFileUrl()" class="pdf-viewer"></iframe>
-                        }
-                    </div>
-                </div>
-            </div>
-        </div>
-    }
+    </a>
 }
 
 @code {
@@ -60,10 +43,17 @@
     [Parameter]
     public Guid OwnerId { get; set; }
 
-    private bool showViewer = false;
-
-    private bool IsImage => Document?.ContentType.StartsWith("image/") == true;
-    private bool IsPdf => Document?.ContentType == "application/pdf";
+    private bool IsImage => Document?.ContentType?.StartsWith("image/") == true 
+                            || Document?.FileName?.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) == true
+                            || Document?.FileName?.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) == true
+                            || Document?.FileName?.EndsWith(".png", StringComparison.OrdinalIgnoreCase) == true;
+                            
+    private bool IsPdf => Document?.ContentType == "application/pdf"
+                          || Document?.FileName?.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) == true;
+                          
+    private bool IsWord => Document?.ContentType?.Contains("word") == true
+                           || Document?.FileName?.EndsWith(".doc", StringComparison.OrdinalIgnoreCase) == true
+                           || Document?.FileName?.EndsWith(".docx", StringComparison.OrdinalIgnoreCase) == true;
 
     // Assuming the API is running on https://localhost:7148 (standard dev port)
     // In a real app, this base URL should come from config.
@@ -72,16 +62,6 @@
         if (Document == null) return string.Empty;
         // Point to the API download endpoint
         return $"https://localhost:7148/api/documents/{Document.Id}/download";
-    }
-
-    private void ShowViewer()
-    {
-        showViewer = true;
-    }
-
-    private void CloseViewer()
-    {
-        showViewer = false;
     }
 }
 

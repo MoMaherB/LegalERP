@@ -628,18 +628,34 @@ User tested the following endpoints via Swagger and confirmed working:
 - Migration: `20260731092545_AddClientsModule` applied to database.
 - Company Partner Refactor (BR-6.8): Refactored `CompanyDetail.razor` "+ Add Partner" form to use Client Quick-Search Selector. Partner name, National ID, and ID document are now pulled directly from the central `Client` record. `CompanyPartnerDto` and `CompaniesController.cs` map `partner.Client`. `CompanyRepository.cs` includes `p.Client.NationalIdDocument`.
 
+**Feature 10: Cases Legal Memos (مذكرات) & Document Management — ✅ COMPLETED (2026-08-01)**
+- Domain: Created `CaseMemo` entity (Title, Content/Notes, Date, CaseId, DocumentId FK). Added `Memos` collection to `Case`.
+- Infrastructure: `CaseMemoConfiguration` (table `case_memos`, Cascade delete on Case, SetNull on Document). Updated `ApplicationDbContext` and `CaseRepository`.
+- Web UI: Added `FileThumbnail` component for document representation. Thumbnails must display PDF/Word logos and trigger direct file download on click (no browser modal preview). Added capability to update/replace existing memo documents. Removed unprofessional "Attached File:" prefixes from document displays.
+- API: Added Memo CRUD endpoints (`POST/PUT/DELETE /api/cases/{caseId}/memos`) to `CasesController.cs`.
+- Web UI: Updated `CaseDetail.razor` with interactive **Legal Memos & Briefs (المذكرات القانونية)** section supporting title, date, rich text content, file upload attachments with interactive thumbnails & preview popups (`FileThumbnail.razor`), and delete confirmation dialogs.
+- Migration: `20260801014144_AddCaseMemosTable` applied to PostgreSQL database.
+
 ### In Progress
 
-**Feature 10: Cases Legal Memos (مذكرات) & Document Management**
-- Domain: Create `CaseMemo` entity (Title, Content/Notes, Date, CaseId, DocumentId FK).
-- Infrastructure: `CaseMemoConfiguration`, update `ApplicationDbContext`, update `CaseRepository`.
-- API: Memo CRUD endpoints on `CasesController` (`POST/GET/DELETE /api/cases/{caseId}/memos`).
-- Web UI: Update `CaseDetail.razor` with a dedicated **Legal Memos & Briefs (المذكرات القانونية)** section supporting title, text content, file upload attachment with thumbnails + preview popups, and delete dialogs.
+
+**Feature 11: Cases Hearings, Postponement Chain & Audit Trail**
+- Domain: Create `CaseHearing` entity (HearingDate, Purpose, JudgeDecision, PostponementReason, CaseId). Removed NextHearingDate per user feedback — each hearing is a separate record, notification system triggers off HearingDate.
+- Infrastructure: `CaseHearingConfiguration`, update `ApplicationDbContext`, update `CaseRepository`.
+- API: Hearing CRUD endpoints (`POST/PUT/DELETE /api/cases/{caseId}/hearings`).
+- Web UI: Add **Hearings & Postponement Chain (جلسات المحكمة وتسلسل التأجيلات)** section to `CaseDetail.razor`.
+
+**Feature 12: Hearing Reminders — Hangfire + Web Push + In-App Bell**
+- Domain: `Notification` entity, `PushSubscription` entity.
+- Infrastructure: EF configurations, `WebPushNotificationService`, `HearingReminderJob`.
+- Application: DTOs, `INotificationRepository`.
+- API: Hangfire setup in `Program.cs`, `NotificationsController`, VAPID keys in appsettings.
+- Web UI: `service-worker.js`, `push-notifications.js`, `NotificationBell.razor` component, `NotificationApiClient.cs`.
 
 ### Current Position
 
-**Feature Sequence Position: Ready for Feature 10 (Cases: Legal Memos & Documents)**
-Clients Module is tested and approved. Awaiting user green light to build Feature 10.
+**Feature Sequence Position: Implementing Feature 12 (Hearing Reminders — Hangfire + Web Push + In-App Bell)**
+Feature 11 completed and pushed. Now building Feature 12.
 
 ### Active Agent Instructions
 

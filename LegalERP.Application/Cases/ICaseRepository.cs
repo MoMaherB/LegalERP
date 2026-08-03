@@ -15,4 +15,14 @@ public interface ICaseRepository : IRepository<Case>
     Task<CaseParty?> GetPartyByIdAsync(Guid partyId, CancellationToken ct = default);
     void UpdateParty(CaseParty party);
     void SoftDeleteParty(CaseParty party);
+
+    Task AddMemoAsync(CaseMemo memo, CancellationToken ct = default);
+    Task<CaseMemo?> GetMemoByIdAsync(Guid memoId, CancellationToken ct = default);
+    void UpdateMemo(CaseMemo memo);
+    void SoftDeleteMemo(CaseMemo memo);
+
+    Task AddHearingAsync(CaseHearing hearing, CancellationToken ct = default);
+    Task<CaseHearing?> GetHearingByIdAsync(Guid hearingId, CancellationToken ct = default);
+    void UpdateHearing(CaseHearing hearing);
+    void SoftDeleteHearing(CaseHearing hearing);
 }

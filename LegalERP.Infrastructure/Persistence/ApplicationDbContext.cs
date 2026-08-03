@@ -18,9 +18,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<CompanyAmendment> CompanyAmendments => Set<CompanyAmendment>();
     public DbSet<CompanyPartner> CompanyPartners => Set<CompanyPartner>();
     public DbSet<Document> Documents => Set<Document>();
-    public DbSet<Case> Cases => Set<Case>();
-    public DbSet<CaseParty> CaseParties => Set<CaseParty>();
+    public DbSet<Case> Cases { get; set; } = null!;
+    public DbSet<CaseParty> CaseParties { get; set; } = null!;
+    public DbSet<CaseMemo> CaseMemos { get; set; } = null!;
+    public DbSet<CaseHearing> CaseHearings { get; set; } = null!;
     public DbSet<Client> Clients => Set<Client>();
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

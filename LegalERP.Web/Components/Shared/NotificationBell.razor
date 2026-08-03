@@ -1,0 +1,182 @@
+@using LegalERP.Application.Notifications
+@using LegalERP.Web.Services
+@inject NotificationApiClient NotifApi
+@inject IJSRuntime JS
+@inject NavigationManager NavManager
+@implements IDisposable
+
+<div class="notification-bell-wrapper position-relative d-inline-block">
+    <button class="btn btn-link text-dark position-relative p-1" @onclick="ToggleDropdown" title="Notifications">
+        <i class="bi bi-bell-fill fs-5"></i>
+        @if (unreadCount > 0)
+        {
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.65rem;">
+                @(unreadCount > 9 ? "9+" : unreadCount.ToString())
+            </span>
+        }
+    </button>
+
+    @if (showDropdown)
+    {
+        <div class="notification-dropdown position-absolute end-0 mt-2 shadow-lg border rounded bg-white" style="width: 360px; max-height: 420px; z-index: 1050;">
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <h6 class="mb-0 fw-bold">Notifications</h6>
+                @if (unreadCount > 0)
+                {
+                    <button class="btn btn-sm btn-outline-primary" @onclick="MarkAllRead">Mark all read</button>
+                }
+            </div>
+            <div class="overflow-auto" style="max-height: 340px;">
+                @if (notifications == null || notifications.Count == 0)
+                {
+                    <div class="p-4 text-center text-muted">
+                        <i class="bi bi-bell-slash fs-3 d-block mb-2"></i>
+                        No notifications yet.
+                    </div>
+                }
+                else
+                {
+                    @foreach (var n in notifications)
+                    {
+                        <div class="notification-item p-3 border-bottom @(n.IsRead ? "" : "bg-light")" style="cursor: pointer;" @onclick="() => OnNotificationClick(n)">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <strong class="text-truncate d-block" style="max-width: 260px;" title="@n.Title">@n.Title</strong>
+                                @if (!n.IsRead)
+                                {
+                                    <span class="badge bg-primary rounded-pill ms-2">New</span>
+                                }
+                            </div>
+                            <small class="text-muted d-block mt-1">@n.Message</small>
+                            <small class="text-muted d-block mt-1 fst-italic">@n.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</small>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<NotificationDto>? notifications;
+    private int unreadCount;
+    private bool showDropdown;
+    private Timer? _pollTimer;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Register service worker and subscribe to push
+            await SetupPushNotifications();
+
+            // Load initial count
+            await RefreshUnreadCount();
+            StateHasChanged();
+
+            // Poll every 30 seconds for new notifications
+            _pollTimer = new Timer(async _ =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await RefreshUnreadCount();
+                    StateHasChanged();
+                });
+            }, null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        }
+    }
+
+    private async Task SetupPushNotifications()
+    {
+        try
+        {
+            var isSupported = await JS.InvokeAsync<bool>("pushNotifications.isSupported");
+            if (!isSupported) return;
+
+            await JS.InvokeAsync<bool>("pushNotifications.registerServiceWorker");
+
+            var isSubscribed = await JS.InvokeAsync<bool>("pushNotifications.isSubscribed");
+            if (isSubscribed) return;
+
+            // Get VAPID public key from API
+            var vapidKey = await NotifApi.GetVapidPublicKeyAsync();
+            if (string.IsNullOrEmpty(vapidKey)) return;
+
+            // Subscribe to push — this will prompt the user "Allow notifications?"
+            var subscription = await JS.InvokeAsync<PushSubscriptionResult?>("pushNotifications.subscribeToPush", vapidKey);
+            if (subscription != null)
+            {
+                await NotifApi.SubscribeAsync(new CreatePushSubscriptionDto(
+                    subscription.Endpoint,
+                    subscription.P256dh,
+                    subscription.Auth,
+                    null
+                ));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Push setup error: {ex.Message}");
+        }
+    }
+
+    private async Task RefreshUnreadCount()
+    {
+        try
+        {
+            unreadCount = await NotifApi.GetUnreadCountAsync();
+        }
+        catch { /* API might not be up yet */ }
+    }
+
+    private async Task ToggleDropdown()
+    {
+        showDropdown = !showDropdown;
+        if (showDropdown)
+        {
+            try
+            {
+                notifications = await NotifApi.GetAllAsync();
+            }
+            catch { notifications = new(); }
+        }
+    }
+
+    private async Task MarkAllRead()
+    {
+        await NotifApi.MarkAllAsReadAsync();
+        unreadCount = 0;
+        if (notifications != null)
+        {
+            notifications = notifications.Select(n => n with { IsRead = true }).ToList();
+        }
+    }
+
+    private async Task OnNotificationClick(NotificationDto n)
+    {
+        if (!n.IsRead)
+        {
+            await NotifApi.MarkAsReadAsync(n.Id);
+            unreadCount = Math.Max(0, unreadCount - 1);
+        }
+
+        showDropdown = false;
+
+        if (n.CaseId.HasValue)
+        {
+            NavManager.NavigateTo($"/cases/{n.CaseId}");
+        }
+    }
+
+    public void Dispose()
+    {
+        _pollTimer?.Dispose();
+    }
+
+    // Helper class for JS interop deserialization
+    private class PushSubscriptionResult
+    {
+        public string Endpoint { get; set; } = "";
+        public string P256dh { get; set; } = "";
+        public string Auth { get; set; } = "";
+    }
+}

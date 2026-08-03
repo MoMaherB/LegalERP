@@ -16,5 +16,7 @@ public class Case : BaseEntity
     public string? JudgeName { get; set; }                 // اسم القاضي / الدائرة
     public string? Notes { get; set; }                     // ملاحظات
 
-    public List<CaseParty> Parties { get; set; } = new();
+    public ICollection<CaseParty>? Parties { get; set; } = new List<CaseParty>();
+    public ICollection<CaseMemo>? Memos { get; set; } = new List<CaseMemo>();
+    public ICollection<CaseHearing>? Hearings { get; set; } = new List<CaseHearing>();
 }

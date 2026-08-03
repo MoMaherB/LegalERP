@@ -18,7 +18,10 @@ public class CaseRepository : ICaseRepository
 
     public async Task<Case?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _db.Cases
-            .Include(c => c.Parties).ThenInclude(p => p.Document)
+            .Include(c => c.Parties!).ThenInclude(p => p.Document)
+            .Include(c => c.Parties!).ThenInclude(p => p.Client)
+            .Include(c => c.Memos!).ThenInclude(m => m.Document)
+            .Include(c => c.Hearings)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
     public async Task<List<Case>> GetAllAsync(CancellationToken ct = default) =>
@@ -83,6 +86,47 @@ public class CaseRepository : ICaseRepository
         party.IsDeleted = true;
         party.UpdatedAt = DateTime.UtcNow;
         _db.CaseParties.Update(party);
+    }
+
+    public async Task AddMemoAsync(CaseMemo memo, CancellationToken ct = default) =>
+        await _db.CaseMemos.AddAsync(memo, ct);
+
+    public async Task<CaseMemo?> GetMemoByIdAsync(Guid memoId, CancellationToken ct = default) =>
+        await _db.CaseMemos
+            .Include(m => m.Document)
+            .FirstOrDefaultAsync(m => m.Id == memoId, ct);
+
+    public void UpdateMemo(CaseMemo memo)
+    {
+        memo.UpdatedAt = DateTime.UtcNow;
+        _db.CaseMemos.Update(memo);
+    }
+
+    public void SoftDeleteMemo(CaseMemo memo)
+    {
+        memo.IsDeleted = true;
+        memo.UpdatedAt = DateTime.UtcNow;
+        _db.CaseMemos.Update(memo);
+    }
+
+    public async Task AddHearingAsync(CaseHearing hearing, CancellationToken ct = default) =>
+        await _db.CaseHearings.AddAsync(hearing, ct);
+
+    public async Task<CaseHearing?> GetHearingByIdAsync(Guid hearingId, CancellationToken ct = default) =>
+        await _db.CaseHearings
+            .FirstOrDefaultAsync(h => h.Id == hearingId, ct);
+
+    public void UpdateHearing(CaseHearing hearing)
+    {
+        hearing.UpdatedAt = DateTime.UtcNow;
+        _db.CaseHearings.Update(hearing);
+    }
+
+    public void SoftDeleteHearing(CaseHearing hearing)
+    {
+        hearing.IsDeleted = true;
+        hearing.UpdatedAt = DateTime.UtcNow;
+        _db.CaseHearings.Update(hearing);
     }
 
     public async Task SaveChangesAsync(CancellationToken ct = default) =>
