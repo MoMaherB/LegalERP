@@ -1,0 +1,27 @@
+@using LegalERP.Web.Services
+@inject MockAuthService Auth
+@implements IDisposable
+
+<div class="form-check form-switch d-flex align-items-center mb-0">
+    <input class="form-check-input me-2" type="checkbox" id="roleSwitch" checked="@Auth.IsAdmin" @onchange="Toggle">
+    <label class="form-check-label text-muted small" for="roleSwitch">
+        @(Auth.IsAdmin ? "Role: Admin" : "Role: Standard")
+    </label>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Auth.OnRoleChanged += StateHasChanged;
+    }
+
+    private void Toggle(ChangeEventArgs e)
+    {
+        Auth.ToggleRole();
+    }
+
+    public void Dispose()
+    {
+        Auth.OnRoleChanged -= StateHasChanged;
+    }
+}

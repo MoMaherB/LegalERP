@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LegalERP.Application.Cases;
 using LegalERP.Application.Companies;
+using LegalERP.Application.Financials;
 using LegalERP.Domain.Entities;
 using LegalERP.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -280,6 +281,87 @@ public class CasesController : ControllerBase
         return NoContent();
     }
 
+    // --- Financials endpoints ---
+
+    // GET /api/cases/{caseId}/financials
+    [HttpGet("{caseId:guid}/financials")]
+    public async Task<ActionResult<EntityFinancialsDto>> GetFinancials(Guid caseId, CancellationToken ct)
+    {
+        var c = await _repository.GetByIdAsync(caseId, ct);
+        if (c is null) return NotFound();
+
+        var transactions = c.FeeTransactions?.OrderBy(t => t.TransactionDate).ToList() ?? new List<FeeTransaction>();
+        var totalCollected = transactions.Sum(t => t.Amount);
+        
+        var remainingBalance = c.AgreedFee.HasValue ? c.AgreedFee.Value - totalCollected : 0;
+        
+        PaymentStatus status = PaymentStatus.Unpaid;
+        if (c.AgreedFee.HasValue && c.AgreedFee.Value > 0)
+        {
+            if (totalCollected >= c.AgreedFee.Value) status = PaymentStatus.Paid;
+            else if (totalCollected > 0) status = PaymentStatus.PartiallyPaid;
+        }
+
+        var dto = new EntityFinancialsDto(
+            c.AgreedFee,
+            totalCollected,
+            remainingBalance,
+            status,
+            transactions.Select(ToFeeTransactionDto).ToList()
+        );
+
+        return Ok(dto);
+    }
+
+    // PUT /api/cases/{caseId}/agreed-fee
+    [HttpPut("{caseId:guid}/agreed-fee")]
+    public async Task<ActionResult> UpdateAgreedFee(Guid caseId, UpdateAgreedFeeDto dto, CancellationToken ct)
+    {
+        var c = await _repository.GetByIdAsync(caseId, ct);
+        if (c is null) return NotFound();
+
+        c.AgreedFee = dto.AgreedFee;
+        _repository.Update(c);
+        await _repository.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
+    // POST /api/cases/{caseId}/fee-transactions
+    [HttpPost("{caseId:guid}/fee-transactions")]
+    public async Task<ActionResult<FeeTransactionDto>> AddFeeTransaction(Guid caseId, AddFeeTransactionDto dto, CancellationToken ct)
+    {
+        var c = await _repository.GetByIdAsync(caseId, ct);
+        if (c is null) return NotFound();
+
+        var transaction = new FeeTransaction
+        {
+            CaseId = caseId,
+            Amount = dto.Amount,
+            TransactionDate = dto.TransactionDate,
+            ReceiptNumber = dto.ReceiptNumber,
+            Notes = dto.Notes
+        };
+
+        await _repository.AddFeeTransactionAsync(transaction, ct);
+        await _repository.SaveChangesAsync(ct);
+
+        return Ok(ToFeeTransactionDto(transaction));
+    }
+
+    // DELETE /api/cases/{caseId}/fee-transactions/{transactionId}
+    [HttpDelete("{caseId:guid}/fee-transactions/{transactionId:guid}")]
+    public async Task<ActionResult> DeleteFeeTransaction(Guid caseId, Guid transactionId, CancellationToken ct)
+    {
+        var transaction = await _repository.GetFeeTransactionByIdAsync(transactionId, ct);
+        if (transaction is null || transaction.CaseId != caseId) return NotFound();
+
+        _repository.SoftDeleteFeeTransaction(transaction);
+        await _repository.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
     private static CaseDto ToDto(Case c) => new(
         c.Id,
         c.CaseNumber,
@@ -324,5 +406,13 @@ public class CasesController : ControllerBase
         h.Purpose,
         h.JudgeDecision,
         h.PostponementReason
+    );
+
+    private static FeeTransactionDto ToFeeTransactionDto(FeeTransaction t) => new(
+        t.Id,
+        t.Amount,
+        t.TransactionDate,
+        t.ReceiptNumber,
+        t.Notes
     );
 }

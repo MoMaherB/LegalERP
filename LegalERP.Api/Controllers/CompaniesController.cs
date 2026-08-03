@@ -1,4 +1,5 @@
 using LegalERP.Application.Companies;
+using LegalERP.Application.Financials;
 using LegalERP.Domain.Entities;
 using LegalERP.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
@@ -304,6 +305,85 @@ public class CompaniesController : ControllerBase
         if (partner is null || partner.CompanyId != companyId) return NotFound();
 
         _repository.SoftDeletePartner(partner);
+        await _repository.SaveChangesAsync(ct);
+
+        return NoContent();
+    }
+
+    // --- Financials ---
+    
+    // GET /api/companies/{companyId}/financials
+    [HttpGet("{companyId:guid}/financials")]
+    public async Task<ActionResult<EntityFinancialsDto>> GetFinancials(Guid companyId, CancellationToken ct)
+    {
+        var c = await _repository.GetByIdAsync(companyId, ct);
+        if (c is null) return NotFound();
+
+        var transactions = c.FeeTransactions?.OrderBy(t => t.TransactionDate).ToList() ?? new List<FeeTransaction>();
+        var totalCollected = transactions.Sum(t => t.Amount);
+        
+        var remainingBalance = c.AgreedFee.HasValue ? c.AgreedFee.Value - totalCollected : 0;
+        
+        PaymentStatus status = PaymentStatus.Unpaid;
+        if (c.AgreedFee.HasValue && c.AgreedFee.Value > 0)
+        {
+            if (totalCollected >= c.AgreedFee.Value) status = PaymentStatus.Paid;
+            else if (totalCollected > 0) status = PaymentStatus.PartiallyPaid;
+        }
+
+        var dto = new EntityFinancialsDto(
+            c.AgreedFee,
+            totalCollected,
+            remainingBalance,
+            status,
+            transactions.Select(t => new FeeTransactionDto(t.Id, t.Amount, t.TransactionDate, t.ReceiptNumber, t.Notes)).ToList()
+        );
+
+        return Ok(dto);
+    }
+
+    // PUT /api/companies/{companyId}/agreed-fee
+    [HttpPut("{companyId:guid}/agreed-fee")]
+    public async Task<ActionResult> UpdateAgreedFee(Guid companyId, UpdateAgreedFeeDto dto, CancellationToken ct)
+    {
+        var c = await _repository.GetByIdAsync(companyId, ct);
+        if (c is null) return NotFound();
+
+        c.AgreedFee = dto.AgreedFee;
+        await _repository.SaveChangesAsync(ct);
+        return NoContent();
+    }
+
+    // POST /api/companies/{companyId}/fee-transactions
+    [HttpPost("{companyId:guid}/fee-transactions")]
+    public async Task<ActionResult> AddFeeTransaction(Guid companyId, AddFeeTransactionDto dto, CancellationToken ct)
+    {
+        var c = await _repository.GetByIdAsync(companyId, ct);
+        if (c is null) return NotFound();
+
+        var tx = new FeeTransaction
+        {
+            CompanyId = companyId,
+            Amount = dto.Amount,
+            TransactionDate = dto.TransactionDate,
+            ReceiptNumber = dto.ReceiptNumber,
+            Notes = dto.Notes
+        };
+
+        await _repository.AddFeeTransactionAsync(tx, ct);
+        await _repository.SaveChangesAsync(ct);
+
+        return Ok(tx.Id);
+    }
+
+    // DELETE /api/companies/{companyId}/fee-transactions/{transactionId}
+    [HttpDelete("{companyId:guid}/fee-transactions/{transactionId:guid}")]
+    public async Task<ActionResult> DeleteFeeTransaction(Guid companyId, Guid transactionId, CancellationToken ct)
+    {
+        var tx = await _repository.GetFeeTransactionByIdAsync(transactionId, ct);
+        if (tx == null || tx.CompanyId != companyId) return NotFound();
+
+        _repository.SoftDeleteFeeTransaction(tx);
         await _repository.SaveChangesAsync(ct);
 
         return NoContent();

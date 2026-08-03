@@ -1,0 +1,242 @@
+@using LegalERP.Application.Financials
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Services
+@inject CaseApiClient CaseApi
+@inject CompanyApiClient CompanyApi
+
+@if (financials == null)
+{
+    <p>Loading financials...</p>
+}
+else
+{
+    <div class="row">
+        <!-- Summary Cards -->
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Agreed Fee (المتفق عليه)</h5>
+                    <div class="d-flex align-items-center">
+                        <h3 class="mb-0 me-2">@(financials.AgreedFee?.ToString("N2") ?? "—")</h3>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ToggleEditFee">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    </div>
+                    @if (isEditingFee)
+                    {
+                        <div class="mt-2 d-flex gap-2">
+                            <input type="number" class="form-control form-control-sm" @bind="editFeeAmount" />
+                            <button class="btn btn-sm btn-success" @onclick="SaveFee">Save</button>
+                            <button class="btn btn-sm btn-secondary" @onclick="ToggleEditFee">Cancel</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Total Collected (المحصل)</h5>
+                    <h3 class="mb-0 text-success">@financials.TotalCollected.ToString("N2")</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Remaining Balance (المتبقي)</h5>
+                    <h3 class="mb-0 @GetBalanceColor(financials.PaymentStatus)">
+                        @financials.RemainingBalance.ToString("N2")
+                    </h3>
+                    <div class="mt-2">
+                        <span class="badge @GetBadgeColor(financials.PaymentStatus)">
+                            @financials.PaymentStatus
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions Ledger -->
+    <div class="card mt-2 border-0 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Fee Transactions (سجل الدفعات)</h5>
+            <button class="btn btn-sm btn-primary" @onclick="ToggleAddTransaction">
+                @(showAddTransaction ? "Cancel" : "+ Add Payment")
+            </button>
+        </div>
+        <div class="card-body">
+            @if (showAddTransaction)
+            {
+                <div class="bg-light p-3 rounded mb-3">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Amount *</label>
+                            <input type="number" class="form-control" @bind="newTransaction.Amount" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Date *</label>
+                            <input type="date" class="form-control" @bind="newTransaction.TransactionDate" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Receipt Number</label>
+                            <input type="text" class="form-control" @bind="newTransaction.ReceiptNumber" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Notes</label>
+                            <input type="text" class="form-control" @bind="newTransaction.Notes" />
+                        </div>
+                        <div class="col-12 text-end">
+                            <button class="btn btn-success" @onclick="SaveTransaction" disabled="@isSaving">
+                                @(isSaving ? "Saving..." : "Save Payment")
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (!financials.Transactions.Any())
+            {
+                <p class="text-muted mb-0">No transactions recorded yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Receipt No.</th>
+                                <th>Notes</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tx in financials.Transactions.OrderByDescending(t => t.TransactionDate))
+                            {
+                                <tr>
+                                    <td>@tx.TransactionDate.ToString("yyyy-MM-dd")</td>
+                                    <td class="fw-bold text-success">@tx.Amount.ToString("N2")</td>
+                                    <td>@tx.ReceiptNumber</td>
+                                    <td>@tx.Notes</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteTransaction(tx.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid OwnerId { get; set; }
+    [Parameter] public string OwnerType { get; set; } = "case"; // "case" or "company"
+    
+    private EntityFinancialsDto? financials;
+    private bool isEditingFee;
+    private decimal? editFeeAmount;
+    
+    private bool showAddTransaction;
+    private AddFeeTransactionDto newTransaction = new();
+    private bool isSaving;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFinancials();
+    }
+
+    private async Task LoadFinancials()
+    {
+        if (OwnerType == "case")
+            financials = await CaseApi.GetFinancialsAsync(OwnerId);
+        else if (OwnerType == "company")
+            financials = await CompanyApi.GetFinancialsAsync(OwnerId);
+    }
+
+    private void ToggleEditFee()
+    {
+        isEditingFee = !isEditingFee;
+        if (isEditingFee)
+        {
+            editFeeAmount = financials?.AgreedFee;
+        }
+    }
+
+    private async Task SaveFee()
+    {
+        var dto = new UpdateAgreedFeeDto(editFeeAmount);
+        if (OwnerType == "case")
+            await CaseApi.UpdateAgreedFeeAsync(OwnerId, dto);
+        else if (OwnerType == "company")
+            await CompanyApi.UpdateAgreedFeeAsync(OwnerId, dto);
+
+        isEditingFee = false;
+        await LoadFinancials();
+    }
+
+    private void ToggleAddTransaction()
+    {
+        showAddTransaction = !showAddTransaction;
+        if (showAddTransaction)
+        {
+            newTransaction = new();
+        }
+    }
+
+    private async Task SaveTransaction()
+    {
+        if (newTransaction.Amount <= 0) return;
+        
+        isSaving = true;
+        try
+        {
+            if (OwnerType == "case")
+                await CaseApi.AddFeeTransactionAsync(OwnerId, newTransaction);
+            else if (OwnerType == "company")
+                await CompanyApi.AddFeeTransactionAsync(OwnerId, newTransaction);
+
+            showAddTransaction = false;
+            await LoadFinancials();
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteTransaction(Guid id)
+    {
+        if (OwnerType == "case")
+            await CaseApi.DeleteFeeTransactionAsync(OwnerId, id);
+        else if (OwnerType == "company")
+            await CompanyApi.DeleteFeeTransactionAsync(OwnerId, id);
+
+        await LoadFinancials();
+    }
+
+    private string GetBalanceColor(PaymentStatus status) => status switch
+    {
+        PaymentStatus.Paid => "text-success",
+        PaymentStatus.PartiallyPaid => "text-warning",
+        PaymentStatus.Unpaid => "text-danger",
+        _ => ""
+    };
+
+    private string GetBadgeColor(PaymentStatus status) => status switch
+    {
+        PaymentStatus.Paid => "bg-success",
+        PaymentStatus.PartiallyPaid => "bg-warning text-dark",
+        PaymentStatus.Unpaid => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

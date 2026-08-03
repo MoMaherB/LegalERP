@@ -20,4 +20,8 @@ public interface ICompanyRepository : IRepository<Company>
     Task<CompanyPartner?> GetPartnerByIdAsync(Guid partnerId, CancellationToken ct = default);
     void UpdatePartner(CompanyPartner partner);
     void SoftDeletePartner(CompanyPartner partner);
+
+    Task AddFeeTransactionAsync(FeeTransaction transaction, CancellationToken ct = default);
+    Task<FeeTransaction?> GetFeeTransactionByIdAsync(Guid transactionId, CancellationToken ct = default);
+    void SoftDeleteFeeTransaction(FeeTransaction transaction);
 }

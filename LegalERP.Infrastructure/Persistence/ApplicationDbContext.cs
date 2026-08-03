@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<CaseParty> CaseParties { get; set; } = null!;
     public DbSet<CaseMemo> CaseMemos { get; set; } = null!;
     public DbSet<CaseHearing> CaseHearings { get; set; } = null!;
+    public DbSet<FeeTransaction> FeeTransactions { get; set; } = null!;
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();

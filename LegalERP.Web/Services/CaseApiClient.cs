@@ -1,4 +1,5 @@
 using LegalERP.Application.Cases;
+using LegalERP.Application.Financials;
 using LegalERP.Domain.Enums;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -125,6 +126,32 @@ public class CaseApiClient
     public async Task DeleteHearingAsync(Guid caseId, Guid hearingId)
     {
         var response = await _http.DeleteAsync($"api/cases/{caseId}/hearings/{hearingId}");
+        response.EnsureSuccessStatusCode();
+    }
+
+    // --- Financials methods ---
+
+    public async Task<EntityFinancialsDto?> GetFinancialsAsync(Guid caseId)
+    {
+        return await _http.GetFromJsonAsync<EntityFinancialsDto>($"api/cases/{caseId}/financials", JsonOptions);
+    }
+
+    public async Task UpdateAgreedFeeAsync(Guid caseId, UpdateAgreedFeeDto dto)
+    {
+        var response = await _http.PutAsJsonAsync($"api/cases/{caseId}/agreed-fee", dto, JsonOptions);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task<FeeTransactionDto?> AddFeeTransactionAsync(Guid caseId, AddFeeTransactionDto dto)
+    {
+        var response = await _http.PostAsJsonAsync($"api/cases/{caseId}/fee-transactions", dto, JsonOptions);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<FeeTransactionDto>(JsonOptions);
+    }
+
+    public async Task DeleteFeeTransactionAsync(Guid caseId, Guid transactionId)
+    {
+        var response = await _http.DeleteAsync($"api/cases/{caseId}/fee-transactions/{transactionId}");
         response.EnsureSuccessStatusCode();
     }
 }

@@ -25,4 +25,8 @@ public interface ICaseRepository : IRepository<Case>
     Task<CaseHearing?> GetHearingByIdAsync(Guid hearingId, CancellationToken ct = default);
     void UpdateHearing(CaseHearing hearing);
     void SoftDeleteHearing(CaseHearing hearing);
+
+    Task AddFeeTransactionAsync(FeeTransaction transaction, CancellationToken ct = default);
+    Task<FeeTransaction?> GetFeeTransactionByIdAsync(Guid transactionId, CancellationToken ct = default);
+    void SoftDeleteFeeTransaction(FeeTransaction transaction);
 }

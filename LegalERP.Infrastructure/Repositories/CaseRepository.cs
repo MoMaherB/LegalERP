@@ -22,10 +22,11 @@ public class CaseRepository : ICaseRepository
             .Include(c => c.Parties!).ThenInclude(p => p.Client)
             .Include(c => c.Memos!).ThenInclude(m => m.Document)
             .Include(c => c.Hearings)
+            .Include(c => c.FeeTransactions)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
     public async Task<List<Case>> GetAllAsync(CancellationToken ct = default) =>
-        await _db.Cases.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
+        await _db.Cases.Include(c => c.FeeTransactions).OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
 
     public async Task<List<Case>> SearchAsync(string? searchTerm, CaseType? type, CaseStatus? status, CancellationToken ct = default)
     {
@@ -127,6 +128,19 @@ public class CaseRepository : ICaseRepository
         hearing.IsDeleted = true;
         hearing.UpdatedAt = DateTime.UtcNow;
         _db.CaseHearings.Update(hearing);
+    }
+
+    public async Task AddFeeTransactionAsync(FeeTransaction transaction, CancellationToken ct = default) =>
+        await _db.FeeTransactions.AddAsync(transaction, ct);
+
+    public async Task<FeeTransaction?> GetFeeTransactionByIdAsync(Guid transactionId, CancellationToken ct = default) =>
+        await _db.FeeTransactions.FirstOrDefaultAsync(t => t.Id == transactionId, ct);
+
+    public void SoftDeleteFeeTransaction(FeeTransaction transaction)
+    {
+        transaction.IsDeleted = true;
+        transaction.UpdatedAt = DateTime.UtcNow;
+        _db.FeeTransactions.Update(transaction);
     }
 
     public async Task SaveChangesAsync(CancellationToken ct = default) =>

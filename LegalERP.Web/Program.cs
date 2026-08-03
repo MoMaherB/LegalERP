@@ -17,6 +17,8 @@ builder.Services.AddScoped<CompanyApiClient>();
 builder.Services.AddScoped<CaseApiClient>();
 builder.Services.AddScoped<ClientApiClient>();
 builder.Services.AddScoped<NotificationApiClient>();
+builder.Services.AddScoped<FinancialsApiClient>();
+builder.Services.AddScoped<MockAuthService>();
 
 var app = builder.Build();
 

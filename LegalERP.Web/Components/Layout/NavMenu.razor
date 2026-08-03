@@ -1,3 +1,7 @@
+@using LegalERP.Web.Services
+@inject MockAuthService Auth
+@implements IDisposable
+
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">LegalERP.Web</a>
@@ -28,6 +32,26 @@
                 <span class="bi bi-briefcase-nav-menu" aria-hidden="true"></span> Cases
             </NavLink>
         </div>
+        @if (Auth.IsAdmin)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="financials">
+                    <span class="bi bi-cash-stack-nav-menu" aria-hidden="true"></span> Financials
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Auth.OnRoleChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        Auth.OnRoleChanged -= StateHasChanged;
+    }
+}
 

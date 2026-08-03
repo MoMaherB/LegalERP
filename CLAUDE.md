@@ -639,23 +639,33 @@ User tested the following endpoints via Swagger and confirmed working:
 ### In Progress
 
 
-**Feature 11: Cases Hearings, Postponement Chain & Audit Trail**
-- Domain: Create `CaseHearing` entity (HearingDate, Purpose, JudgeDecision, PostponementReason, CaseId). Removed NextHearingDate per user feedback — each hearing is a separate record, notification system triggers off HearingDate.
+**Feature 11: Cases Hearings, Postponement Chain & Audit Trail — ✅ COMPLETED**
+- Domain: Created `CaseHearing` entity (HearingDate, Purpose, JudgeDecision, PostponementReason, CaseId). Removed NextHearingDate per user feedback — each hearing is a separate record, notification system triggers off HearingDate.
 - Infrastructure: `CaseHearingConfiguration`, update `ApplicationDbContext`, update `CaseRepository`.
 - API: Hearing CRUD endpoints (`POST/PUT/DELETE /api/cases/{caseId}/hearings`).
 - Web UI: Add **Hearings & Postponement Chain (جلسات المحكمة وتسلسل التأجيلات)** section to `CaseDetail.razor`.
 
-**Feature 12: Hearing Reminders — Hangfire + Web Push + In-App Bell**
+**Feature 12: Hearing Reminders — Hangfire + Web Push + In-App Bell — ✅ COMPLETED**
 - Domain: `Notification` entity, `PushSubscription` entity.
 - Infrastructure: EF configurations, `WebPushNotificationService`, `HearingReminderJob`.
 - Application: DTOs, `INotificationRepository`.
 - API: Hangfire setup in `Program.cs`, `NotificationsController`, VAPID keys in appsettings.
 - Web UI: `service-worker.js`, `push-notifications.js`, `NotificationBell.razor` component, `NotificationApiClient.cs`.
 
+**Feature 13: Case Financials & Company Financials & Global Ledger — ✅ COMPLETED (2026-08-03)**
+- Domain: Added `AgreedFee` and `FeeTransactions` to both `Case` and `Company` entities. Modified `FeeTransaction` to point to nullable `CaseId` and `CompanyId`.
+- Infrastructure: Configured FK relationships.
+- Application: Centralized `EntityFinancialsDto` and added `GlobalFinancialsDto`.
+- API: Exposed `/financials` on `CasesController` and `CompaniesController`. Created `FinancialsController` for the global dashboard. Included `.Include(c => c.FeeTransactions)` on `GetAllAsync()` repository methods to properly calculate global totals.
+- Web UI: Created reusable `SharedFinancials.razor` for both Cases and Companies. Added `FinancialsOverview.razor` for a global dashboard containing unified records. Added a secure MockAuth Role Switcher that dynamically hides/shows all financial data based on Admin role in real-time.
+
+### In Progress
+- Proceeding to further testing or next feature module based on user request.
+
 ### Current Position
 
-**Feature Sequence Position: Implementing Feature 12 (Hearing Reminders — Hangfire + Web Push + In-App Bell)**
-Feature 11 completed and pushed. Now building Feature 12.
+**Feature Sequence Position: All core defined features implemented.**
+Feature 13 implementation is completed, verified, and bug-fixed. Financials are now fully integrated and secure.
 
 ### Active Agent Instructions
 

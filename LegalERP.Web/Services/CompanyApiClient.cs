@@ -134,4 +134,29 @@ public class CompanyApiClient
         var response = await _http.DeleteAsync($"api/documents/{id}");
         response.EnsureSuccessStatusCode();
     }
+
+    // --- Financials methods ---
+
+    public async Task<LegalERP.Application.Financials.EntityFinancialsDto?> GetFinancialsAsync(Guid companyId)
+    {
+        return await _http.GetFromJsonAsync<LegalERP.Application.Financials.EntityFinancialsDto>($"api/companies/{companyId}/financials", JsonOptions);
+    }
+
+    public async Task UpdateAgreedFeeAsync(Guid companyId, LegalERP.Application.Financials.UpdateAgreedFeeDto dto)
+    {
+        var response = await _http.PutAsJsonAsync($"api/companies/{companyId}/agreed-fee", dto, JsonOptions);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task AddFeeTransactionAsync(Guid companyId, LegalERP.Application.Financials.AddFeeTransactionDto dto)
+    {
+        var response = await _http.PostAsJsonAsync($"api/companies/{companyId}/fee-transactions", dto, JsonOptions);
+        response.EnsureSuccessStatusCode();
+    }
+
+    public async Task DeleteFeeTransactionAsync(Guid companyId, Guid transactionId)
+    {
+        var response = await _http.DeleteAsync($"api/companies/{companyId}/fee-transactions/{transactionId}");
+        response.EnsureSuccessStatusCode();
+    }
 }

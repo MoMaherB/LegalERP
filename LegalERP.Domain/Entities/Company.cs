@@ -17,6 +17,12 @@ public class Company : BaseEntity
     public DateOnly? EstablishmentDate { get; set; } // تاريخ التأسيس
     public string? RegistrationNumber { get; set; }  // رقم السجل التجاري
     public string? Address { get; set; }             // العنوان
+    public string? CommercialRegisterNumber { get; set; } 
+    public string? TaxNumber { get; set; }
+    public string? LegalEntity { get; set; } // الشكل القانوني
+    public string? Notes { get; set; }
+    
+    public decimal? AgreedFee { get; set; } // المتفق عليه (e.g., annual retainer)
 
     // FK to a Document (Documents module comes later — stored as a plain
     // nullable Guid for now, no navigation property yet, to keep this
@@ -28,4 +34,5 @@ public class Company : BaseEntity
     // in the Infrastructure layer (next steps).
     public List<CompanyAmendment> Amendments { get; set; } = new();
     public List<CompanyPartner> Partners { get; set; } = new();
+    public List<FeeTransaction> FeeTransactions { get; set; } = new();
 }

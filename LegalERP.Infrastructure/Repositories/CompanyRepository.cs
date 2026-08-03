@@ -24,10 +24,11 @@ public class CompanyRepository : ICompanyRepository
             .Include(c => c.Amendments).ThenInclude(a => a.Document)
             .Include(c => c.Partners).ThenInclude(p => p.NationalIdDocument)
             .Include(c => c.Partners).ThenInclude(p => p.Client).ThenInclude(cl => cl.NationalIdDocument)
+            .Include(c => c.FeeTransactions)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
     public async Task<List<Company>> GetAllAsync(CancellationToken ct = default) =>
-        await _db.Companies.OrderBy(c => c.CompanyName).ToListAsync(ct);
+        await _db.Companies.Include(c => c.FeeTransactions).OrderBy(c => c.CompanyName).ToListAsync(ct);
 
     public async Task<List<Company>> SearchAsync(string? searchTerm, CompanyCategory? category, CancellationToken ct = default)
     {
@@ -103,6 +104,19 @@ public class CompanyRepository : ICompanyRepository
     {
         partner.IsDeleted = true;
         partner.UpdatedAt = DateTime.UtcNow;
+    }
+
+    public async Task AddFeeTransactionAsync(FeeTransaction transaction, CancellationToken ct = default) =>
+        await _db.FeeTransactions.AddAsync(transaction, ct);
+
+    public async Task<FeeTransaction?> GetFeeTransactionByIdAsync(Guid transactionId, CancellationToken ct = default) =>
+        await _db.FeeTransactions.FirstOrDefaultAsync(t => t.Id == transactionId, ct);
+
+    public void SoftDeleteFeeTransaction(FeeTransaction transaction)
+    {
+        transaction.IsDeleted = true;
+        transaction.UpdatedAt = DateTime.UtcNow;
+        _db.FeeTransactions.Update(transaction);
     }
 
     public async Task SaveChangesAsync(CancellationToken ct = default) =>

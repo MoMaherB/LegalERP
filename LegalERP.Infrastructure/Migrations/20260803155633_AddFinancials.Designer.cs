@@ -3,6 +3,7 @@ using System;
 using LegalERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LegalERP.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260803155633_AddFinancials")]
+    partial class AddFinancials
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -313,16 +316,10 @@ namespace LegalERP.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<decimal?>("AgreedFee")
-                        .HasColumnType("numeric");
-
                     b.Property<string>("Category")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
-
-                    b.Property<string>("CommercialRegisterNumber")
-                        .HasColumnType("text");
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
@@ -345,18 +342,9 @@ namespace LegalERP.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("LegalEntity")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
                     b.Property<string>("RegistrationNumber")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
-
-                    b.Property<string>("TaxNumber")
-                        .HasColumnType("text");
 
                     b.Property<string>("TradeName")
                         .HasMaxLength(500)
@@ -533,10 +521,7 @@ namespace LegalERP.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid?>("CaseId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CompanyId")
+                    b.Property<Guid>("CaseId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -562,8 +547,6 @@ namespace LegalERP.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CaseId");
-
-                    b.HasIndex("CompanyId");
 
                     b.ToTable("fee_transactions", (string)null);
                 });
@@ -780,16 +763,10 @@ namespace LegalERP.Infrastructure.Migrations
                     b.HasOne("LegalERP.Domain.Entities.Case", "Case")
                         .WithMany("FeeTransactions")
                         .HasForeignKey("CaseId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("LegalERP.Domain.Entities.Company", "Company")
-                        .WithMany("FeeTransactions")
-                        .HasForeignKey("CompanyId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Case");
-
-                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("LegalERP.Domain.Entities.Notification", b =>
@@ -823,8 +800,6 @@ namespace LegalERP.Infrastructure.Migrations
             modelBuilder.Entity("LegalERP.Domain.Entities.Company", b =>
                 {
                     b.Navigation("Amendments");
-
-                    b.Navigation("FeeTransactions");
 
                     b.Navigation("Partners");
                 });

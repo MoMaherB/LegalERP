@@ -1,0 +1,169 @@
+@page "/financials"
+@using LegalERP.Application.Financials
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Services
+@inject FinancialsApiClient FinancialsApi
+@inject MockAuthService Auth
+@inject NavigationManager NavManager
+@rendermode InteractiveServer
+@implements IDisposable
+
+<PageTitle>Firm Financials Overview (الماليات العامة)</PageTitle>
+
+@if (!Auth.IsAdmin)
+{
+    <div class="alert alert-danger">
+        Access Denied. You do not have permission to view firm-wide financials.
+    </div>
+}
+else if (summary == null)
+{
+    <p>Loading financial data...</p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0 text-success">Firm Financials Overview (الماليات العامة)</h2>
+    </div>
+
+    <!-- Top Level Metrics -->
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <div class="card bg-light border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Cases Total (إجمالي القضايا)</h5>
+                    <div class="mb-2">
+                        <small class="text-muted">Agreed: @summary.TotalCaseAgreedFees.ToString("N2")</small>
+                    </div>
+                    <h3 class="mb-0 text-primary">@summary.TotalCaseCollected.ToString("N2") Collected</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-light border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title text-muted">Companies Total (إجمالي الشركات)</h5>
+                    <div class="mb-2">
+                        <small class="text-muted">Agreed: @summary.TotalCompanyAgreedFees.ToString("N2")</small>
+                    </div>
+                    <h3 class="mb-0 text-primary">@summary.TotalCompanyCollected.ToString("N2") Collected</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-success shadow h-100">
+                <div class="card-body bg-success bg-opacity-10">
+                    <h5 class="card-title text-success fw-bold">Firm Grand Total (الإجمالي العام)</h5>
+                    <div class="mb-2">
+                        <small class="text-success fw-bold">Total Expected: @summary.FirmTotalAgreedFees.ToString("N2")</small>
+                    </div>
+                    <h2 class="mb-0 text-success fw-bold">@summary.FirmTotalCollected.ToString("N2") Collected</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unified Data Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">All Financial Records (سجل كل التعاملات)</h5>
+        </div>
+        <div class="card-body">
+            @if (!summary.Records.Any())
+            {
+                <p class="text-muted mb-0">No financial records found.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Type</th>
+                                <th>Name</th>
+                                <th>Reference No.</th>
+                                <th>Agreed Fee</th>
+                                <th>Collected</th>
+                                <th>Remaining</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var record in summary.Records)
+                            {
+                                <tr>
+                                    <td>
+                                        @if (record.OwnerType == "Case")
+                                        {
+                                            <span class="badge bg-primary">Case</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-info text-dark">Company</span>
+                                        }
+                                    </td>
+                                    <td class="fw-bold">@record.OwnerName</td>
+                                    <td>@record.ReferenceNumber</td>
+                                    <td>@(record.AgreedFee?.ToString("N2") ?? "—")</td>
+                                    <td class="fw-bold text-success">@record.TotalCollected.ToString("N2")</td>
+                                    <td class="@(record.RemainingBalance > 0 ? "text-danger" : "text-success")">
+                                        @record.RemainingBalance.ToString("N2")
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetBadgeColor(record.PaymentStatus)">
+                                            @record.PaymentStatus
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        @if (record.OwnerType == "Case")
+                                        {
+                                            <a href="/cases/@record.OwnerId" class="btn btn-sm btn-outline-secondary">View Case</a>
+                                        }
+                                        else
+                                        {
+                                            <a href="/companies/@record.OwnerId" class="btn btn-sm btn-outline-secondary">View Company</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private GlobalFinancialsDto? summary;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Auth.OnRoleChanged += StateHasChanged;
+        if (Auth.IsAdmin)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        summary = await FinancialsApi.GetSummaryAsync();
+    }
+
+    public void Dispose()
+    {
+        Auth.OnRoleChanged -= StateHasChanged;
+    }
+
+    private string GetBadgeColor(PaymentStatus status) => status switch
+    {
+        PaymentStatus.Paid => "bg-success",
+        PaymentStatus.PartiallyPaid => "bg-warning text-dark",
+        PaymentStatus.Unpaid => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

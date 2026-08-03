@@ -16,7 +16,10 @@ public class Case : BaseEntity
     public string? JudgeName { get; set; }                 // اسم القاضي / الدائرة
     public string? Notes { get; set; }                     // ملاحظات
 
+    public decimal? AgreedFee { get; set; }                // المتفق عليه
+
     public ICollection<CaseParty>? Parties { get; set; } = new List<CaseParty>();
     public ICollection<CaseMemo>? Memos { get; set; } = new List<CaseMemo>();
     public ICollection<CaseHearing>? Hearings { get; set; } = new List<CaseHearing>();
+    public ICollection<FeeTransaction>? FeeTransactions { get; set; } = new List<FeeTransaction>();
 }
