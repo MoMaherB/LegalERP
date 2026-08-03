@@ -388,6 +388,14 @@ Document (polymorphic: owner_type + owner_id) ──> Local VPS Storage Path
 | أموال | Capital/Funds Company | `company_category = CapitalCompany` |
 | أشخاص | Partnership/Persons Company | `company_category = Partnership` |
 | السمة التجارية | Trade Name | `trade_name` |
+| اسم الشركة | Company Name | `company_name` |
+| السجل التجاري | Commercial Register Number | `registration_number` |
+| تاريخ التأسيس | Establishment Date | `establishment_date` |
+| الاسم باللغة الإنجليزية | English Name (Optional) | `company_name_en` |
+| العنوان | Address | `address` |
+| الشركاء | Partners | `company_partners` |
+| نسبة الشراكة | Ownership Percentage | `ownership_percentage` |
+| التعديلات | Amendments | `company_amendments` table |
 | عقد التأسيس | Articles of Incorporation | `incorporation_doc_id` |
 | عقد التعديل | Amendment Contract | `company_amendments` table |
 | جنائي | Criminal Case | `case_type = Criminal` |
@@ -395,19 +403,42 @@ Document (polymorphic: owner_type + owner_id) ──> Local VPS Storage Path
 | مدني | Civil Case | `case_type = Civil` |
 | قضاء إداري | Administrative Court Case | `case_type = Administrative` |
 | مذكرات | Legal Memos/Briefs | `case_memos` table |
-| المتهم | Defendant | `party_role = Defendant` |
-| المجني عليه | Victim | `party_role = Victim` |
-| الأجلات | Hearing Postponements | `case_hearings` chain |
+| المتهم | Defendant (Criminal) | `party_role = Defendant` (if Criminal) |
+| المجني عليه | Victim (Criminal) | `party_role = Victim` (if Criminal) |
+| المدعى عليه | Defendant (Non-Criminal) | `party_role = Defendant` (if Non-Criminal) |
+| المدعي | Victim (Non-Criminal) | `party_role = Victim` (if Non-Criminal) |
+| الخصوم | Parties | `case_parties` |
+| القضايا | Cases | `cases` |
+| رقم القضية | Case Number | `case_number` |
+| عنوان القضية | Case Title | `title` |
+| تاريخ الحكم | Filing Date | `filing_date` |
+| متداولة | Active | `case_status = Active` |
+| منتهية | Closed | `case_status = Closed` |
+| نوع القضية | Case Type | `case_type` |
+| المنطوق | Case Outcome | `case_outcome` |
+| مكسب | Won | `case_outcome = Won` |
+| خسارة | Lost | `case_outcome = Lost` |
+| تصالح | Settled/Dismissed | `case_outcome = Settled` |
+| الحكم و التأجيل | Hearings & Postponements | `case_hearings` chain |
+| موعد الجلسة | Hearing Date | `hearing_date` |
+| نوع الجلسة | Purpose | `purpose` |
+| سبب التأجيل | Postponement Reason | `postponement_reason` |
 | تأجيل | Postponement | `hearing_outcome = Postponed` |
 | حكم | Judgment | `hearing_outcome = Judgment` |
 | المتفق عليه | Agreed Fee | `agreed_fee` |
 | المحصل | Collected Amount | Computed from `fee_transactions` |
 | المتبقي | Remaining Balance | Computed (`agreed_fee` − collected) |
+| الماليات | Financials | `financials` |
 | الموكلين | Clients (People Registry) | `clients` table |
-| الموكل | Client (Our Represented) | `client` record where `is_our_client = true` on the CaseParty |
+| الموكل | Our Client | `client` record where `is_our_client = true` on the CaseParty |
 | الخصم | Opponent | `client` record where `is_our_client = false` on the CaseParty |
-| صورة الهوية | National ID Scan | `client.national_id_document_id` |
-| صورة الوكالة | Attorney / Power of Attorney | `client.attorney_document_id` |
+| موكل | Client | `client` |
+| الاسم بالكامل | Full Name | `full_name` |
+| الايميل | Email | `email` |
+| ملاحظات | Notes | `notes` |
+| رقم البطاقة | National ID | `national_id_number` |
+| صورة البطاقة | National ID Scan | `client.national_id_document_id` |
+| صورة التوكيل | Attorney / Power of Attorney | `client.attorney_document_id` |
 
 ---
 
