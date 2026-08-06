@@ -31,42 +31,40 @@ else
 {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="/clients" class="btn btn-outline-secondary me-2">@Loc["BackToList"]</a>
-            <a href="/clients/edit/@client.Id" class="btn btn-primary me-2">@Loc["EditClient"]</a>
+            <a href="/clients" class="ios-btn ios-btn-secondary me-2 text-decoration-none">@Loc["BackToList"]</a>
+            <a href="/clients/edit/@client.Id" class="ios-btn ios-btn-primary me-2 text-decoration-none">@Loc["EditClient"]</a>
         </div>
-        <button class="btn btn-danger" @onclick="DeleteClient">@Loc["DeleteClient"]</button>
+        <button class="ios-btn ios-btn-danger" @onclick="DeleteClient">@Loc["DeleteClient"]</button>
     </div>
 
     @* ── Personal Information Card ── *@
-    <div class="glass-card mb-4">
-        <div class="glass-card-header">
-            <h3 class="mb-0">@client.FullName</h3>
+    <div class="ios-widget-card mb-4">
+        <div class="p-4">
+            <h3 class="ios-title mb-0">@client.FullName</h3>
             @if (!string.IsNullOrWhiteSpace(client.FullNameEn))
             {
                 <small class="text-muted">@client.FullNameEn</small>
             }
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
+            <div class="row g-3 mt-3">
                 <div class="col-md-4">
-                    <strong>@Loc["NationalId"]:</strong>
+                    <strong class="ios-details fw-bold">@Loc["NationalId"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.NationalIdNumber) ? "—" : client.NationalIdNumber)</p>
                 </div>
                 <div class="col-md-4">
-                    <strong>@Loc["Phone"]:</strong>
+                    <strong class="ios-details fw-bold">@Loc["Phone"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.PhoneNumber) ? "—" : client.PhoneNumber)</p>
                 </div>
                 <div class="col-md-4">
-                    <strong>@Loc["Email"]:</strong>
+                    <strong class="ios-details fw-bold">@Loc["Email"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.Email) ? "—" : client.Email)</p>
                 </div>
                 <div class="col-12">
-                    <strong>@Loc["Address"]:</strong>
+                    <strong class="ios-details fw-bold">@Loc["Address"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.Address) ? "—" : client.Address)</p>
                 </div>
                 <div class="col-12">
-                    <strong>@Loc["Notes"]:</strong>
-                    <p class="border p-3 rounded bg-light mb-0">
+                    <strong class="ios-details fw-bold">@Loc["Notes"]:</strong>
+                    <p class="border p-3 rounded mb-0 mt-2" style="background: rgba(0,0,0,0.02); border-color: rgba(0,0,0,0.05) !important;">
                         @(string.IsNullOrWhiteSpace(client.Notes) ? Loc["NoNotesRecorded"] : client.Notes)
                     </p>
                 </div>
@@ -75,32 +73,34 @@ else
     </div>
 
     @* ── Documents Card ── *@
-    <div class="glass-card mb-4">
-        <div class="glass-card-header">
-            <h4 class="mb-0">@Loc["Documents"]</h4>
-        </div>
-        <div class="card-body">
+    <div class="ios-widget-card mb-4">
+        <div class="p-4">
+            <h4 class="ios-title mb-4" style="font-size: 1.3rem;">@Loc["Documents"]</h4>
             <div class="row g-4">
                 <div class="col-md-6">
-                    <h5>@Loc["NationalIdScan"]</h5>
+                    <h5 class="ios-title" style="font-size: 1.1rem;">@Loc["NationalIdScan"]</h5>
                     @if (client.NationalIdDocument != null)
                     {
-                        <FileThumbnail Document="client.NationalIdDocument" OwnerType="client" OwnerId="client.Id" />
+                        <div class="my-3 p-3 rounded w-100" style="background: rgba(0,0,0,0.02);">
+                            <FileThumbnail Document="client.NationalIdDocument" OwnerType="client" OwnerId="client.Id" />
+                        </div>
                     }
                     else
                     {
-                        <div class="alert alert-light border">@Loc["NoNationalIdUploaded"] <a href="/clients/edit/@client.Id">@Loc["UploadNow"]</a>.</div>
+                        <div class="alert alert-light border mt-3" style="border-radius: 12px;">@Loc["NoNationalIdUploaded"] <a href="/clients/edit/@client.Id">@Loc["UploadNow"]</a>.</div>
                     }
                 </div>
                 <div class="col-md-6">
-                    <h5>@Loc["PowerOfAttorney"]</h5>
+                    <h5 class="ios-title" style="font-size: 1.1rem;">@Loc["PowerOfAttorney"]</h5>
                     @if (client.AttorneyDocument != null)
                     {
-                        <FileThumbnail Document="client.AttorneyDocument" OwnerType="client" OwnerId="client.Id" />
+                        <div class="my-3 p-3 rounded w-100" style="background: rgba(0,0,0,0.02);">
+                            <FileThumbnail Document="client.AttorneyDocument" OwnerType="client" OwnerId="client.Id" />
+                        </div>
                     }
                     else
                     {
-                        <div class="alert alert-light border">@Loc["NoAttorneyDocumentUploaded"] <a href="/clients/edit/@client.Id">@Loc["UploadNow"]</a>.</div>
+                        <div class="alert alert-light border mt-3" style="border-radius: 12px;">@Loc["NoAttorneyDocumentUploaded"] <a href="/clients/edit/@client.Id">@Loc["UploadNow"]</a>.</div>
                     }
                 </div>
             </div>
@@ -108,120 +108,120 @@ else
     </div>
 
     @* ── Related Cases ── *@
-    <div class="glass-card mb-4">
-        <div class="glass-card-header">
-            <h4 class="mb-0">@Loc["RelatedCases"]</h4>
-        </div>
-        <div class="card-body">
+    <div class="ios-widget-card mb-4">
+        <div class="p-4">
+            <h4 class="ios-title mb-4" style="font-size: 1.3rem;">@Loc["RelatedCases"]</h4>
             @if (client.RelatedCases.Count == 0)
             {
-                <div class="alert alert-light border mb-0">@Loc["ClientNoRelatedCases"]</div>
+                <div class="alert alert-light border mb-0" style="border-radius: 12px;">@Loc["ClientNoRelatedCases"]</div>
             }
             else
             {
-                <table class="table table-hover align-middle mb-0 table-glass">
-                    <thead>
-                        <tr>
-                            <th>@Loc["CaseNumber"]</th>
-                            <th>@Loc["Title"]</th>
-                            <th>@Loc["Type"]</th>
-                            <th>@Loc["Role"]</th>
-                            <th>@Loc["Representation"]</th>
-                            <th>@Loc["Status"]</th>
-                            <th>@Loc["Actions"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var c in client.RelatedCases)
-                        {
+                <div class="ios-table-container">
+                    <table class="ios-table mb-0">
+                        <thead>
                             <tr>
-                                <td><strong>@c.CaseNumber</strong></td>
-                                <td>@c.CaseTitle</td>
-                                <td><span class="badge bg-secondary">@c.CaseType</span></td>
-                                <td>
-                                    <span class="badge bg-secondary">
-                                        @(c.PartyRole == PartyRole.Defendant ? Loc["Defendant"] : Loc["Victim"])
-                                    </span>
-                                </td>
-                                <td>
-                                    @if (c.IsOurClient)
-                                    {
-                                        <span class="badge bg-success px-3 py-2">@Loc["Client"]</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-danger px-3 py-2">@Loc["Opponent"]</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (c.CaseStatus == CaseStatus.Active)
-                                    {
-                                        <span class="badge bg-warning text-dark">@Loc["Active"]</span>
-                                    }
-                                    else
-                                    {
-                                        @if (c.CaseOutcome == CaseOutcome.Won)
+                                <th>@Loc["CaseNumber"]</th>
+                                <th>@Loc["Title"]</th>
+                                <th>@Loc["Type"]</th>
+                                <th>@Loc["Role"]</th>
+                                <th>@Loc["Representation"]</th>
+                                <th>@Loc["Status"]</th>
+                                <th>@Loc["Actions"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in client.RelatedCases)
+                            {
+                                <tr>
+                                    <td><strong>@c.CaseNumber</strong></td>
+                                    <td>@c.CaseTitle</td>
+                                    <td><span class="ios-status-badge ios-status-gray">@c.CaseType</span></td>
+                                    <td>
+                                        <span class="ios-status-badge ios-status-gray">
+                                            @(c.PartyRole == PartyRole.Defendant ? Loc["Defendant"] : Loc["Victim"])
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (c.IsOurClient)
                                         {
-                                            <span class="badge bg-success">@Loc["ClosedWon"]</span>
-                                        }
-                                        else if (c.CaseOutcome == CaseOutcome.Lost)
-                                        {
-                                            <span class="badge bg-danger">@Loc["ClosedLost"]</span>
-                                        }
-                                        else if (c.CaseOutcome == CaseOutcome.Settled)
-                                        {
-                                            <span class="badge bg-info text-dark">@Loc["ClosedSettled"]</span>
+                                            <span class="ios-status-badge ios-status-green">@Loc["Client"]</span>
                                         }
                                         else
                                         {
-                                            <span class="badge bg-success">@Loc["Closed"]</span>
+                                            <span class="ios-status-badge ios-status-red">@Loc["Opponent"]</span>
                                         }
-                                    }
-                                </td>
-                                <td>
-                                    <a href="/cases/@c.CaseId" class="btn btn-sm btn-info">@Loc["ViewCase"]</a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                                    </td>
+                                    <td>
+                                        @if (c.CaseStatus == CaseStatus.Active)
+                                        {
+                                            <span class="ios-status-badge ios-status-amber">@Loc["Active"]</span>
+                                        }
+                                        else
+                                        {
+                                            @if (c.CaseOutcome == CaseOutcome.Won)
+                                            {
+                                                <span class="ios-status-badge ios-status-green">@Loc["ClosedWon"]</span>
+                                            }
+                                            else if (c.CaseOutcome == CaseOutcome.Lost)
+                                            {
+                                                <span class="ios-status-badge ios-status-red">@Loc["ClosedLost"]</span>
+                                            }
+                                            else if (c.CaseOutcome == CaseOutcome.Settled)
+                                            {
+                                                <span class="ios-status-badge ios-status-blue">@Loc["ClosedSettled"]</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="ios-status-badge ios-status-green">@Loc["Closed"]</span>
+                                            }
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="/cases/@c.CaseId" class="ios-btn ios-btn-info text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["ViewCase"]</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
     </div>
 
     @* ── Related Companies ── *@
-    <div class="glass-card mb-4">
-        <div class="glass-card-header">
-            <h4 class="mb-0">@Loc["RelatedCompanies"]</h4>
-        </div>
-        <div class="card-body">
+    <div class="ios-widget-card mb-4">
+        <div class="p-4">
+            <h4 class="ios-title mb-4" style="font-size: 1.3rem;">@Loc["RelatedCompanies"]</h4>
             @if (client.RelatedCompanies.Count == 0)
             {
-                <div class="alert alert-light border mb-0">@Loc["ClientNoRelatedCompanies"]</div>
+                <div class="alert alert-light border mb-0" style="border-radius: 12px;">@Loc["ClientNoRelatedCompanies"]</div>
             }
             else
             {
-                <table class="table table-hover align-middle mb-0 table-glass">
-                    <thead>
-                        <tr>
-                            <th>@Loc["CompanyName"]</th>
-                            <th>@Loc["OwnershipPercentage"]</th>
-                            <th>@Loc["Actions"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var co in client.RelatedCompanies)
-                        {
+                <div class="ios-table-container">
+                    <table class="ios-table mb-0">
+                        <thead>
                             <tr>
-                                <td><strong>@co.CompanyName</strong></td>
-                                <td>@(co.OwnershipPercentage.HasValue ? $"{co.OwnershipPercentage.Value:F2}%" : "—")</td>
-                                <td>
-                                    <a href="/companies/@co.CompanyId" class="btn btn-sm btn-info">@Loc["ViewCompany"]</a>
-                                </td>
+                                <th>@Loc["CompanyName"]</th>
+                                <th>@Loc["OwnershipPercentage"]</th>
+                                <th>@Loc["Actions"]</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var co in client.RelatedCompanies)
+                            {
+                                <tr>
+                                    <td><strong>@co.CompanyName</strong></td>
+                                    <td>@(co.OwnershipPercentage.HasValue ? $"{co.OwnershipPercentage.Value:F2}%" : "—")</td>
+                                    <td>
+                                        <a href="/companies/@co.CompanyId" class="ios-btn ios-btn-info text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["ViewCompany"]</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             }
         </div>
     </div>

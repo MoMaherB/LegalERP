@@ -1,20 +1,141 @@
 @page "/"
+@using LegalERP.Web.Services
+@using LegalERP.Domain.Enums
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
+@inject MockAuthService Auth
+@inject CaseApiClient CaseApi
+@inject CompanyApiClient CompanyApi
+@inject ClientApiClient ClientApi
+@inject FinancialsApiClient FinancialsApi
 
 <PageTitle>LegalERP | @Loc["Home"]</PageTitle>
 
-<div class="glass-card mb-4">
-    <h1>@Loc["Home"]</h1>
-    <p>Welcome to LegalERP.</p>
+<div class="mb-4" style="margin: -1.5rem -1.5rem 2rem -1.5rem;">
+    <img src="images/banner.jpg" alt="مكتب أ/ أحمد حمدي المأذون المحامي" style="width: 100%; height: 300px; object-fit: cover; object-position: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
 </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <div class="glass-card">
-            <h5 class="glass-card-header">@Loc["Companies"]</h5>
-            <p>Manage company records, partners, and amendments.</p>
-            <a href="/companies" class="btn btn-primary glass-panel">@Loc["Companies"]</a>
+<div class="dashboard-grid">
+    @if (isLoading)
+    {
+        <div class="text-center w-100">
+            <p>@Loc["Loading"]...</p>
         </div>
-    </div>
+    }
+    else
+    {
+        <!-- Cases Card -->
+        <a href="cases" class="ios-widget-card ios-card-blue text-decoration-none">
+            <div class="ios-content">
+                <div class="ios-title">@Loc["Cases"]</div>
+                <div class="ios-badge">@casesCount</div>
+            </div>
+            <div class="ios-icon-box" style="--glow-color: rgba(56,189,248,0.4); --icon-color: #38bdf8; --bg-color: rgba(56,189,248,0.15);">
+                <i class="bi bi-hammer"></i>
+            </div>
+        </a>
+
+        <!-- Companies Card -->
+        <a href="companies" class="ios-widget-card ios-card-purple text-decoration-none">
+            <div class="ios-content">
+                <div class="ios-title">@Loc["Companies"]</div>
+                <div class="ios-badge">@companiesCount</div>
+            </div>
+            <div class="ios-icon-box" style="--glow-color: rgba(167,139,250,0.4); --icon-color: #a78bfa; --bg-color: rgba(167,139,250,0.15);">
+                <i class="bi bi-building"></i>
+            </div>
+        </a>
+
+        <!-- Clients Card -->
+        <a href="clients" class="ios-widget-card ios-card-green text-decoration-none">
+            <div class="ios-content">
+                <div class="ios-title">@Loc["Clients"]</div>
+                <div class="ios-badge">@clientsCount</div>
+            </div>
+            <div class="ios-icon-box" style="--glow-color: rgba(52,211,153,0.4); --icon-color: #34d399; --bg-color: rgba(52,211,153,0.15);">
+                <i class="bi bi-people-fill"></i>
+            </div>
+        </a>
+
+        <!-- Financials Card (Admin Only) -->
+        @if (Auth.IsAdmin)
+        {
+            <a href="financials" class="ios-widget-card ios-card-amber text-decoration-none">
+                <div class="ios-content">
+                    <div class="ios-title">@Loc["Financials"]</div>
+                    <div class="ios-badge" style="visibility: hidden;">0</div>
+                </div>
+                <div class="ios-icon-box" style="--glow-color: rgba(251,191,36,0.4); --icon-color: #fbbf24; --bg-color: rgba(251,191,36,0.15);">
+                    <i class="bi bi-wallet2"></i>
+                </div>
+            </a>
+        }
+    }
 </div>
+
+@code {
+    private bool isLoading = true;
+    private int casesCount = 0;
+    private int activeCasesCount = 0;
+    private int closedCasesCount = 0;
+    
+    private int companiesCount = 0;
+    private int capitalCount = 0;
+    private int partnershipCount = 0;
+    private int soleCount = 0;
+
+    private int clientsCount = 0;
+
+    private decimal totalAgreed = 0;
+    private decimal totalCollected = 0;
+    private decimal totalRemaining = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        var cases = await CaseApi.GetAllAsync();
+        casesCount = cases.Count;
+        activeCasesCount = cases.Count(c => c.Status == CaseStatus.Active);
+        closedCasesCount = cases.Count(c => c.Status == CaseStatus.Closed);
+
+        var companies = await CompanyApi.GetAllAsync();
+        companiesCount = companies.Count;
+        capitalCount = companies.Count(c => c.Category == CompanyCategory.CapitalCompany);
+        partnershipCount = companies.Count(c => c.Category == CompanyCategory.Partnership);
+        soleCount = companies.Count(c => c.Category == CompanyCategory.SoleProprietorship);
+
+        var clients = await ClientApi.GetAllAsync();
+        clientsCount = clients.Count;
+
+        if (Auth.IsAdmin)
+        {
+            var summary = await FinancialsApi.GetSummaryAsync();
+            if (summary != null)
+            {
+                totalAgreed = summary.FirmTotalAgreedFees;
+                totalCollected = summary.FirmTotalCollected;
+                totalRemaining = totalAgreed - totalCollected;
+            }
+        }
+    }
+
+    private string FormatShortCurrency(decimal amount)
+    {
+        if (amount >= 1000000)
+            return (amount / 1000000).ToString("0.#") + "m";
+        if (amount >= 1000)
+            return (amount / 1000).ToString("0.#") + "k";
+        return amount.ToString("0.#");
+    }
+
+    private int CalculatePercentage(decimal part, decimal total)
+    {
+        if (total == 0) return 0;
+        return (int)Math.Round((part / total) * 100);
+    }
+}

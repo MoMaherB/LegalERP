@@ -12,33 +12,31 @@
 <PageTitle>@Loc["CompaniesManagement"]</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>@Loc["CompaniesManagement"]</h1>
-    <a href="/companies/new" class="btn btn-primary">@Loc["AddNewCompany"]</a>
+    <h1 class="ios-title">@Loc["CompaniesManagement"]</h1>
+    <a href="/companies/new" class="ios-btn ios-btn-primary text-decoration-none">@Loc["AddNewCompany"]</a>
 </div>
 
 <!-- Search & Filter Controls -->
-<div class="glass-card mb-4">
-    <div class="card-body">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-5">
-                <label class="form-label font-weight-bold">@Loc["SearchNameTradeNameEnglish"]</label>
-                <input type="text" class="form-control" placeholder="@Loc["SearchCompaniesPlaceholder"]" 
-                       @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label font-weight-bold">@Loc["CategoryFilter"]</label>
-                <select class="form-select" @bind="selectedCategory">
-                    <option value="">@Loc["AllCategories"]</option>
-                    @foreach (var cat in Enum.GetValues<CompanyCategory>())
-                    {
-                        <option value="@cat">@cat</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-secondary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
-            </div>
+<div class="ios-widget-card mb-4">
+    <div class="row g-3 align-items-end w-100 m-0">
+        <div class="col-md-5">
+            <label class="form-label font-weight-bold ios-details">@Loc["SearchNameTradeNameEnglish"]</label>
+            <input type="text" class="ios-input" placeholder="@Loc["SearchCompaniesPlaceholder"]" 
+                   @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label font-weight-bold ios-details">@Loc["CategoryFilter"]</label>
+            <select class="ios-select" @bind="selectedCategory">
+                <option value="">@Loc["AllCategories"]</option>
+                @foreach (var cat in Enum.GetValues<CompanyCategory>())
+                {
+                    <option value="@cat">@cat</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3 d-flex gap-2">
+            <button class="ios-btn ios-btn-primary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
+            <button class="ios-btn ios-btn-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
         </div>
     </div>
 </div>
@@ -55,37 +53,39 @@ else if (companies.Count == 0)
 }
 else
 {
-    <table class="table table-hover align-middle table-glass">
-        <thead>
-            <tr>
-                <th>@Loc["Name"]</th>
-                <th>@Loc["TradeName"]</th>
-                <th>@Loc["Category"]</th>
-                <th>@Loc["Actions"]</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var c in companies)
-            {
+    <div class="ios-table-container">
+        <table class="ios-table">
+            <thead>
                 <tr>
-                    <td>
-                        <strong>@c.CompanyName</strong>
-                        @if (!string.IsNullOrWhiteSpace(c.CompanyNameEn))
-                        {
-                            <br /><small class="text-muted">@c.CompanyNameEn</small>
-                        }
-                    </td>
-                    <td>@(string.IsNullOrWhiteSpace(c.TradeName) ? "—" : c.TradeName)</td>
-                    <td><span class="badge bg-secondary">@c.Category</span></td>
-                    <td>
-                        <a href="/companies/@c.Id" class="btn btn-sm btn-info me-2">@Loc["View"]</a>
-                        <a href="/companies/edit/@c.Id" class="btn btn-sm btn-secondary me-2">@Loc["Edit"]</a>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCompany(c.Id)">@Loc["Delete"]</button>
-                    </td>
+                    <th>@Loc["Name"]</th>
+                    <th>@Loc["TradeName"]</th>
+                    <th>@Loc["Category"]</th>
+                    <th class="text-center">@Loc["Actions"]</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var c in companies)
+                {
+                    <tr>
+                        <td>
+                            <strong>@c.CompanyName</strong>
+                            @if (!string.IsNullOrWhiteSpace(c.CompanyNameEn))
+                            {
+                                <br /><small class="text-muted">@c.CompanyNameEn</small>
+                            }
+                        </td>
+                        <td>@(string.IsNullOrWhiteSpace(c.TradeName) ? "—" : c.TradeName)</td>
+                        <td><span class="ios-status-badge ios-status-gray">@c.Category</span></td>
+                        <td class="text-center">
+                            <a href="/companies/@c.Id" class="ios-btn ios-btn-secondary me-1 text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["View"]</a>
+                            <a href="/companies/edit/@c.Id" class="ios-btn ios-btn-secondary me-1 text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["Edit"]</a>
+                            <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteCompany(c.Id)">@Loc["Delete"]</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {

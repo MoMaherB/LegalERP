@@ -33,40 +33,40 @@ else
 {
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <a href="/cases" class="btn btn-outline-secondary me-2">@Loc["Back"]</a>
-            <a href="/cases/edit/@caseDto.Id" class="btn btn-primary me-2">@Loc["Edit"]</a>
+            <a href="/cases" class="ios-btn ios-btn-secondary me-2 text-decoration-none">@Loc["Back"]</a>
+            <a href="/cases/edit/@caseDto.Id" class="ios-btn ios-btn-primary me-2 text-decoration-none">@Loc["Edit"]</a>
         </div>
-        <button class="btn btn-danger" @onclick="DeleteCase">@Loc["Delete"]</button>
+        <button class="ios-btn ios-btn-danger" @onclick="DeleteCase">@Loc["Delete"]</button>
     </div>
 
-    <div class="glass-card mb-4">
-        <div class="glass-card-header d-flex justify-content-between align-items-center">
-            <h3 class="mb-0">@caseDto.Title</h3>
+    <div class="ios-widget-card mb-4 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="ios-title mb-0" style="font-size: 1.5rem;">@caseDto.Title</h3>
             <div class="d-flex gap-2 align-items-center">
-                <span class="badge bg-secondary fs-6">@caseDto.CaseType</span>
+                <span class="ios-status-badge ios-status-gray fs-6">@caseDto.CaseType</span>
                 @if (caseDto.Status == CaseStatus.Active)
                 {
-                    <span class="badge bg-warning text-dark fs-6">Active</span>
+                    <span class="ios-status-badge ios-status-amber fs-6">Active</span>
                 }
                 else
                 {
-                    <span class="badge bg-success fs-6">Closed</span>
+                    <span class="ios-status-badge ios-status-green fs-6">Closed</span>
                     @if (caseDto.Outcome == CaseOutcome.Won)
                     {
-                        <span class="badge bg-success fs-6">Won (ربح القضية)</span>
+                        <span class="ios-status-badge ios-status-green fs-6">Won (ربح القضية)</span>
                     }
                     else if (caseDto.Outcome == CaseOutcome.Lost)
                     {
-                        <span class="badge bg-danger fs-6">Lost (خسارة القضية)</span>
+                        <span class="ios-status-badge ios-status-red fs-6">Lost (خسارة القضية)</span>
                     }
                     else if (caseDto.Outcome == CaseOutcome.Settled)
                     {
-                        <span class="badge bg-info text-dark fs-6">Settled (صلح / تسوية)</span>
+                        <span class="ios-status-badge ios-status-blue fs-6">Settled (صلح / تسوية)</span>
                     }
                 }
             </div>
         </div>
-        <div class="glass-card-body">
+        <div>
             <div class="row g-3">
                 <div class="col-md-4">
                     <strong>Case Number:</strong>
@@ -96,22 +96,22 @@ else
 
     @* ── Parties Section (Defendants vs Victims / Client vs Opponent) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">Case Parties (أطراف القضية)</h3>
-        <button class="btn btn-sm btn-success" @onclick="ToggleAddPartyForm">
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Case Parties (أطراف القضية)</h3>
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartyForm" style="padding: 6px 12px; font-size: 0.9rem;">
             @(showAddPartyForm ? "Cancel" : "+ Add Party")
         </button>
     </div>
 
     @if (showAddPartyForm)
     {
-        <div class="glass-card mb-4 border-success">
-            <div class="glass-card-body">
-                <h5 class="glass-card-title text-success mb-3">Add Case Party (from Clients Registry)</h5>
+        <div class="ios-widget-card mb-4" style="border: 1px solid rgba(52, 211, 153, 0.3);">
+            <div class="p-4">
+                <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">Add Case Party (from Clients Registry)</h5>
                 <div class="row g-3">
                     @* ── Client Quick-Search Selector ── *@
                     <div class="col-md-6">
-                        <label class="form-label">Search Client by Name (بحث عن الموكل) *</label>
-                        <input class="form-control" @bind="clientSearchTerm" @bind:event="oninput"
+                        <label class="form-label ios-details fw-bold">Search Client by Name (بحث عن الموكل) *</label>
+                        <input class="ios-input" @bind="clientSearchTerm" @bind:event="oninput"
                                @onkeyup="HandleClientSearch" placeholder="Type client name to search..." />
                         @if (clientSearchResults != null)
                         {
@@ -149,30 +149,30 @@ else
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label">Party Position (الصفة القانونية) *</label>
-                        <select class="form-select" @bind="newPartyRole">
+                        <label class="form-label ios-details fw-bold">Party Position (الصفة القانونية) *</label>
+                        <select class="ios-select" @bind="newPartyRole">
                             <option value="@PartyRole.Defendant">Defendant (المتهم)</option>
                             <option value="@PartyRole.Victim">Victim (المجني عليه)</option>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Client Status (صفة التوكيل) *</label>
-                        <select class="form-select" @bind="newPartyClientStatus">
+                        <label class="form-label ios-details fw-bold">Client Status (صفة التوكيل) *</label>
+                        <select class="ios-select" @bind="newPartyClientStatus">
                             <option value="client">Our Client - موكلنا (Green)</option>
                             <option value="opponent">Opponent - خصمنا (Red)</option>
                         </select>
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label">Notes (for this case only)</label>
-                        <input class="form-control" @bind="newPartyNotes" placeholder="Additional notes about this party in this case..." />
+                        <label class="form-label ios-details fw-bold">Notes (for this case only)</label>
+                        <input class="ios-input" @bind="newPartyNotes" placeholder="Additional notes about this party in this case..." />
                     </div>
 
                     <div class="col-12">
-                        <button class="btn btn-success me-2" @onclick="AddParty" disabled="@isSavingParty">
+                        <button class="ios-btn ios-btn-primary me-2" @onclick="AddParty" disabled="@isSavingParty">
                             @(isSavingParty ? "Saving..." : "Save Party")
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ToggleAddPartyForm">Cancel</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddPartyForm">Cancel</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(partyErrorMessage))
@@ -185,100 +185,102 @@ else
 
     @if (caseDto.Parties.Count == 0)
     {
-        <div class="alert alert-light border mb-4">No parties recorded for this case yet.</div>
+        <div class="alert alert-light border mb-4" style="border-radius: 12px;">No parties recorded for this case yet.</div>
     }
     else
     {
-        <table class="table table-glass table-hover align-middle mb-4">
-            <thead>
-                <tr>
-                    <th>Party Name</th>
-                    <th>Legal Role</th>
-                    <th>Representation</th>
-                    <th>National ID</th>
-                    <th>Phone</th>
-                    <th>Attached Document</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var party in caseDto.Parties)
-                {
+        <div class="ios-table-container mb-4">
+            <table class="ios-table">
+                <thead>
                     <tr>
-                        <td><strong>@party.FullName</strong></td>
-                        <td>
-                            <span class="badge bg-secondary">
-                                @(party.Role == PartyRole.Defendant ? "Defendant (المتهم)" : "Victim (المجني عليه)")
-                            </span>
-                        </td>
-                        <td>
-                            @if (party.IsOurClient)
-                            {
-                                <span class="badge bg-success px-3 py-2 fs-6">Client (موكلنا)</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-danger px-3 py-2 fs-6">Opponent (خصمنا)</span>
-                            }
-                        </td>
-                        <td>@(party.NationalIdNumber ?? "—")</td>
-                        <td>@(party.PhoneNumber ?? "—")</td>
-                        <td>
-                            @if (party.Document != null)
-                            {
-                                <FileThumbnail Document="party.Document" OwnerType="caseparty" OwnerId="party.Id" />
-                            }
-                            else
-                            {
-                                <span class="text-muted">—</span>
-                            }
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteParty(party.Id)">Delete</button>
-                        </td>
+                        <th>Party Name</th>
+                        <th>Legal Role</th>
+                        <th>Representation</th>
+                        <th>National ID</th>
+                        <th>Phone</th>
+                        <th>Attached Document</th>
+                        <th>Actions</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var party in caseDto.Parties)
+                    {
+                        <tr>
+                            <td><strong>@party.FullName</strong></td>
+                            <td>
+                                <span class="ios-status-badge ios-status-gray">
+                                    @(party.Role == PartyRole.Defendant ? "Defendant (المتهم)" : "Victim (المجني عليه)")
+                                </span>
+                            </td>
+                            <td>
+                                @if (party.IsOurClient)
+                                {
+                                    <span class="ios-status-badge ios-status-green">Client (موكلنا)</span>
+                                }
+                                else
+                                {
+                                    <span class="ios-status-badge ios-status-red">Opponent (خصمنا)</span>
+                                }
+                            </td>
+                            <td>@(party.NationalIdNumber ?? "—")</td>
+                            <td>@(party.PhoneNumber ?? "—")</td>
+                            <td>
+                                @if (party.Document != null)
+                                {
+                                    <FileThumbnail Document="party.Document" OwnerType="caseparty" OwnerId="party.Id" />
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteParty(party.Id)">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 
     @* ── Legal Memos & Briefs Section (المذكرات القانونية) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">Legal Memos & Briefs (المذكرات القانونية)</h3>
-        <button class="btn btn-sm btn-info text-white" @onclick="ToggleAddMemoForm">
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Legal Memos & Briefs (المذكرات القانونية)</h3>
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddMemoForm" style="padding: 6px 12px; font-size: 0.9rem;">
             @(showAddMemoForm ? "Cancel" : "+ Add Legal Memo")
         </button>
     </div>
 
     @if (showAddMemoForm)
     {
-        <div class="glass-card mb-4 border-info">
-            <div class="glass-card-body">
-                <h5 class="glass-card-title text-info mb-3">Add Legal Memo / Brief (إضافة مذكرة قانونية)</h5>
+        <div class="ios-widget-card mb-4" style="border: 1px solid rgba(59, 130, 246, 0.3);">
+            <div class="p-4">
+                <h5 class="ios-title text-info mb-3" style="font-size: 1.2rem;">Add Legal Memo / Brief (إضافة مذكرة قانونية)</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Memo Title (عنوان المذكرة) *</label>
-                        <input class="form-control" @bind="newMemoTitle" placeholder="e.g. مذكرة دفاع أولى, مذكرة شارحة..." />
+                        <label class="form-label ios-details fw-bold">Memo Title (عنوان المذكرة) *</label>
+                        <input class="ios-input" @bind="newMemoTitle" placeholder="e.g. مذكرة دفاع أولى, مذكرة شارحة..." />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Memo Date (تاريخ المذكرة) *</label>
-                        <input type="date" class="form-control" @bind="newMemoDate" />
+                        <label class="form-label ios-details fw-bold">Memo Date (تاريخ المذكرة) *</label>
+                        <input type="date" class="ios-input" @bind="newMemoDate" />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Attached Document (مستند المذكرة)</label>
-                        <InputFile class="form-control" OnChange="LoadMemoFile" accept=".pdf,.doc,.docx" />
+                        <label class="form-label ios-details fw-bold">Attached Document (مستند المذكرة)</label>
+                        <InputFile class="ios-input" OnChange="LoadMemoFile" accept=".pdf,.doc,.docx" />
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label">Memo Content / Text (نص المذكرة / الملاحظات)</label>
-                        <textarea class="form-control" @bind="newMemoContent" rows="4" placeholder="Enter full memo text or summary of arguments..."></textarea>
+                        <label class="form-label ios-details fw-bold">Memo Content / Text (نص المذكرة / الملاحظات)</label>
+                        <textarea class="ios-input" @bind="newMemoContent" rows="4" placeholder="Enter full memo text or summary of arguments..."></textarea>
                     </div>
 
                     <div class="col-12">
-                        <button class="btn btn-info text-white me-2" @onclick="AddMemo" disabled="@isSavingMemo">
+                        <button class="ios-btn ios-btn-primary me-2" @onclick="AddMemo" disabled="@isSavingMemo">
                             @(isSavingMemo ? "Saving..." : "Save Legal Memo")
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ToggleAddMemoForm">Cancel</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddMemoForm">Cancel</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(memoErrorMessage))
@@ -291,7 +293,7 @@ else
 
     @if (caseDto.Memos is null || caseDto.Memos.Count == 0)
     {
-        <div class="alert alert-light border mb-4">No legal memos recorded for this case yet.</div>
+        <div class="alert alert-light border mb-4" style="border-radius: 12px;">No legal memos recorded for this case yet.</div>
     }
     else
     {
@@ -299,41 +301,43 @@ else
             @foreach (var memo in caseDto.Memos)
             {
                 <div class="col">
-                    <div class="glass-card h-100 border shadow-sm">
-                        <div class="glass-card-header bg-light d-flex justify-content-between align-items-center">
-                            <strong class="text-primary mb-0">@memo.Title</strong>
-                            <span class="badge bg-secondary">📅 @memo.MemoDate.ToString("yyyy-MM-dd")</span>
-                        </div>
-                        <div class="glass-card-body d-flex flex-column justify-content-between">
-                            @if (!string.IsNullOrWhiteSpace(memo.Content))
-                            {
-                                <p class="glass-card-text text-dark border-start border-4 border-info ps-3 py-1 mb-3" style="white-space: pre-wrap;">@memo.Content</p>
-                            }
-                            else
-                            {
-                                <p class="text-muted italic mb-3">No content recorded.</p>
-                            }
-
-                            @if (memo.Document != null)
-                            {
-                                <div class="mt-2 p-2 rounded bg-light border text-center">
-                                    <FileThumbnail Document="memo.Document" OwnerType="casememo" OwnerId="memo.Id" />
+                    <div class="ios-widget-card h-100 d-flex flex-column">
+                        <div class="ios-content d-flex flex-column h-100 justify-content-between p-4">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <strong class="ios-title mb-0" style="font-size: 1.1rem; color: #1d4ed8;">@memo.Title</strong>
+                                    <span class="ios-status-badge ios-status-gray">📅 @memo.MemoDate.ToString("yyyy-MM-dd")</span>
                                 </div>
-                            }
-                        </div>
-                        <div class="glass-card-footer bg-transparent d-flex justify-content-between align-items-center">
-                            @if (memo.Document != null)
-                            {
-                                <label class="btn btn-sm btn-outline-primary mb-0">
-                                    Update File (تحديث الملف)
-                                    <InputFile OnChange="@((e) => UpdateMemoFile(memo.Id, e))" style="display: none;" accept=".pdf,.doc,.docx" />
-                                </label>
-                            }
-                            else
-                            {
-                                <div></div>
-                            }
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteMemo(memo.Id)">Delete Memo</button>
+                                @if (!string.IsNullOrWhiteSpace(memo.Content))
+                                {
+                                    <p class="text-dark border-start border-4 ps-3 py-1 mb-3" style="border-color: rgba(59, 130, 246, 0.5) !important; white-space: pre-wrap; font-size: 0.95rem;">@memo.Content</p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted italic mb-3">No content recorded.</p>
+                                }
+
+                                @if (memo.Document != null)
+                                {
+                                    <div class="mt-2 p-3 rounded text-center" style="background: rgba(0,0,0,0.02);">
+                                        <FileThumbnail Document="memo.Document" OwnerType="casememo" OwnerId="memo.Id" />
+                                    </div>
+                                }
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="border-color: rgba(0,0,0,0.05) !important;">
+                                @if (memo.Document != null)
+                                {
+                                    <label class="ios-btn ios-btn-secondary mb-0" style="padding: 4px 10px; font-size: 0.85rem; cursor: pointer;">
+                                        Update File (تحديث الملف)
+                                        <InputFile OnChange="@((e) => UpdateMemoFile(memo.Id, e))" style="display: none;" accept=".pdf,.doc,.docx" />
+                                    </label>
+                                }
+                                else
+                                {
+                                    <div></div>
+                                }
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteMemo(memo.Id)">Delete Memo</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -343,39 +347,39 @@ else
 
     @* ── Hearings & Postponements (جلسات المحكمة وتسلسل التأجيلات) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">Hearings & Postponements (جلسات المحكمة)</h3>
-        <button class="btn btn-sm btn-primary" @onclick="ToggleAddHearingForm">
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Hearings & Postponements (جلسات المحكمة)</h3>
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddHearingForm" style="padding: 6px 12px; font-size: 0.9rem;">
             @(showAddHearingForm ? "Cancel" : "+ Add Hearing")
         </button>
     </div>
 
     @if (showAddHearingForm)
     {
-        <div class="glass-card mb-4 border-primary">
-            <div class="glass-card-body">
-                <h5 class="glass-card-title text-primary mb-3">Record New Hearing</h5>
+        <div class="ios-widget-card mb-4">
+            <div class="p-4">
+                <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">Record New Hearing</h5>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">Hearing Date *</label>
-                        <input type="date" class="form-control" @bind="newHearingDate" @bind:format="yyyy-MM-dd" />
+                        <label class="form-label ios-details fw-bold">Hearing Date *</label>
+                        <input type="date" class="ios-input" @bind="newHearingDate" @bind:format="yyyy-MM-dd" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Purpose / Session Reason</label>
-                        <input class="form-control" @bind="newHearingPurpose" />
+                        <label class="form-label ios-details fw-bold">Purpose / Session Reason</label>
+                        <input class="ios-input" @bind="newHearingPurpose" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Judge Decision</label>
-                        <input class="form-control" @bind="newHearingDecision" />
+                        <label class="form-label ios-details fw-bold">Judge Decision</label>
+                        <input class="ios-input" @bind="newHearingDecision" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Postponement Reason</label>
-                        <input class="form-control" @bind="newPostponementReason" />
+                        <label class="form-label ios-details fw-bold">Postponement Reason</label>
+                        <input class="ios-input" @bind="newPostponementReason" />
                     </div>
                     <div class="col-12">
-                        <button class="btn btn-primary me-2" @onclick="SaveHearing" disabled="@isSavingHearing">
+                        <button class="ios-btn ios-btn-primary me-2" @onclick="SaveHearing" disabled="@isSavingHearing">
                             @(isSavingHearing ? "Saving..." : "Save Hearing")
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ToggleAddHearingForm">Cancel</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddHearingForm">Cancel</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(hearingErrorMessage))
@@ -388,13 +392,13 @@ else
 
     @if (caseDto.Hearings == null || caseDto.Hearings.Count == 0)
     {
-        <div class="alert alert-light border">No hearings recorded for this case yet.</div>
+        <div class="alert alert-light border" style="border-radius: 12px;">No hearings recorded for this case yet.</div>
     }
     else
     {
-        <div class="table table-glass-responsive mb-4">
-            <table class="table table-glass table-hover table-bordered align-middle">
-                <thead class="table table-glass-light">
+        <div class="ios-table-container mb-4">
+            <table class="ios-table">
+                <thead>
                     <tr>
                         <th>Date (التاريخ)</th>
                         <th>Purpose (السبب)</th>
@@ -412,7 +416,7 @@ else
                             <td>@hearing.JudgeDecision</td>
                             <td>@hearing.PostponementReason</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteHearing(hearing.Id)">Delete</button>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteHearing(hearing.Id)">Delete</button>
                             </td>
                         </tr>
                     }
@@ -423,31 +427,31 @@ else
 
     @* ── Case Documents / Files (With Custom Document Titles) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">Case Documents & Files (مستندات القضية)</h3>
-        <button class="btn btn-sm btn-primary" @onclick="ToggleAddDocForm">
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Case Documents & Files (مستندات القضية)</h3>
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddDocForm" style="padding: 6px 12px; font-size: 0.9rem;">
             @(showAddDocForm ? "Cancel" : "+ Upload Document")
         </button>
     </div>
 
     @if (showAddDocForm)
     {
-        <div class="glass-card mb-4 border-primary">
-            <div class="glass-card-body">
-                <h5 class="glass-card-title text-primary mb-3">Upload Document with Custom Title</h5>
+        <div class="ios-widget-card mb-4">
+            <div class="p-4">
+                <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">Upload Document with Custom Title</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Document Title / Description *</label>
-                        <input class="form-control" @bind="newDocTitle" placeholder="e.g. Legal Memo #1, Evidence Photo, Court Notification..." />
+                        <label class="form-label ios-details fw-bold">Document Title / Description *</label>
+                        <input class="ios-input" @bind="newDocTitle" placeholder="e.g. Legal Memo #1, Evidence Photo, Court Notification..." />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">File (PDF / Image) *</label>
-                        <InputFile class="form-control" OnChange="LoadDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                        <label class="form-label ios-details fw-bold">File (PDF / Image) *</label>
+                        <InputFile class="ios-input" OnChange="LoadDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                     </div>
                     <div class="col-12">
-                        <button class="btn btn-primary me-2" @onclick="UploadCaseDocument" disabled="@isUploadingDoc">
+                        <button class="ios-btn ios-btn-primary me-2" @onclick="UploadCaseDocument" disabled="@isUploadingDoc">
                             @(isUploadingDoc ? "Uploading..." : "Upload & Save Document")
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ToggleAddDocForm">Cancel</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddDocForm">Cancel</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(docErrorMessage))
@@ -464,7 +468,7 @@ else
     }
     else if (caseDocuments.Count == 0)
     {
-        <div class="alert alert-light border">No general documents uploaded for this case yet.</div>
+        <div class="alert alert-light border" style="border-radius: 12px;">No general documents uploaded for this case yet.</div>
     }
     else
     {
@@ -472,17 +476,17 @@ else
             @foreach (var doc in caseDocuments)
             {
                 <div class="col">
-                    <div class="glass-card h-100 border shadow-sm">
-                        <div class="glass-card-body text-center d-flex flex-column align-items-center justify-content-between">
-                            <h6 class="glass-card-title text-start w-100 text-truncate font-weight-bold" title="@doc.FileName">
+                    <div class="ios-widget-card h-100">
+                        <div class="ios-content text-center d-flex flex-column align-items-center justify-content-between">
+                            <h6 class="ios-title text-start w-100 text-truncate font-weight-bold" style="font-size: 1.1rem;" title="@doc.FileName">
                                 @doc.FileName
                             </h6>
-                            <div class="my-2">
+                            <div class="my-3 p-3 rounded w-100" style="background: rgba(0,0,0,0.02);">
                                 <FileThumbnail Document="doc" OwnerType="case" OwnerId="caseDto.Id" />
                             </div>
-                            <div class="mt-2 w-100 d-flex justify-content-between align-items-center">
-                                <small class="text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
-                                <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteCaseDocument(doc.Id)">Delete</button>
+                            <div class="mt-auto w-100 d-flex justify-content-between align-items-center border-top pt-3" style="border-color: rgba(0,0,0,0.05) !important;">
+                                <small class="ios-details fw-bold text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteCaseDocument(doc.Id)">Delete</button>
                             </div>
                         </div>
                     </div>
@@ -493,10 +497,10 @@ else
     @if (Auth.IsAdmin)
     {
         <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
-            <h3 class="mb-0 text-success">Financials (الماليات)</h3>
+            <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Financials (الماليات)</h3>
         </div>
-        <div class="glass-card border-success mb-5">
-            <div class="glass-card-body">
+        <div class="ios-widget-card mb-5">
+            <div class="p-4">
                 <SharedFinancials OwnerId="caseDto.Id" OwnerType="case" />
             </div>
         </div>

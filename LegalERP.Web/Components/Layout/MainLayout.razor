@@ -1,16 +1,44 @@
 @inherits LayoutComponentBase
+@inject NavigationManager NavManager
+@inject LegalERP.Web.Services.MockAuthService Auth
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
+@implements IDisposable
 
-<div class="page">
-    <div class="sidebar glass-navbar">
-        <NavMenu />
-    </div>
+<div class="page" style="flex-direction: column;">
+    <main style="flex: 1;">
+        <div class="top-row px-4 d-flex justify-content-between align-items-center gap-2 glass-navbar" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div class="d-flex align-items-center gap-3">
+                <a class="navbar-brand modern-brand text-decoration-none" href="">
+                    <i class="fa-solid fa-pen-nib me-2" style="color: #f59e0b;"></i> ركائز للمحاماة
+                </a>
+                
+                @if (!IsHomePage)
+                {
+                    <NavLink class="nav-link ios-nav-link ios-nav-companies" href="companies" Match="NavLinkMatch.Prefix">
+                        <i class="bi bi-building"></i> @Loc["Companies"]
+                    </NavLink>
+                    <NavLink class="nav-link ios-nav-link ios-nav-clients" href="clients" Match="NavLinkMatch.Prefix">
+                        <i class="bi bi-people"></i> @Loc["Clients"]
+                    </NavLink>
+                    <NavLink class="nav-link ios-nav-link ios-nav-cases" href="cases" Match="NavLinkMatch.Prefix">
+                        <i class="bi bi-briefcase"></i> @Loc["Cases"]
+                    </NavLink>
+                    @if (Auth.IsAdmin)
+                    {
+                        <NavLink class="nav-link ios-nav-link ios-nav-financials" href="financials" Match="NavLinkMatch.Prefix">
+                            <i class="bi bi-cash-stack"></i> @Loc["Financials"]
+                        </NavLink>
+                    }
+                }
+            </div>
 
-    <main>
-        <div class="top-row px-4 d-flex justify-content-end align-items-center gap-2 glass-navbar">
-            <LegalERP.Web.Components.Shared.RoleSwitcher />
-            <LegalERP.Web.Components.Shared.NotificationBell />
-            <LegalERP.Web.Components.Shared.LanguageSwitcher />
-            <LegalERP.Web.Components.Shared.ThemeSwitcher />
+            <div class="d-flex align-items-center gap-2">
+                <LegalERP.Web.Components.Shared.RoleSwitcher />
+                <LegalERP.Web.Components.Shared.NotificationBell />
+                <LegalERP.Web.Components.Shared.LanguageSwitcher />
+                <LegalERP.Web.Components.Shared.ThemeSwitcher />
+            </div>
         </div>
 
         <article class="content px-4">
@@ -18,6 +46,27 @@
         </article>
     </main>
 </div>
+
+@code {
+    private bool IsHomePage => NavManager.ToBaseRelativePath(NavManager.Uri) == "";
+
+    protected override void OnInitialized()
+    {
+        Auth.OnRoleChanged += StateHasChanged;
+        NavManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Auth.OnRoleChanged -= StateHasChanged;
+        NavManager.LocationChanged -= OnLocationChanged;
+    }
+}
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.

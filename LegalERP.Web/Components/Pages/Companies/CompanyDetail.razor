@@ -22,37 +22,38 @@ else
 {
     <PageTitle>@company.CompanyName - @Loc["Details"]</PageTitle>
 
-    <div class="mb-4">
-        <button class="btn btn-outline-secondary" @onclick="GoBack">@Loc["BackToList"]</button>
-        <a href="/companies/edit/@company.Id" class="btn btn-primary ms-2">@Loc["Edit"]</a>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="ios-title mb-0">@company.CompanyName</h1>
+        <div>
+            <button class="ios-btn ios-btn-secondary me-2 text-decoration-none" @onclick="GoBack">@Loc["BackToList"]</button>
+            <a href="/companies/edit/@company.Id" class="ios-btn ios-btn-primary text-decoration-none">@Loc["Edit"]</a>
+        </div>
     </div>
-
-    <h1>@company.CompanyName</h1>
     
     <div class="row">
         @* ── Company Info Card ── *@
         <div class="col-md-8">
-            <div class="glass-card mb-4 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">@Loc["CompanyInfo"]</h5>
-                    <dl class="row">
-                        <dt class="col-sm-4">@Loc["EnglishName"]</dt>
-                        <dd class="col-sm-8">@(company.CompanyNameEn ?? "—")</dd>
+            <div class="ios-widget-card mb-4 h-100">
+                <div class="p-4">
+                    <h5 class="ios-title" style="font-size: 1.25rem;">@Loc["CompanyInfo"]</h5>
+                    <dl class="row mt-3">
+                        <dt class="col-sm-4 ios-details fw-bold">@Loc["EnglishName"]</dt>
+                        <dd class="col-sm-8 mb-3">@(company.CompanyNameEn ?? "—")</dd>
 
-                        <dt class="col-sm-4">@Loc["TradeName"]</dt>
-                        <dd class="col-sm-8">@(company.TradeName ?? "—")</dd>
+                        <dt class="col-sm-4 ios-details fw-bold">@Loc["TradeName"]</dt>
+                        <dd class="col-sm-8 mb-3">@(company.TradeName ?? "—")</dd>
 
-                        <dt class="col-sm-4">@Loc["Category"]</dt>
-                        <dd class="col-sm-8">@company.Category</dd>
+                        <dt class="col-sm-4 ios-details fw-bold">@Loc["Category"]</dt>
+                        <dd class="col-sm-8 mb-3"><span class="ios-status-badge ios-status-gray">@company.Category</span></dd>
 
-                        <dt class="col-sm-4">@Loc["EstablishmentDate"]</dt>
-                        <dd class="col-sm-8">@(company.EstablishmentDate?.ToString("yyyy-MM-dd") ?? "—")</dd>
+                        <dt class="col-sm-4 ios-details fw-bold">@Loc["EstablishmentDate"]</dt>
+                        <dd class="col-sm-8 mb-3">@(company.EstablishmentDate?.ToString("yyyy-MM-dd") ?? "—")</dd>
 
-                        <dt class="col-sm-4">@Loc["RegistrationNumber"]</dt>
-                        <dd class="col-sm-8">@(company.RegistrationNumber ?? "—")</dd>
+                        <dt class="col-sm-4 ios-details fw-bold">@Loc["RegistrationNumber"]</dt>
+                        <dd class="col-sm-8 mb-3">@(company.RegistrationNumber ?? "—")</dd>
 
-                        <dt class="col-sm-4">@Loc["Address"]</dt>
-                        <dd class="col-sm-8">@(company.Address ?? "—")</dd>
+                        <dt class="col-sm-4 ios-details fw-bold">@Loc["Address"]</dt>
+                        <dd class="col-sm-8 mb-3">@(company.Address ?? "—")</dd>
                     </dl>
                 </div>
             </div>
@@ -60,20 +61,20 @@ else
 
         @* ── Incorporation Contract Card ── *@
         <div class="col-md-4">
-            <div class="glass-card mb-4 h-100">
-                <div class="card-body text-center d-flex flex-column align-items-center justify-content-center">
-                    <h5 class="card-title w-100 text-start">@Loc["IncorporationContract"]</h5>
+            <div class="ios-widget-card mb-4 h-100">
+                <div class="p-4 text-center d-flex flex-column align-items-center justify-content-center h-100">
+                    <h5 class="ios-title w-100 text-start" style="font-size: 1.25rem;">@Loc["IncorporationContract"]</h5>
                     @if (company.IncorporationDocument != null)
                     {
-                        <div class="mb-2">
+                        <div class="my-3 p-3 rounded w-100" style="background: rgba(0,0,0,0.02);">
                             <FileThumbnail Document="company.IncorporationDocument" OwnerType="company" OwnerId="company.Id" />
                         </div>
-                        <div class="mt-2 w-100">
-                            <label class="form-label text-muted small">@Loc["ReplaceContract"]</label>
-                            <InputFile class="form-control form-control-sm mb-2" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        <div class="mt-auto w-100 border-top pt-3" style="border-color: rgba(0,0,0,0.05) !important;">
+                            <label class="form-label text-muted small ios-details fw-bold">@Loc["ReplaceContract"]</label>
+                            <InputFile class="ios-input mb-3" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
                             @if (incorporationContractFile != null)
                             {
-                                <button class="btn btn-sm btn-primary w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
+                                <button class="ios-btn ios-btn-primary w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
                                     @(isUploadingIncorporationContract ? Loc["Uploading"] : Loc["SaveNewContract"])
                                 </button>
                             }
@@ -81,12 +82,12 @@ else
                     }
                     else
                     {
-                        <p class="text-muted mb-2">@Loc["NoContractUploaded"]</p>
-                        <div class="w-100">
-                            <InputFile class="form-control form-control-sm mb-2" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        <p class="text-muted mb-4 mt-3">@Loc["NoContractUploaded"]</p>
+                        <div class="w-100 mt-auto">
+                            <InputFile class="ios-input mb-3" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
                             @if (incorporationContractFile != null)
                             {
-                                <button class="btn btn-sm btn-success w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
+                                <button class="ios-btn ios-btn-primary w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
                                     @(isUploadingIncorporationContract ? Loc["Uploading"] : Loc["UploadContract"])
                                 </button>
                             }
@@ -103,30 +104,30 @@ else
 
     @* ── Partners Section ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">@Loc["Partners"]</h3>
-        <button class="btn btn-sm btn-success" @onclick="ToggleAddPartnerForm">
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Partners"]</h3>
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartnerForm" style="padding: 6px 12px; font-size: 0.9rem;">
             @(showAddPartnerForm ? Loc["Cancel"] : Loc["AddPartner"])
         </button>
     </div>
 
     @if (showAddPartnerForm)
     {
-        <div class="glass-card mb-3 border-success">
-            <div class="card-body">
-                <h5 class="card-title text-success">@Loc["AddCompanyPartner"]</h5>
+        <div class="ios-widget-card mb-4" style="border: 1px solid rgba(52, 211, 153, 0.3);">
+            <div class="p-4">
+                <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">@Loc["AddCompanyPartner"]</h5>
                 <div class="row g-3">
                     <div class="col-md-8">
-                        <label class="form-label">@Loc["SearchClientByName"] *</label>
-                        <input class="form-control" @bind="clientSearchTerm" @bind:event="oninput"
+                        <label class="form-label ios-details fw-bold">@Loc["SearchClientByName"] *</label>
+                        <input class="ios-input" @bind="clientSearchTerm" @bind:event="oninput"
                                @onkeyup="HandleClientSearch" placeholder="@Loc["TypeClientNameSearch"]" />
                         @if (clientSearchResults != null)
                         {
-                            <div class="list-group mt-1 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100;">
+                            <div class="list-group mt-2 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100; border-radius: 12px;">
                                 @if (clientSearchResults.Count > 0)
                                 {
                                     @foreach (var c in clientSearchResults)
                                     {
-                                        <button type="button" class="list-group-item list-group-item-action @(selectedClientId == c.Id ? "active" : "")"
+                                        <button type="button" class="list-group-item list-group-item-action border-0 @(selectedClientId == c.Id ? "active" : "")"
                                                 @onclick="() => SelectClient(c)">
                                             <strong>@c.FullName</strong>
                                             @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
@@ -140,35 +141,35 @@ else
                                         </button>
                                     }
                                 }
-                                <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning text-center">
+                                <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning border-0 text-center">
                                     <strong>➕ @Loc["ClientNotFoundAddNew"]</strong>
                                 </a>
                             </div>
                         }
                         @if (selectedClientId.HasValue)
                         {
-                            <div class="alert alert-success mt-2 mb-0 py-2 d-flex justify-content-between align-items-center">
+                            <div class="alert alert-success mt-3 mb-0 py-2 d-flex justify-content-between align-items-center" style="border-radius: 12px;">
                                 <span>✅ @Loc["Selected"]: <strong>@selectedClientName</strong></span>
-                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearClientSelection">@Loc["Clear"]</button>
+                                <button type="button" class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="ClearClientSelection">@Loc["Clear"]</button>
                             </div>
                         }
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label">@Loc["OwnershipPercentage"]</label>
-                        <input type="number" step="0.01" class="form-control" @bind="newPartnerOwnership" placeholder="e.g. 25.5" />
+                        <label class="form-label ios-details fw-bold">@Loc["OwnershipPercentage"]</label>
+                        <input type="number" step="0.01" class="ios-input" @bind="newPartnerOwnership" placeholder="e.g. 25.5" />
                     </div>
 
-                    <div class="col-12 mt-3">
-                        <button class="btn btn-success me-2" @onclick="AddPartner" disabled="@isSavingPartner">
+                    <div class="col-12 mt-4">
+                        <button class="ios-btn ios-btn-primary me-2" @onclick="AddPartner" disabled="@isSavingPartner">
                             @(isSavingPartner ? Loc["Saving"] : Loc["SavePartner"])
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ToggleAddPartnerForm">@Loc["Cancel"]</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddPartnerForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(partnerErrorMessage))
                 {
-                    <p class="text-danger mt-2">@partnerErrorMessage</p>
+                    <p class="text-danger mt-2 mb-0">@partnerErrorMessage</p>
                 }
             </div>
         </div>
@@ -176,81 +177,93 @@ else
 
     @if (company.Partners.Count == 0)
     {
-        <p class="text-muted">@Loc["NoPartnersRecorded"]</p>
+        <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoPartnersRecorded"]</div>
     }
     else
     {
-        <table class="table table-hover align-middle table-glass">
-            <thead>
-                <tr>
-                    <th>@Loc["Name"]</th>
-                    <th>@Loc["NationalID"]</th>
-                    <th>@Loc["OwnershipPercentage"]</th>
-                    <th>@Loc["IDDocument"]</th>
-                    <th>@Loc["Actions"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var partner in company.Partners)
-                {
+        <div class="ios-table-container mb-4">
+            <table class="ios-table">
+                <thead>
                     <tr>
-                        <td>@partner.FullName</td>
-                        <td>@(partner.NationalIdNumber ?? "—")</td>
-                        <td>@(partner.OwnershipPercentage?.ToString("0.00") ?? "—")%</td>
-                        <td>
-                            @if (partner.NationalIdDocument != null)
-                            {
-                                <FileThumbnail Document="partner.NationalIdDocument" OwnerType="partner" OwnerId="partner.Id" />
-                            }
-                            else
-                            {
-                                <span class="text-muted">—</span>
-                            }
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button>
-                        </td>
+                        <th>@Loc["Name"]</th>
+                        <th>@Loc["NationalID"]</th>
+                        <th>@Loc["OwnershipPercentage"]</th>
+                        <th>@Loc["IDDocument"]</th>
+                        <th>@Loc["Actions"]</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var partner in company.Partners)
+                    {
+                        <tr>
+                            <td><strong>@partner.FullName</strong></td>
+                            <td>@(partner.NationalIdNumber ?? "—")</td>
+                            <td>
+                                @if (partner.OwnershipPercentage.HasValue)
+                                {
+                                    <span class="ios-status-badge ios-status-blue">@partner.OwnershipPercentage.Value.ToString("0.00")%</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                @if (partner.NationalIdDocument != null)
+                                {
+                                    <FileThumbnail Document="partner.NationalIdDocument" OwnerType="partner" OwnerId="partner.Id" />
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 
     @* ── Amendments Section ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="mb-0">@Loc["Amendments"]</h3>
-        <button class="btn btn-sm btn-success" @onclick="ToggleAddAmendmentForm">
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Amendments"]</h3>
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddAmendmentForm" style="padding: 6px 12px; font-size: 0.9rem;">
             @(showAddAmendmentForm ? Loc["Cancel"] : Loc["AddAmendment"])
         </button>
     </div>
 
     @if (showAddAmendmentForm)
     {
-        <div class="glass-card mb-3 border-success">
-            <div class="card-body">
-                <h5 class="card-title text-success">@Loc["NewAmendment"]</h5>
+        <div class="ios-widget-card mb-4" style="border: 1px solid rgba(59, 130, 246, 0.3);">
+            <div class="p-4">
+                <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">@Loc["NewAmendment"]</h5>
                 <div class="row g-3">
                     <div class="col-md-5">
-                        <label class="form-label">@Loc["TitleLeaveBlankAuto"]</label>
-                        <input class="form-control" @bind="newAmendmentTitle" placeholder="@NextAmendmentPlaceholder" />
+                        <label class="form-label ios-details fw-bold">@Loc["TitleLeaveBlankAuto"]</label>
+                        <input class="ios-input" @bind="newAmendmentTitle" placeholder="@NextAmendmentPlaceholder" />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">@Loc["Date"]</label>
-                        <input type="date" class="form-control" @bind="newAmendmentDate" />
+                        <label class="form-label ios-details fw-bold">@Loc["Date"]</label>
+                        <input type="date" class="ios-input" @bind="newAmendmentDate" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">@Loc["AmendmentContract"]</label>
-                        <InputFile class="form-control" OnChange="LoadAmendmentFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        <label class="form-label ios-details fw-bold">@Loc["AmendmentContract"]</label>
+                        <InputFile class="ios-input" OnChange="LoadAmendmentFile" accept=".pdf,.jpg,.jpeg,.png" />
                     </div>
-                    <div class="col-12 mt-3">
-                        <button class="btn btn-success" @onclick="AddAmendment" disabled="@isSavingAmendment">
+                    <div class="col-12 mt-4">
+                        <button class="ios-btn ios-btn-primary me-2" @onclick="AddAmendment" disabled="@isSavingAmendment">
                             @(isSavingAmendment ? Loc["Saving"] : Loc["SaveAmendment"])
                         </button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddAmendmentForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(amendmentErrorMessage))
                 {
-                    <p class="text-danger mt-2">@amendmentErrorMessage</p>
+                    <p class="text-danger mt-2 mb-0">@amendmentErrorMessage</p>
                 }
             </div>
         </div>
@@ -258,53 +271,55 @@ else
 
     @if (company.Amendments.Count == 0)
     {
-        <p class="text-muted">@Loc["NoAmendmentsRecorded"]</p>
+        <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoAmendmentsRecorded"]</div>
     }
     else
     {
-        <table class="table table-hover align-middle table-glass">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>@Loc["Title"]</th>
-                    <th>@Loc["Date"]</th>
-                    <th>@Loc["Contract"]</th>
-                    <th>@Loc["Actions"]</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var amendment in company.Amendments.OrderBy(a => a.SequenceNumber))
-                {
+        <div class="ios-table-container mb-4">
+            <table class="ios-table">
+                <thead>
                     <tr>
-                        <td>@amendment.SequenceNumber</td>
-                        <td>@amendment.Title</td>
-                        <td>@amendment.AmendmentDate?.ToString("yyyy-MM-dd")</td>
-                        <td>
-                            @if (amendment.Document != null)
-                            {
-                                <FileThumbnail Document="amendment.Document" OwnerType="amendment" OwnerId="amendment.Id" />
-                            }
-                            else
-                            {
-                                <span class="text-muted">—</span>
-                            }
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteAmendment(amendment.Id)">@Loc["Delete"]</button>
-                        </td>
+                        <th>#</th>
+                        <th>@Loc["Title"]</th>
+                        <th>@Loc["Date"]</th>
+                        <th>@Loc["Contract"]</th>
+                        <th>@Loc["Actions"]</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var amendment in company.Amendments.OrderBy(a => a.SequenceNumber))
+                    {
+                        <tr>
+                            <td><span class="ios-status-badge ios-status-gray">@amendment.SequenceNumber</span></td>
+                            <td><strong>@amendment.Title</strong></td>
+                            <td>@(amendment.AmendmentDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                            <td>
+                                @if (amendment.Document != null)
+                                {
+                                    <FileThumbnail Document="amendment.Document" OwnerType="amendment" OwnerId="amendment.Id" />
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteAmendment(amendment.Id)">@Loc["Delete"]</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
     }
 
     @if (Auth.IsAdmin)
     {
         <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
-            <h3 class="mb-0 text-success">@Loc["Financials"]</h3>
+            <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Financials"]</h3>
         </div>
-        <div class="glass-card border-success mb-5">
-            <div class="card-body">
+        <div class="ios-widget-card mb-5">
+            <div class="p-4">
                 <SharedFinancials OwnerId="company.Id" OwnerType="company" />
             </div>
         </div>

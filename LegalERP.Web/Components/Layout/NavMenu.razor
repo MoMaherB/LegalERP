@@ -6,7 +6,9 @@
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
-        <a class="navbar-brand" href="">LegalERP</a>
+        <a class="navbar-brand modern-brand" href="">
+            <i class="fa-solid fa-pen-nib me-2" style="color: #f59e0b;"></i> ركائز للمحاماة
+        </a>
     </div>
 </div>
 
@@ -15,29 +17,29 @@
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <NavLink class="nav-link nav-home" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> @Loc["Home"]
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="companies">
+            <NavLink class="nav-link nav-companies" href="companies">
                 <span class="bi bi-building-nav-menu" aria-hidden="true"></span> @Loc["Companies"]
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="clients">
+            <NavLink class="nav-link nav-clients" href="clients">
                 <span class="bi bi-people-fill-nav-menu" aria-hidden="true"></span> @Loc["Clients"]
             </NavLink>
         </div>
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="cases">
+            <NavLink class="nav-link nav-cases" href="cases">
                 <span class="bi bi-briefcase-nav-menu" aria-hidden="true"></span> @Loc["Cases"]
             </NavLink>
         </div>
         @if (Auth.IsAdmin)
         {
             <div class="nav-item px-3">
-                <NavLink class="nav-link" href="financials">
+                <NavLink class="nav-link nav-financials" href="financials">
                     <span class="bi bi-cash-stack-nav-menu" aria-hidden="true"></span> @Loc["Financials"]
                 </NavLink>
             </div>

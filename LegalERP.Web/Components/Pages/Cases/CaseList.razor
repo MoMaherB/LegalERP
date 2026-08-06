@@ -12,43 +12,41 @@
 <PageTitle>@Loc["CasesManagement"]</PageTitle>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>@Loc["CasesManagement"]</h1>
-    <a href="/cases/new" class="btn btn-primary">@Loc["AddNewCase"]</a>
+    <h1 class="ios-title">@Loc["CasesManagement"]</h1>
+    <a href="/cases/new" class="ios-btn ios-btn-primary text-decoration-none">@Loc["AddNewCase"]</a>
 </div>
 
 <!-- Search & Filter Controls -->
-<div class="glass-card mb-4">
-    <div class="card-body">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label font-weight-bold">@Loc["Search"]</label>
-                <input type="text" class="form-control" placeholder="@Loc["SearchPlaceholder"]" 
-                       @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label font-weight-bold">@Loc["CaseType"]</label>
-                <select class="form-select" @bind="selectedType">
-                    <option value="">@Loc["AllTypes"]</option>
-                    @foreach (var t in Enum.GetValues<CaseType>())
-                    {
-                        <option value="@t">@t</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label font-weight-bold">@Loc["Status"]</label>
-                <select class="form-select" @bind="selectedStatus">
-                    <option value="">@Loc["AllStatuses"]</option>
-                    @foreach (var s in Enum.GetValues<CaseStatus>())
-                    {
-                        <option value="@s">@s</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2 d-flex gap-2">
-                <button class="btn btn-secondary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
-            </div>
+<div class="ios-widget-card mb-4">
+    <div class="row g-3 align-items-end w-100 m-0">
+        <div class="col-md-4">
+            <label class="form-label font-weight-bold ios-details">@Loc["Search"]</label>
+            <input type="text" class="ios-input" placeholder="@Loc["SearchPlaceholder"]" 
+                   @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label font-weight-bold ios-details">@Loc["CaseType"]</label>
+            <select class="ios-select" @bind="selectedType">
+                <option value="">@Loc["AllTypes"]</option>
+                @foreach (var t in Enum.GetValues<CaseType>())
+                {
+                    <option value="@t">@t</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label font-weight-bold ios-details">@Loc["Status"]</label>
+            <select class="ios-select" @bind="selectedStatus">
+                <option value="">@Loc["AllStatuses"]</option>
+                @foreach (var s in Enum.GetValues<CaseStatus>())
+                {
+                    <option value="@s">@s</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button class="ios-btn ios-btn-primary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
+            <button class="ios-btn ios-btn-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
         </div>
     </div>
 </div>
@@ -65,61 +63,63 @@ else if (cases.Count == 0)
 }
 else
 {
-    <table class="table table-hover align-middle table-glass">
-        <thead>
-            <tr>
-                <th>@Loc["CaseNumber"]</th>
-                <th>@Loc["TitleSubject"]</th>
-                <th>@Loc["Type"]</th>
-                <th>@Loc["Court"]</th>
-                <th>@Loc["Status"]</th>
-                <th>@Loc["FilingDate"]</th>
-                <th>@Loc["Actions"]</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var c in cases)
-            {
+    <div class="ios-table-container">
+        <table class="ios-table">
+            <thead>
                 <tr>
-                    <td><strong>@c.CaseNumber</strong></td>
-                    <td>@c.Title</td>
-                    <td><span class="badge bg-secondary">@c.CaseType</span></td>
-                    <td>@(string.IsNullOrWhiteSpace(c.CourtName) ? "—" : c.CourtName)</td>
-                    <td>
-                        @if (c.Status == CaseStatus.Active)
-                        {
-                            <span class="badge bg-warning text-dark">@Loc["Active"]</span>
-                        }
-                        else
-                        {
-                            @if (c.Outcome == CaseOutcome.Won)
+                    <th>@Loc["CaseNumber"]</th>
+                    <th>@Loc["TitleSubject"]</th>
+                    <th>@Loc["Type"]</th>
+                    <th>@Loc["Court"]</th>
+                    <th>@Loc["Status"]</th>
+                    <th>@Loc["FilingDate"]</th>
+                    <th class="text-center">@Loc["Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in cases)
+                {
+                    <tr>
+                        <td><strong>@c.CaseNumber</strong></td>
+                        <td>@c.Title</td>
+                        <td><span class="ios-status-badge ios-status-gray">@c.CaseType</span></td>
+                        <td>@(string.IsNullOrWhiteSpace(c.CourtName) ? "—" : c.CourtName)</td>
+                        <td>
+                            @if (c.Status == CaseStatus.Active)
                             {
-                                <span class="badge bg-success">@Loc["ClosedWon"]</span>
-                            }
-                            else if (c.Outcome == CaseOutcome.Lost)
-                            {
-                                <span class="badge bg-danger">@Loc["ClosedLost"]</span>
-                            }
-                            else if (c.Outcome == CaseOutcome.Settled)
-                            {
-                                <span class="badge bg-info text-dark">@Loc["ClosedSettled"]</span>
+                                <span class="ios-status-badge ios-status-amber">@Loc["Active"]</span>
                             }
                             else
                             {
-                                <span class="badge bg-success">@Loc["Closed"]</span>
+                                @if (c.Outcome == CaseOutcome.Won)
+                                {
+                                    <span class="ios-status-badge ios-status-green">@Loc["ClosedWon"]</span>
+                                }
+                                else if (c.Outcome == CaseOutcome.Lost)
+                                {
+                                    <span class="ios-status-badge ios-status-red">@Loc["ClosedLost"]</span>
+                                }
+                                else if (c.Outcome == CaseOutcome.Settled)
+                                {
+                                    <span class="ios-status-badge ios-status-blue">@Loc["ClosedSettled"]</span>
+                                }
+                                else
+                                {
+                                    <span class="ios-status-badge ios-status-green">@Loc["Closed"]</span>
+                                }
                             }
-                        }
-                    </td>
-                    <td>@(c.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</td>
-                    <td>
-                        <a href="/cases/@c.Id" class="btn btn-sm btn-info me-1">@Loc["View"]</a>
-                        <a href="/cases/edit/@c.Id" class="btn btn-sm btn-secondary me-1">@Loc["Edit"]</a>
-                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteCase(c.Id)">@Loc["Delete"]</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+                        </td>
+                        <td>@(c.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td class="text-center">
+                            <a href="/cases/@c.Id" class="ios-btn ios-btn-secondary me-1 text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["View"]</a>
+                            <a href="/cases/edit/@c.Id" class="ios-btn ios-btn-secondary me-1 text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["Edit"]</a>
+                            <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteCase(c.Id)">@Loc["Delete"]</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }
 
 @code {

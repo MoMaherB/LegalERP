@@ -25,39 +25,39 @@ else if (summary == null)
 else
 {
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0 text-success">@Loc["FirmFinancialsOverview"]</h2>
+        <h2 class="ios-title mb-0">@Loc["FirmFinancialsOverview"]</h2>
     </div>
 
     <!-- Top Level Metrics -->
     <div class="row mb-5">
         <div class="col-md-4">
-            <div class="glass-card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-muted">@Loc["CasesTotal"]</h5>
+            <div class="ios-widget-card h-100">
+                <div class="ios-content">
+                    <h5 class="ios-title text-muted" style="font-size: 1.2rem;">@Loc["CasesTotal"]</h5>
                     <div class="mb-2">
-                        <small class="text-muted">@Loc["Agreed"]: @summary.TotalCaseAgreedFees.ToString("N2")</small>
+                        <small class="ios-details">@Loc["Agreed"]: @summary.TotalCaseAgreedFees.ToString("N2")</small>
                     </div>
-                    <h3 class="mb-0 text-primary">@summary.TotalCaseCollected.ToString("N2") @Loc["Collected"]</h3>
+                    <h3 class="mb-0 text-primary fw-bold">@summary.TotalCaseCollected.ToString("N2") @Loc["Collected"]</h3>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="glass-card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <h5 class="card-title text-muted">@Loc["CompaniesTotal"]</h5>
+            <div class="ios-widget-card h-100">
+                <div class="ios-content">
+                    <h5 class="ios-title text-muted" style="font-size: 1.2rem;">@Loc["CompaniesTotal"]</h5>
                     <div class="mb-2">
-                        <small class="text-muted">@Loc["Agreed"]: @summary.TotalCompanyAgreedFees.ToString("N2")</small>
+                        <small class="ios-details">@Loc["Agreed"]: @summary.TotalCompanyAgreedFees.ToString("N2")</small>
                     </div>
-                    <h3 class="mb-0 text-primary">@summary.TotalCompanyCollected.ToString("N2") @Loc["Collected"]</h3>
+                    <h3 class="mb-0 text-primary fw-bold">@summary.TotalCompanyCollected.ToString("N2") @Loc["Collected"]</h3>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="glass-card border-success shadow h-100">
-                <div class="card-body bg-success bg-opacity-10">
-                    <h5 class="card-title text-success fw-bold">@Loc["FirmGrandTotal"]</h5>
+            <div class="ios-widget-card h-100" style="background: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.4);">
+                <div class="ios-content">
+                    <h5 class="ios-title text-success fw-bold" style="font-size: 1.2rem;">@Loc["FirmGrandTotal"]</h5>
                     <div class="mb-2">
                         <small class="text-success fw-bold">@Loc["TotalExpected"]: @summary.FirmTotalAgreedFees.ToString("N2")</small>
                     </div>
@@ -68,74 +68,71 @@ else
     </div>
 
     <!-- Unified Data Table -->
-    <div class="glass-card border-0 shadow-sm">
-        <div class="glass-card-header">
-            <h5 class="mb-0">@Loc["AllFinancialRecords"]</h5>
-        </div>
-        <div class="card-body">
-            @if (!summary.Records.Any())
-            {
-                <p class="text-muted mb-0">@Loc["NoFinancialRecordsFound"]</p>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle table-glass">
-                        <thead class="table-light">
+    <div class="ios-widget-card border-0 shadow-sm p-4">
+        <h5 class="ios-title mb-4" style="font-size: 1.4rem;">@Loc["AllFinancialRecords"]</h5>
+        
+        @if (!summary.Records.Any())
+        {
+            <p class="text-muted mb-0">@Loc["NoFinancialRecordsFound"]</p>
+        }
+        else
+        {
+            <div class="ios-table-container">
+                <table class="ios-table">
+                    <thead>
+                        <tr>
+                            <th>@Loc["Type"]</th>
+                            <th>@Loc["Name"]</th>
+                            <th>@Loc["ReferenceNo"]</th>
+                            <th>@Loc["AgreedFee"]</th>
+                            <th>@Loc["Collected"]</th>
+                            <th>@Loc["Remaining"]</th>
+                            <th>@Loc["Status"]</th>
+                            <th class="text-center">@Loc["Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var record in summary.Records)
+                        {
                             <tr>
-                                <th>@Loc["Type"]</th>
-                                <th>@Loc["Name"]</th>
-                                <th>@Loc["ReferenceNo"]</th>
-                                <th>@Loc["AgreedFee"]</th>
-                                <th>@Loc["Collected"]</th>
-                                <th>@Loc["Remaining"]</th>
-                                <th>@Loc["Status"]</th>
-                                <th class="text-end">@Loc["Actions"]</th>
+                                <td>
+                                    @if (record.OwnerType == "Case")
+                                    {
+                                        <span class="ios-status-badge ios-status-blue">@Loc["Case"]</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="ios-status-badge ios-status-amber">@Loc["Company"]</span>
+                                    }
+                                </td>
+                                <td class="fw-bold">@record.OwnerName</td>
+                                <td>@record.ReferenceNumber</td>
+                                <td>@(record.AgreedFee?.ToString("N2") ?? "—")</td>
+                                <td class="fw-bold text-success">@record.TotalCollected.ToString("N2")</td>
+                                <td class="@(record.RemainingBalance > 0 ? "text-danger fw-bold" : "text-success fw-bold")">
+                                    @record.RemainingBalance.ToString("N2")
+                                </td>
+                                <td>
+                                    <span class="ios-status-badge @GetBadgeColor(record.PaymentStatus)">
+                                        @Loc[record.PaymentStatus.ToString()]
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    @if (record.OwnerType == "Case")
+                                    {
+                                        <a href="/cases/@record.OwnerId" class="ios-btn ios-btn-secondary text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["ViewCase"]</a>
+                                    }
+                                    else
+                                    {
+                                        <a href="/companies/@record.OwnerId" class="ios-btn ios-btn-secondary text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["ViewCompany"]</a>
+                                    }
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var record in summary.Records)
-                            {
-                                <tr>
-                                    <td>
-                                        @if (record.OwnerType == "Case")
-                                        {
-                                            <span class="badge bg-primary">@Loc["Case"]</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-info text-dark">@Loc["Company"]</span>
-                                        }
-                                    </td>
-                                    <td class="fw-bold">@record.OwnerName</td>
-                                    <td>@record.ReferenceNumber</td>
-                                    <td>@(record.AgreedFee?.ToString("N2") ?? "—")</td>
-                                    <td class="fw-bold text-success">@record.TotalCollected.ToString("N2")</td>
-                                    <td class="@(record.RemainingBalance > 0 ? "text-danger" : "text-success")">
-                                        @record.RemainingBalance.ToString("N2")
-                                    </td>
-                                    <td>
-                                        <span class="badge @GetBadgeColor(record.PaymentStatus)">
-                                            @Loc[record.PaymentStatus.ToString()]
-                                        </span>
-                                    </td>
-                                    <td class="text-end">
-                                        @if (record.OwnerType == "Case")
-                                        {
-                                            <a href="/cases/@record.OwnerId" class="btn btn-sm btn-outline-secondary">@Loc["ViewCase"]</a>
-                                        }
-                                        else
-                                        {
-                                            <a href="/companies/@record.OwnerId" class="btn btn-sm btn-outline-secondary">@Loc["ViewCompany"]</a>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 }
 
@@ -163,9 +160,9 @@ else
 
     private string GetBadgeColor(PaymentStatus status) => status switch
     {
-        PaymentStatus.Paid => "bg-success",
-        PaymentStatus.PartiallyPaid => "bg-warning text-dark",
-        PaymentStatus.Unpaid => "bg-danger",
-        _ => "bg-secondary"
+        PaymentStatus.Paid => "ios-status-green",
+        PaymentStatus.PartiallyPaid => "ios-status-amber",
+        PaymentStatus.Unpaid => "ios-status-red",
+        _ => "ios-status-gray"
     };
 }

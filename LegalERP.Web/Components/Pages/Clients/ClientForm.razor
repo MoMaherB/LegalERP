@@ -13,7 +13,10 @@
 
 <PageTitle>@(IsEditMode ? Loc["EditClient"] : Loc["AddNewClient"])</PageTitle>
 
-<h1 class="mb-4">@(IsEditMode ? Loc["EditClient"] : Loc["AddNewClient"])</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="ios-title mb-0">@(IsEditMode ? Loc["EditClient"] : Loc["AddNewClient"])</h1>
+    <a href="/clients" class="ios-btn ios-btn-secondary text-decoration-none">@Loc["Cancel"]</a>
+</div>
 
 @if (isLoading)
 {
@@ -24,75 +27,71 @@ else
     <EditForm Model="model" OnValidSubmit="HandleSubmit">
         <DataAnnotationsValidator />
 
-        <div class="glass-card mb-4">
-            <div class="glass-card-header">
-                <h5 class="mb-0">@Loc["PersonalInformation"]</h5>
-            </div>
-            <div class="card-body">
+        <div class="ios-widget-card mb-4">
+            <div class="p-4">
+                <h5 class="ios-title mb-3" style="font-size: 1.25rem;">@Loc["PersonalInformation"]</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">@Loc["FullNameArabic"] *</label>
-                        <InputText class="form-control" @bind-Value="model.FullName" placeholder="@Loc["FullNameArabicPlaceholder"]" />
+                        <label class="form-label ios-details fw-bold">@Loc["FullNameArabic"] *</label>
+                        <InputText class="ios-input" @bind-Value="model.FullName" placeholder="@Loc["FullNameArabicPlaceholder"]" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">@Loc["FullNameEnglish"]</label>
-                        <InputText class="form-control" @bind-Value="model.FullNameEn" placeholder="@Loc["FullNameEnglishPlaceholder"]" />
+                        <label class="form-label ios-details fw-bold">@Loc["FullNameEnglish"]</label>
+                        <InputText class="ios-input" @bind-Value="model.FullNameEn" placeholder="@Loc["FullNameEnglishPlaceholder"]" />
                     </div>
 
                     <div class="col-md-4">
-                        <label class="form-label">@Loc["NationalIdNumber"] *</label>
-                        <InputText class="form-control" @bind-Value="model.NationalIdNumber" placeholder="@Loc["NationalIdNumberPlaceholder"]" />
+                        <label class="form-label ios-details fw-bold">@Loc["NationalIdNumber"] *</label>
+                        <InputText class="ios-input" @bind-Value="model.NationalIdNumber" placeholder="@Loc["NationalIdNumberPlaceholder"]" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">@Loc["PhoneNumber"]</label>
-                        <InputText class="form-control" @bind-Value="model.PhoneNumber" placeholder="@Loc["PhoneNumberPlaceholder"]" />
+                        <label class="form-label ios-details fw-bold">@Loc["PhoneNumber"]</label>
+                        <InputText class="ios-input" @bind-Value="model.PhoneNumber" placeholder="@Loc["PhoneNumberPlaceholder"]" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">@Loc["Email"]</label>
-                        <InputText class="form-control" @bind-Value="model.Email" placeholder="@Loc["EmailPlaceholder"]" />
-                    </div>
-
-                    <div class="col-12">
-                        <label class="form-label">@Loc["Address"]</label>
-                        <InputText class="form-control" @bind-Value="model.Address" placeholder="@Loc["AddressPlaceholder"]" />
+                        <label class="form-label ios-details fw-bold">@Loc["Email"]</label>
+                        <InputText class="ios-input" @bind-Value="model.Email" placeholder="@Loc["EmailPlaceholder"]" />
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label">@Loc["Notes"]</label>
-                        <InputTextArea class="form-control" @bind-Value="model.Notes" rows="3" placeholder="@Loc["NotesPlaceholder"]" />
+                        <label class="form-label ios-details fw-bold">@Loc["Address"]</label>
+                        <InputText class="ios-input" @bind-Value="model.Address" placeholder="@Loc["AddressPlaceholder"]" />
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label ios-details fw-bold">@Loc["Notes"]</label>
+                        <InputTextArea class="ios-input" @bind-Value="model.Notes" rows="3" placeholder="@Loc["NotesPlaceholder"]" />
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="glass-card mb-4">
-            <div class="glass-card-header">
-                <h5 class="mb-0">@Loc["Documents"]</h5>
-            </div>
-            <div class="card-body">
+        <div class="ios-widget-card mb-4">
+            <div class="p-4">
+                <h5 class="ios-title mb-3" style="font-size: 1.25rem;">@Loc["Documents"]</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">@Loc["NationalIdScan"]</label>
-                        <InputFile class="form-control" OnChange="LoadNationalIdFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        <label class="form-label ios-details fw-bold">@Loc["NationalIdScan"]</label>
+                        <InputFile class="ios-input" OnChange="LoadNationalIdFile" accept=".pdf,.jpg,.jpeg,.png" />
                         @if (existingNationalIdDoc != null)
                         {
-                            <small class="text-success mt-1 d-block">@Loc["Current"]: @existingNationalIdDoc.FileName</small>
+                            <small class="text-success mt-1 d-block fw-bold">@Loc["Current"]: @existingNationalIdDoc.FileName</small>
                         }
                         @if (nationalIdFile != null)
                         {
-                            <small class="text-primary mt-1 d-block">@Loc["NewFile"]: @nationalIdFile.Name</small>
+                            <small class="text-primary mt-1 d-block fw-bold">@Loc["NewFile"]: @nationalIdFile.Name</small>
                         }
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">@Loc["PowerOfAttorney"]</label>
-                        <InputFile class="form-control" OnChange="LoadAttorneyFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        <label class="form-label ios-details fw-bold">@Loc["PowerOfAttorney"]</label>
+                        <InputFile class="ios-input" OnChange="LoadAttorneyFile" accept=".pdf,.jpg,.jpeg,.png" />
                         @if (existingAttorneyDoc != null)
                         {
-                            <small class="text-success mt-1 d-block">@Loc["Current"]: @existingAttorneyDoc.FileName</small>
+                            <small class="text-success mt-1 d-block fw-bold">@Loc["Current"]: @existingAttorneyDoc.FileName</small>
                         }
                         @if (attorneyFile != null)
                         {
-                            <small class="text-primary mt-1 d-block">@Loc["NewFile"]: @attorneyFile.Name</small>
+                            <small class="text-primary mt-1 d-block fw-bold">@Loc["NewFile"]: @attorneyFile.Name</small>
                         }
                     </div>
                 </div>
@@ -105,10 +104,9 @@ else
         }
 
         <div class="d-flex gap-2">
-            <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+            <button type="submit" class="ios-btn ios-btn-primary" disabled="@isSubmitting">
                 @(isSubmitting ? Loc["Saving"] : (IsEditMode ? Loc["SaveChanges"] : Loc["CreateClient"]))
             </button>
-            <a href="/clients" class="btn btn-outline-secondary">@Loc["Cancel"]</a>
         </div>
     </EditForm>
 }
