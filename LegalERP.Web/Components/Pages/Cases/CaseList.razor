@@ -30,7 +30,7 @@
                 <option value="">@Loc["AllTypes"]</option>
                 @foreach (var t in Enum.GetValues<CaseType>())
                 {
-                    <option value="@t">@t</option>
+                    <option value="@t">@Loc[t.ToString()]</option>
                 }
             </select>
         </div>
@@ -40,7 +40,7 @@
                 <option value="">@Loc["AllStatuses"]</option>
                 @foreach (var s in Enum.GetValues<CaseStatus>())
                 {
-                    <option value="@s">@s</option>
+                    <option value="@s">@Loc[s.ToString()]</option>
                 }
             </select>
         </div>
@@ -82,7 +82,7 @@ else
                     <tr>
                         <td><strong>@c.CaseNumber</strong></td>
                         <td>@c.Title</td>
-                        <td><span class="ios-status-badge ios-status-gray">@c.CaseType</span></td>
+                        <td><span class="ios-status-badge ios-status-gray">@Loc[c.CaseType.ToString()]</span></td>
                         <td>@(string.IsNullOrWhiteSpace(c.CourtName) ? "—" : c.CourtName)</td>
                         <td>
                             @if (c.Status == CaseStatus.Active)
@@ -163,7 +163,7 @@ else
 
     private async Task DeleteCase(Guid id)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this case? This action cannot be undone.");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["DeleteCaseConfirm"].Value);
         if (confirmed)
         {
             await CaseApi.DeleteAsync(id);

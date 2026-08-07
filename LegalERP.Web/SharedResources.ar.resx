@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -338,5 +338,323 @@
   </data>
   <data name="No" xml:space="preserve">
     <value>لا</value>
+  </data>
+  <data name="CasesManagement" xml:space="preserve">
+    <value>إدارة القضايا</value>
+  </data>
+  <data name="AddNewCase" xml:space="preserve">
+    <value>إضافة قضية جديدة</value>
+  </data>
+  <data name="SearchPlaceholder" xml:space="preserve">
+    <value>ابحث برقم أو عنوان القضية...</value>
+  </data>
+  <data name="AllTypes" xml:space="preserve">
+    <value>كل الأنواع</value>
+  </data>
+  <data name="AllStatuses" xml:space="preserve">
+    <value>كل الحالات</value>
+  </data>
+  <data name="NoCasesFound" xml:space="preserve">
+    <value>لا توجد قضايا مطابقة للبحث.</value>
+  </data>
+  <data name="Court" xml:space="preserve">
+    <value>المحكمة</value>
+  </data>
+  <data name="ClosedWon" xml:space="preserve">
+    <value>منتهية (مكسب)</value>
+  </data>
+  <data name="ClosedLost" xml:space="preserve">
+    <value>منتهية (خسارة)</value>
+  </data>
+  <data name="ClosedSettled" xml:space="preserve">
+    <value>منتهية (تصالح)</value>
+  </data>
+  <data name="TitleSubject" xml:space="preserve">
+    <value>الموضوع</value>
+  </data>
+  <data name="DeleteCaseConfirm" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذه القضية؟ لا يمكن التراجع عن هذا الإجراء.</value>
+  </data>
+  <data name="Reset" xml:space="preserve">
+    <value>إعادة تعيين</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>عرض</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>النوع</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>جاري التحميل...</value>
+  </data>
+  <data name="EditCase" xml:space="preserve">
+    <value>تعديل القضية</value>
+  </data>
+  <data name="CaseNumberPlaceholder" xml:space="preserve">
+    <value>أدخل رقم القضية</value>
+  </data>
+  <data name="TitleSubjectPlaceholder" xml:space="preserve">
+    <value>أدخل موضوع القضية</value>
+  </data>
+  <data name="SelectOutcome" xml:space="preserve">
+    <value>اختر المنطوق</value>
+  </data>
+  <data name="CourtName" xml:space="preserve">
+    <value>اسم المحكمة</value>
+  </data>
+  <data name="CourtNamePlaceholder" xml:space="preserve">
+    <value>أدخل اسم المحكمة</value>
+  </data>
+  <data name="JudgeName" xml:space="preserve">
+    <value>اسم القاضي</value>
+  </data>
+  <data name="JudgeNamePlaceholder" xml:space="preserve">
+    <value>أدخل اسم القاضي</value>
+  </data>
+  <data name="NotesRemarks" xml:space="preserve">
+    <value>ملاحظات</value>
+  </data>
+  <data name="NotesRemarksPlaceholder" xml:space="preserve">
+    <value>أدخل أي ملاحظات إضافية هنا...</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>جاري الحفظ...</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>حفظ التعديلات</value>
+  </data>
+  <data name="CreateCase" xml:space="preserve">
+    <value>إضافة القضية</value>
+  </data>
+  <data name="LoadingCaseInfo" xml:space="preserve">
+    <value>جاري تحميل بيانات القضية...</value>
+  </data>
+  <data name="CaseDetails" xml:space="preserve">
+    <value>تفاصيل القضية</value>
+  </data>
+  <data name="Back" xml:space="preserve">
+    <value>رجوع</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>تعديل</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>حذف</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>متداولة</value>
+  </data>
+  <data name="Closed" xml:space="preserve">
+    <value>منتهية</value>
+  </data>
+  <data name="CaseParties" xml:space="preserve">
+    <value>أطراف القضية</value>
+  </data>
+  <data name="AddParty" xml:space="preserve">
+    <value>إضافة طرف</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>إلغاء</value>
+  </data>
+  <data name="NoPartiesRecorded" xml:space="preserve">
+    <value>لم يتم تسجيل أطراف لهذه القضية بعد.</value>
+  </data>
+  <data name="PartyName" xml:space="preserve">
+    <value>اسم الطرف</value>
+  </data>
+  <data name="LegalRole" xml:space="preserve">
+    <value>الصفة القانونية</value>
+  </data>
+  <data name="Representation" xml:space="preserve">
+    <value>التمثيل</value>
+  </data>
+  <data name="NationalID" xml:space="preserve">
+    <value>الرقم القومي</value>
+  </data>
+  <data name="PhoneNumber" xml:space="preserve">
+    <value>الهاتف</value>
+  </data>
+  <data name="AttachedDocument" xml:space="preserve">
+    <value>المستند المرفق</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>إجراءات</value>
+  </data>
+  <data name="DefendantCriminal" xml:space="preserve">
+    <value>المتهم</value>
+  </data>
+  <data name="VictimCriminal" xml:space="preserve">
+    <value>المجني عليه</value>
+  </data>
+  <data name="OurClient" xml:space="preserve">
+    <value>موكلنا</value>
+  </data>
+  <data name="Opponent" xml:space="preserve">
+    <value>خصمنا</value>
+  </data>
+  <data name="LegalMemos" xml:space="preserve">
+    <value>المذكرات القانونية</value>
+  </data>
+  <data name="AddLegalMemo" xml:space="preserve">
+    <value>إضافة مذكرة</value>
+  </data>
+  <data name="NoLegalMemos" xml:space="preserve">
+    <value>لم يتم تسجيل مذكرات قانونية لهذه القضية بعد.</value>
+  </data>
+  <data name="UpdateFile" xml:space="preserve">
+    <value>تحديث الملف</value>
+  </data>
+  <data name="DeleteMemo" xml:space="preserve">
+    <value>حذف المذكرة</value>
+  </data>
+  <data name="HearingsAndPostponements" xml:space="preserve">
+    <value>جلسات المحكمة</value>
+  </data>
+  <data name="AddHearing" xml:space="preserve">
+    <value>إضافة جلسة</value>
+  </data>
+  <data name="NoHearings" xml:space="preserve">
+    <value>لم يتم تسجيل جلسات لهذه القضية بعد.</value>
+  </data>
+  <data name="HearingDate" xml:space="preserve">
+    <value>التاريخ</value>
+  </data>
+  <data name="Purpose" xml:space="preserve">
+    <value>السبب</value>
+  </data>
+  <data name="JudgeDecision" xml:space="preserve">
+    <value>القرار</value>
+  </data>
+  <data name="PostponementReason" xml:space="preserve">
+    <value>سبب التأجيل</value>
+  </data>
+  <data name="CaseDocuments" xml:space="preserve">
+    <value>مستندات القضية</value>
+  </data>
+  <data name="UploadDocument" xml:space="preserve">
+    <value>رفع مستند</value>
+  </data>
+  <data name="NoCaseDocuments" xml:space="preserve">
+    <value>لم يتم رفع مستندات عامة لهذه القضية بعد.</value>
+  </data>
+  <data name="NoNotes" xml:space="preserve">
+    <value>لم يتم تسجيل ملاحظات.</value>
+  </data>
+  <data name="ConfirmDeleteParty" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذا الطرف؟</value>
+  </data>
+  <data name="ConfirmDeleteMemo" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذه المذكرة؟</value>
+  </data>
+  <data name="ConfirmDeleteHearing" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذه الجلسة؟</value>
+  </data>
+  <data name="ConfirmDeleteDoc" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذا المستند؟</value>
+  </data>
+  <data name="AddCasePartyFromRegistry" xml:space="preserve">
+    <value>إضافة طرف من سجل الموكلين</value>
+  </data>
+  <data name="SearchClientByName" xml:space="preserve">
+    <value>بحث عن الموكل بالاسم *</value>
+  </data>
+  <data name="TypeClientNamePlaceholder" xml:space="preserve">
+    <value>...اكتب اسم الموكل للبحث</value>
+  </data>
+  <data name="ClientNotFoundAddNew" xml:space="preserve">
+    <value>لم يتم العثور على الموكل — إضافة موكل جديد</value>
+  </data>
+  <data name="Selected" xml:space="preserve">
+    <value>تم الاختيار</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>مسح</value>
+  </data>
+  <data name="PartyPosition" xml:space="preserve">
+    <value>الصفة القانونية *</value>
+  </data>
+  <data name="ClientStatus" xml:space="preserve">
+    <value>صفة التوكيل *</value>
+  </data>
+  <data name="OurClientGreen" xml:space="preserve">
+    <value>موكلنا</value>
+  </data>
+  <data name="OpponentRed" xml:space="preserve">
+    <value>خصمنا</value>
+  </data>
+  <data name="PartyNotes" xml:space="preserve">
+    <value>ملاحظات (لهذه القضية فقط)</value>
+  </data>
+  <data name="PartyNotesPlaceholder" xml:space="preserve">
+    <value>...ملاحظات إضافية حول هذا الطرف في هذه القضية</value>
+  </data>
+  <data name="SaveParty" xml:space="preserve">
+    <value>حفظ الطرف</value>
+  </data>
+  <data name="AddLegalMemoBrief" xml:space="preserve">
+    <value>إضافة مذكرة قانونية</value>
+  </data>
+  <data name="MemoTitle" xml:space="preserve">
+    <value>عنوان المذكرة *</value>
+  </data>
+  <data name="MemoTitlePlaceholder" xml:space="preserve">
+    <value>...مثال: مذكرة دفاع أولى، مذكرة شارحة</value>
+  </data>
+  <data name="MemoDate" xml:space="preserve">
+    <value>تاريخ المذكرة *</value>
+  </data>
+  <data name="MemoAttachedDocument" xml:space="preserve">
+    <value>المستند المرفق</value>
+  </data>
+  <data name="MemoContent" xml:space="preserve">
+    <value>نص المذكرة / الملاحظات</value>
+  </data>
+  <data name="MemoContentPlaceholder" xml:space="preserve">
+    <value>...أدخل نص المذكرة بالكامل أو ملخص الدفوع</value>
+  </data>
+  <data name="SaveLegalMemo" xml:space="preserve">
+    <value>حفظ المذكرة</value>
+  </data>
+  <data name="RecordNewHearing" xml:space="preserve">
+    <value>تسجيل جلسة جديدة</value>
+  </data>
+  <data name="HearingDateForm" xml:space="preserve">
+    <value>تاريخ الجلسة *</value>
+  </data>
+  <data name="HearingPurpose" xml:space="preserve">
+    <value>سبب الجلسة</value>
+  </data>
+  <data name="HearingDecision" xml:space="preserve">
+    <value>قرار القاضي</value>
+  </data>
+  <data name="HearingPostponement" xml:space="preserve">
+    <value>سبب التأجيل</value>
+  </data>
+  <data name="SaveHearing" xml:space="preserve">
+    <value>حفظ الجلسة</value>
+  </data>
+  <data name="UploadDocCustomTitle" xml:space="preserve">
+    <value>رفع مستند بعنوان مخصص</value>
+  </data>
+  <data name="DocTitleDescription" xml:space="preserve">
+    <value>عنوان/وصف المستند *</value>
+  </data>
+  <data name="DocTitlePlaceholder" xml:space="preserve">
+    <value>...مثال: مستند التوكيل، صحيفة الدعوى</value>
+  </data>
+  <data name="DocFile" xml:space="preserve">
+    <value>الملف (PDF / صورة) *</value>
+  </data>
+  <data name="UploadSaveDoc" xml:space="preserve">
+    <value>رفع وحفظ المستند</value>
+  </data>
+  <data name="DefendantCivil" xml:space="preserve">
+    <value>المدعى عليه</value>
+  </data>
+  <data name="PlaintiffCivil" xml:space="preserve">
+    <value>المدعي</value>
   </data>
 </root>

@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddControllers();
 builder.Services.AddLocalization();
 
 builder.Services.AddHttpClient("LegalErpApi", client =>
@@ -38,13 +39,21 @@ app.UseAntiforgery();
 
 var supportedCultures = new[] { "ar-EG", "en-US" };
 var localizationOptions = new RequestLocalizationOptions()
-    .SetDefaultCulture(supportedCultures[0])
+    .SetDefaultCulture("ar-EG")
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
+
+// Clear providers to ignore the browser's Accept-Language header.
+// It will only use the Cookie provider and the Query string provider.
+localizationOptions.RequestCultureProviders.Remove(
+    localizationOptions.RequestCultureProviders
+        .FirstOrDefault(p => p is Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider));
 
 app.UseRequestLocalization(localizationOptions);
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapControllers();
 
 app.Run();

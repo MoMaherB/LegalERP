@@ -705,6 +705,20 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 - **Top & Side Navigation:** Applied individual color-coded glassmorphism themes to navigation links based on their module (Companies = Purple, Clients = Green, Cases = Amber, Financials = Rose/Red).
 - **Light/Dark Mode Fixes:** Removed hardcoded `text-white` classes from layout headers to ensure text adapts correctly to the light mode white glass background while remaining visible in dark mode.
 
+**Feature 15: Arabic Localization & Case UI Logic — ✅ COMPLETED (2026-08-07)**
+- **Blazor Arabic Localization Fixes:**
+  - Added `bootstrap.bundle.min.js` to `App.razor` to fix non-functional dropdown buttons.
+  - Hardcoded the Default Culture to `ar-EG` in `Program.cs` and bypassed browser `Accept-Language` headers to ensure the app is Arabic by default for all users.
+  - Modified `CultureController.cs` to use `Redirect()` instead of `LocalRedirect()` to allow absolute URIs sent from Blazor, fixing an `InvalidOperationException`.
+- **Cases UI Full Translation:**
+  - Fully translated `CaseList.razor`, `CaseForm.razor`, and `CaseDetail.razor` by mapping missing keys into `SharedResources.ar.resx` and `SharedResources.resx`.
+  - Localized hardcoded JavaScript `confirm` messages for deleting cases, parties, memos, hearings, and documents.
+  - Used `@Loc[]` for Enum translations (Case Status, Case Type) directly in Razor components.
+- **Case Party Logic Refinements (`CaseDetail.razor`):**
+  - **Dynamic Legal Terminology:** Automatically displays "المتهم/المجني عليه" (Defendant/Victim) for Criminal cases, and "المدعى عليه/المدعي" (Defendant/Plaintiff) for Civil and all other case types.
+  - **Smart Manual Opponent Entry:** When adding an "Opponent" (خصمنا), the system hides the Client Search dropdown and provides a simple manual text input, bypassing the need for a registered `ClientId`.
+  - **Clickable Profile Links:** Case parties in the table now automatically convert to a clickable link to their respective Client Profile (`/clients/{id}`) if they are registered clients, while remaining standard text for manually entered opponents.
+
 ### Active Agent Instructions
 
 - **User Builds and Tests**: The user is solely responsible for running `dotnet build`/`run` via Visual Studio and performing manual UI tests. The agent will wait for the user to report bugs or give the green light.

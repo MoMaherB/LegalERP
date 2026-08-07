@@ -43,25 +43,25 @@ else
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h3 class="ios-title mb-0" style="font-size: 1.5rem;">@caseDto.Title</h3>
             <div class="d-flex gap-2 align-items-center">
-                <span class="ios-status-badge ios-status-gray fs-6">@caseDto.CaseType</span>
+                <span class="ios-status-badge ios-status-gray fs-6">@Loc[caseDto.CaseType.ToString()]</span>
                 @if (caseDto.Status == CaseStatus.Active)
                 {
-                    <span class="ios-status-badge ios-status-amber fs-6">Active</span>
+                    <span class="ios-status-badge ios-status-amber fs-6">@Loc["Active"]</span>
                 }
                 else
                 {
-                    <span class="ios-status-badge ios-status-green fs-6">Closed</span>
+                    <span class="ios-status-badge ios-status-green fs-6">@Loc["Closed"]</span>
                     @if (caseDto.Outcome == CaseOutcome.Won)
                     {
-                        <span class="ios-status-badge ios-status-green fs-6">Won (ربح القضية)</span>
+                        <span class="ios-status-badge ios-status-green fs-6">@Loc["ClosedWon"]</span>
                     }
                     else if (caseDto.Outcome == CaseOutcome.Lost)
                     {
-                        <span class="ios-status-badge ios-status-red fs-6">Lost (خسارة القضية)</span>
+                        <span class="ios-status-badge ios-status-red fs-6">@Loc["ClosedLost"]</span>
                     }
                     else if (caseDto.Outcome == CaseOutcome.Settled)
                     {
-                        <span class="ios-status-badge ios-status-blue fs-6">Settled (صلح / تسوية)</span>
+                        <span class="ios-status-badge ios-status-blue fs-6">@Loc["ClosedSettled"]</span>
                     }
                 }
             </div>
@@ -69,25 +69,25 @@ else
         <div>
             <div class="row g-3">
                 <div class="col-md-4">
-                    <strong>Case Number:</strong>
+                    <strong>@Loc["CaseNumber"]:</strong>
                     <p class="fs-5 text-primary mb-0">@caseDto.CaseNumber</p>
                 </div>
                 <div class="col-md-4">
-                    <strong>Court Name:</strong>
+                    <strong>@Loc["CourtName"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(caseDto.CourtName) ? "—" : caseDto.CourtName)</p>
                 </div>
                 <div class="col-md-4">
-                    <strong>Judge / Circuit:</strong>
+                    <strong>@Loc["JudgeName"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(caseDto.JudgeName) ? "—" : caseDto.JudgeName)</p>
                 </div>
                 <div class="col-md-4">
-                    <strong>Filing Date:</strong>
+                    <strong>@Loc["FilingDate"]:</strong>
                     <p class="mb-0">@(caseDto.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</p>
                 </div>
                 <div class="col-12 mt-3">
-                    <strong>Notes & Remarks:</strong>
+                    <strong>@Loc["NotesRemarks"]:</strong>
                     <p class="border p-3 rounded bg-light mb-0">
-                        @(string.IsNullOrWhiteSpace(caseDto.Notes) ? "No notes recorded." : caseDto.Notes)
+                        @(string.IsNullOrWhiteSpace(caseDto.Notes) ? Loc["NoNotes"].Value : caseDto.Notes)
                     </p>
                 </div>
             </div>
@@ -96,9 +96,9 @@ else
 
     @* ── Parties Section (Defendants vs Victims / Client vs Opponent) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Case Parties (أطراف القضية)</h3>
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["CaseParties"]</h3>
         <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartyForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddPartyForm ? "Cancel" : "+ Add Party")
+            @(showAddPartyForm ? Loc["Cancel"].Value : Loc["AddParty"].Value)
         </button>
     </div>
 
@@ -106,73 +106,89 @@ else
     {
         <div class="ios-widget-card mb-4" style="border: 1px solid rgba(52, 211, 153, 0.3);">
             <div class="p-4">
-                <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">Add Case Party (from Clients Registry)</h5>
+                <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">@Loc["AddCasePartyFromRegistry"]</h5>
                 <div class="row g-3">
-                    @* ── Client Quick-Search Selector ── *@
+                    @* ── Client Quick-Search Selector or Manual Name ── *@
                     <div class="col-md-6">
-                        <label class="form-label ios-details fw-bold">Search Client by Name (بحث عن الموكل) *</label>
-                        <input class="ios-input" @bind="clientSearchTerm" @bind:event="oninput"
-                               @onkeyup="HandleClientSearch" placeholder="Type client name to search..." />
-                        @if (clientSearchResults != null)
+                        @if (newPartyClientStatus == "client")
                         {
-                            <div class="list-group mt-1 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100;">
-                                @if (clientSearchResults.Count > 0)
-                                {
-                                    @foreach (var c in clientSearchResults)
+                            <label class="form-label ios-details fw-bold">@Loc["SearchClientByName"]</label>
+                            <input class="ios-input" @bind="clientSearchTerm" @bind:event="oninput"
+                                   @onkeyup="HandleClientSearch" placeholder="@Loc["TypeClientNamePlaceholder"]" />
+                            @if (clientSearchResults != null)
+                            {
+                                <div class="list-group mt-1 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100;">
+                                    @if (clientSearchResults.Count > 0)
                                     {
-                                        <button type="button" class="list-group-item list-group-item-action @(selectedClientId == c.Id ? "active" : "")"
-                                                @onclick="() => SelectClient(c)">
-                                            <strong>@c.FullName</strong>
-                                            @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
-                                            {
-                                                <span class="ms-1 text-muted">(ID: @c.NationalIdNumber)</span>
-                                            }
-                                            @if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
-                                            {
-                                                <small class="ms-2 text-muted">📞 @c.PhoneNumber</small>
-                                            }
-                                        </button>
+                                        @foreach (var c in clientSearchResults)
+                                        {
+                                            <button type="button" class="list-group-item list-group-item-action @(selectedClientId == c.Id ? "active" : "")"
+                                                    @onclick="() => SelectClient(c)">
+                                                <strong>@c.FullName</strong>
+                                                @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
+                                                {
+                                                    <span class="ms-1 text-muted">(ID: @c.NationalIdNumber)</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
+                                                {
+                                                    <small class="ms-2 text-muted">📞 @c.PhoneNumber</small>
+                                                }
+                                            </button>
+                                        }
                                     }
-                                }
-                                <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning text-center">
-                                    <strong>➕ Client not found — Add new client (إضافة موكل جديد)</strong>
-                                </a>
-                            </div>
+                                    <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning text-center">
+                                        <strong>➕ @Loc["ClientNotFoundAddNew"]</strong>
+                                    </a>
+                                </div>
+                            }
+                            @if (selectedClientId.HasValue)
+                            {
+                                <div class="alert alert-success mt-2 mb-0 py-2 d-flex justify-content-between align-items-center">
+                                    <span>✅ @Loc["Selected"]: <strong>@selectedClientName</strong></span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearClientSelection">@Loc["Clear"]</button>
+                                </div>
+                            }
                         }
-                        @if (selectedClientId.HasValue)
+                        else
                         {
-                            <div class="alert alert-success mt-2 mb-0 py-2 d-flex justify-content-between align-items-center">
-                                <span>✅ Selected: <strong>@selectedClientName</strong></span>
-                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="ClearClientSelection">Clear</button>
-                            </div>
+                            <label class="form-label ios-details fw-bold">@Loc["PartyName"] *</label>
+                            <input class="ios-input" @bind="manualOpponentName" placeholder="@Loc["PartyName"]" />
                         }
                     </div>
 
                     <div class="col-md-3">
-                        <label class="form-label ios-details fw-bold">Party Position (الصفة القانونية) *</label>
+                        <label class="form-label ios-details fw-bold">@Loc["PartyPosition"]</label>
                         <select class="ios-select" @bind="newPartyRole">
-                            <option value="@PartyRole.Defendant">Defendant (المتهم)</option>
-                            <option value="@PartyRole.Victim">Victim (المجني عليه)</option>
+                            @if (caseDto.CaseType == CaseType.Criminal)
+                            {
+                                <option value="@PartyRole.Defendant">@Loc["DefendantCriminal"]</option>
+                                <option value="@PartyRole.Victim">@Loc["VictimCriminal"]</option>
+                            }
+                            else
+                            {
+                                <option value="@PartyRole.Defendant">@Loc["DefendantCivil"]</option>
+                                <option value="@PartyRole.Victim">@Loc["PlaintiffCivil"]</option>
+                            }
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label ios-details fw-bold">Client Status (صفة التوكيل) *</label>
+                        <label class="form-label ios-details fw-bold">@Loc["ClientStatus"]</label>
                         <select class="ios-select" @bind="newPartyClientStatus">
-                            <option value="client">Our Client - موكلنا (Green)</option>
-                            <option value="opponent">Opponent - خصمنا (Red)</option>
+                            <option value="client">@Loc["OurClientGreen"]</option>
+                            <option value="opponent">@Loc["OpponentRed"]</option>
                         </select>
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label ios-details fw-bold">Notes (for this case only)</label>
-                        <input class="ios-input" @bind="newPartyNotes" placeholder="Additional notes about this party in this case..." />
+                        <label class="form-label ios-details fw-bold">@Loc["PartyNotes"]</label>
+                        <input class="ios-input" @bind="newPartyNotes" placeholder="@Loc["PartyNotesPlaceholder"]" />
                     </div>
 
                     <div class="col-12">
                         <button class="ios-btn ios-btn-primary me-2" @onclick="AddParty" disabled="@isSavingParty">
-                            @(isSavingParty ? "Saving..." : "Save Party")
+                            @(isSavingParty ? Loc["Saving"].Value : Loc["SaveParty"].Value)
                         </button>
-                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddPartyForm">Cancel</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddPartyForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(partyErrorMessage))
@@ -185,7 +201,7 @@ else
 
     @if (caseDto.Parties.Count == 0)
     {
-        <div class="alert alert-light border mb-4" style="border-radius: 12px;">No parties recorded for this case yet.</div>
+        <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoPartiesRecorded"]</div>
     }
     else
     {
@@ -193,33 +209,51 @@ else
             <table class="ios-table">
                 <thead>
                     <tr>
-                        <th>Party Name</th>
-                        <th>Legal Role</th>
-                        <th>Representation</th>
-                        <th>National ID</th>
-                        <th>Phone</th>
-                        <th>Attached Document</th>
-                        <th>Actions</th>
+                        <th>@Loc["PartyName"]</th>
+                        <th>@Loc["LegalRole"]</th>
+                        <th>@Loc["Representation"]</th>
+                        <th>@Loc["NationalID"]</th>
+                        <th>@Loc["PhoneNumber"]</th>
+                        <th>@Loc["AttachedDocument"]</th>
+                        <th>@Loc["Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var party in caseDto.Parties)
                     {
                         <tr>
-                            <td><strong>@party.FullName</strong></td>
+                            <td>
+                                @if (party.ClientId.HasValue)
+                                {
+                                    <a href="/clients/@party.ClientId.Value" class="text-decoration-none fw-bold" style="color: #2c3e50;">
+                                        @party.FullName
+                                    </a>
+                                }
+                                else
+                                {
+                                    <strong>@party.FullName</strong>
+                                }
+                            </td>
                             <td>
                                 <span class="ios-status-badge ios-status-gray">
-                                    @(party.Role == PartyRole.Defendant ? "Defendant (المتهم)" : "Victim (المجني عليه)")
+                                    @if (party.Role == PartyRole.Defendant)
+                                    {
+                                        @(caseDto.CaseType == CaseType.Criminal ? Loc["DefendantCriminal"].Value : Loc["DefendantCivil"].Value)
+                                    }
+                                    else
+                                    {
+                                        @(caseDto.CaseType == CaseType.Criminal ? Loc["VictimCriminal"].Value : Loc["PlaintiffCivil"].Value)
+                                    }
                                 </span>
                             </td>
                             <td>
                                 @if (party.IsOurClient)
                                 {
-                                    <span class="ios-status-badge ios-status-green">Client (موكلنا)</span>
+                                    <span class="ios-status-badge ios-status-green">@Loc["OurClient"]</span>
                                 }
                                 else
                                 {
-                                    <span class="ios-status-badge ios-status-red">Opponent (خصمنا)</span>
+                                    <span class="ios-status-badge ios-status-red">@Loc["Opponent"]</span>
                                 }
                             </td>
                             <td>@(party.NationalIdNumber ?? "—")</td>
@@ -235,7 +269,7 @@ else
                                 }
                             </td>
                             <td>
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteParty(party.Id)">Delete</button>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteParty(party.Id)">@Loc["Delete"]</button>
                             </td>
                         </tr>
                     }
@@ -246,9 +280,9 @@ else
 
     @* ── Legal Memos & Briefs Section (المذكرات القانونية) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Legal Memos & Briefs (المذكرات القانونية)</h3>
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["LegalMemos"]</h3>
         <button class="ios-btn ios-btn-primary" @onclick="ToggleAddMemoForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddMemoForm ? "Cancel" : "+ Add Legal Memo")
+            @(showAddMemoForm ? Loc["Cancel"].Value : Loc["AddLegalMemo"].Value)
         </button>
     </div>
 
@@ -256,31 +290,31 @@ else
     {
         <div class="ios-widget-card mb-4" style="border: 1px solid rgba(59, 130, 246, 0.3);">
             <div class="p-4">
-                <h5 class="ios-title text-info mb-3" style="font-size: 1.2rem;">Add Legal Memo / Brief (إضافة مذكرة قانونية)</h5>
+                <h5 class="ios-title text-info mb-3" style="font-size: 1.2rem;">@Loc["AddLegalMemoBrief"]</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label ios-details fw-bold">Memo Title (عنوان المذكرة) *</label>
-                        <input class="ios-input" @bind="newMemoTitle" placeholder="e.g. مذكرة دفاع أولى, مذكرة شارحة..." />
+                        <label class="form-label ios-details fw-bold">@Loc["MemoTitle"]</label>
+                        <input class="ios-input" @bind="newMemoTitle" placeholder="@Loc["MemoTitlePlaceholder"]" />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label ios-details fw-bold">Memo Date (تاريخ المذكرة) *</label>
+                        <label class="form-label ios-details fw-bold">@Loc["MemoDate"]</label>
                         <input type="date" class="ios-input" @bind="newMemoDate" />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label ios-details fw-bold">Attached Document (مستند المذكرة)</label>
+                        <label class="form-label ios-details fw-bold">@Loc["MemoAttachedDocument"]</label>
                         <InputFile class="ios-input" OnChange="LoadMemoFile" accept=".pdf,.doc,.docx" />
                     </div>
 
                     <div class="col-12">
-                        <label class="form-label ios-details fw-bold">Memo Content / Text (نص المذكرة / الملاحظات)</label>
-                        <textarea class="ios-input" @bind="newMemoContent" rows="4" placeholder="Enter full memo text or summary of arguments..."></textarea>
+                        <label class="form-label ios-details fw-bold">@Loc["MemoContent"]</label>
+                        <textarea class="ios-input" @bind="newMemoContent" rows="4" placeholder="@Loc["MemoContentPlaceholder"]"></textarea>
                     </div>
 
                     <div class="col-12">
                         <button class="ios-btn ios-btn-primary me-2" @onclick="AddMemo" disabled="@isSavingMemo">
-                            @(isSavingMemo ? "Saving..." : "Save Legal Memo")
+                            @(isSavingMemo ? Loc["Saving"].Value : Loc["SaveLegalMemo"].Value)
                         </button>
-                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddMemoForm">Cancel</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddMemoForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(memoErrorMessage))
@@ -293,7 +327,7 @@ else
 
     @if (caseDto.Memos is null || caseDto.Memos.Count == 0)
     {
-        <div class="alert alert-light border mb-4" style="border-radius: 12px;">No legal memos recorded for this case yet.</div>
+        <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoLegalMemos"]</div>
     }
     else
     {
@@ -328,7 +362,7 @@ else
                                 @if (memo.Document != null)
                                 {
                                     <label class="ios-btn ios-btn-secondary mb-0" style="padding: 4px 10px; font-size: 0.85rem; cursor: pointer;">
-                                        Update File (تحديث الملف)
+                                        @Loc["UpdateFile"]
                                         <InputFile OnChange="@((e) => UpdateMemoFile(memo.Id, e))" style="display: none;" accept=".pdf,.doc,.docx" />
                                     </label>
                                 }
@@ -336,7 +370,7 @@ else
                                 {
                                     <div></div>
                                 }
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteMemo(memo.Id)">Delete Memo</button>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteMemo(memo.Id)">@Loc["DeleteMemo"]</button>
                             </div>
                         </div>
                     </div>
@@ -347,9 +381,9 @@ else
 
     @* ── Hearings & Postponements (جلسات المحكمة وتسلسل التأجيلات) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Hearings & Postponements (جلسات المحكمة)</h3>
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["HearingsAndPostponements"]</h3>
         <button class="ios-btn ios-btn-primary" @onclick="ToggleAddHearingForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddHearingForm ? "Cancel" : "+ Add Hearing")
+            @(showAddHearingForm ? Loc["Cancel"].Value : Loc["AddHearing"].Value)
         </button>
     </div>
 
@@ -357,29 +391,29 @@ else
     {
         <div class="ios-widget-card mb-4">
             <div class="p-4">
-                <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">Record New Hearing</h5>
+                <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">@Loc["RecordNewHearing"]</h5>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label ios-details fw-bold">Hearing Date *</label>
+                        <label class="form-label ios-details fw-bold">@Loc["HearingDateForm"]</label>
                         <input type="date" class="ios-input" @bind="newHearingDate" @bind:format="yyyy-MM-dd" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label ios-details fw-bold">Purpose / Session Reason</label>
+                        <label class="form-label ios-details fw-bold">@Loc["HearingPurpose"]</label>
                         <input class="ios-input" @bind="newHearingPurpose" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label ios-details fw-bold">Judge Decision</label>
+                        <label class="form-label ios-details fw-bold">@Loc["HearingDecision"]</label>
                         <input class="ios-input" @bind="newHearingDecision" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label ios-details fw-bold">Postponement Reason</label>
+                        <label class="form-label ios-details fw-bold">@Loc["HearingPostponement"]</label>
                         <input class="ios-input" @bind="newPostponementReason" />
                     </div>
                     <div class="col-12">
                         <button class="ios-btn ios-btn-primary me-2" @onclick="SaveHearing" disabled="@isSavingHearing">
-                            @(isSavingHearing ? "Saving..." : "Save Hearing")
+                            @(isSavingHearing ? Loc["Saving"].Value : Loc["SaveHearing"].Value)
                         </button>
-                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddHearingForm">Cancel</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddHearingForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(hearingErrorMessage))
@@ -392,7 +426,7 @@ else
 
     @if (caseDto.Hearings == null || caseDto.Hearings.Count == 0)
     {
-        <div class="alert alert-light border" style="border-radius: 12px;">No hearings recorded for this case yet.</div>
+        <div class="alert alert-light border" style="border-radius: 12px;">@Loc["NoHearings"]</div>
     }
     else
     {
@@ -400,11 +434,11 @@ else
             <table class="ios-table">
                 <thead>
                     <tr>
-                        <th>Date (التاريخ)</th>
-                        <th>Purpose (السبب)</th>
-                        <th>Decision (القرار)</th>
-                        <th>Postponement Reason (سبب التأجيل)</th>
-                        <th class="text-end">Actions</th>
+                        <th>@Loc["HearingDate"]</th>
+                        <th>@Loc["Purpose"]</th>
+                        <th>@Loc["JudgeDecision"]</th>
+                        <th>@Loc["PostponementReason"]</th>
+                        <th class="text-end">@Loc["Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -416,7 +450,7 @@ else
                             <td>@hearing.JudgeDecision</td>
                             <td>@hearing.PostponementReason</td>
                             <td class="text-end">
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteHearing(hearing.Id)">Delete</button>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteHearing(hearing.Id)">@Loc["Delete"]</button>
                             </td>
                         </tr>
                     }
@@ -427,9 +461,9 @@ else
 
     @* ── Case Documents / Files (With Custom Document Titles) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Case Documents & Files (مستندات القضية)</h3>
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["CaseDocuments"]</h3>
         <button class="ios-btn ios-btn-primary" @onclick="ToggleAddDocForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddDocForm ? "Cancel" : "+ Upload Document")
+            @(showAddDocForm ? Loc["Cancel"].Value : Loc["UploadDocument"].Value)
         </button>
     </div>
 
@@ -437,21 +471,21 @@ else
     {
         <div class="ios-widget-card mb-4">
             <div class="p-4">
-                <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">Upload Document with Custom Title</h5>
+                <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">@Loc["UploadDocCustomTitle"]</h5>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label ios-details fw-bold">Document Title / Description *</label>
-                        <input class="ios-input" @bind="newDocTitle" placeholder="e.g. Legal Memo #1, Evidence Photo, Court Notification..." />
+                        <label class="form-label ios-details fw-bold">@Loc["DocTitleDescription"]</label>
+                        <input class="ios-input" @bind="newDocTitle" placeholder="@Loc["DocTitlePlaceholder"]" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label ios-details fw-bold">File (PDF / Image) *</label>
+                        <label class="form-label ios-details fw-bold">@Loc["DocFile"]</label>
                         <InputFile class="ios-input" OnChange="LoadDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
                     </div>
                     <div class="col-12">
                         <button class="ios-btn ios-btn-primary me-2" @onclick="UploadCaseDocument" disabled="@isUploadingDoc">
-                            @(isUploadingDoc ? "Uploading..." : "Upload & Save Document")
+                            @(isUploadingDoc ? Loc["Saving"].Value : Loc["UploadSaveDoc"].Value)
                         </button>
-                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddDocForm">Cancel</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddDocForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrEmpty(docErrorMessage))
@@ -468,7 +502,7 @@ else
     }
     else if (caseDocuments.Count == 0)
     {
-        <div class="alert alert-light border" style="border-radius: 12px;">No general documents uploaded for this case yet.</div>
+        <div class="alert alert-light border" style="border-radius: 12px;">@Loc["NoCaseDocuments"]</div>
     }
     else
     {
@@ -486,7 +520,7 @@ else
                             </div>
                             <div class="mt-auto w-100 d-flex justify-content-between align-items-center border-top pt-3" style="border-color: rgba(0,0,0,0.05) !important;">
                                 <small class="ios-details fw-bold text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteCaseDocument(doc.Id)">Delete</button>
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteCaseDocument(doc.Id)">@Loc["Delete"]</button>
                             </div>
                         </div>
                     </div>
@@ -598,6 +632,7 @@ else
         showAddPartyForm = !showAddPartyForm;
         partyErrorMessage = null;
         ClearClientSelection();
+        manualOpponentName = null;
         clientSearchTerm = null;
         clientSearchResults = null;
         showNoClientFound = false;
@@ -641,11 +676,19 @@ else
 
     // --- Add Party (from Client) ---
 
+    private string? manualOpponentName;
+
     private async Task AddParty()
     {
-        if (!selectedClientId.HasValue)
+        if (newPartyClientStatus == "client" && !selectedClientId.HasValue)
         {
             partyErrorMessage = "You must select a Client from the search results. If the person is not in the system, click 'Add new client' to register them first.";
+            return;
+        }
+
+        if (newPartyClientStatus == "opponent" && string.IsNullOrWhiteSpace(manualOpponentName))
+        {
+            partyErrorMessage = "You must enter the opponent's name.";
             return;
         }
 
@@ -654,9 +697,12 @@ else
 
         try
         {
+            var fullName = newPartyClientStatus == "client" ? selectedClientName! : manualOpponentName!;
+            var clientId = newPartyClientStatus == "client" ? selectedClientId : null;
+
             var dto = new CreateCasePartyDto(
-                selectedClientId.Value,
-                selectedClientName ?? "",
+                clientId,
+                fullName,
                 newPartyRole,
                 newPartyClientStatus == "client",
                 null,  // NationalIdNumber comes from Client record
@@ -669,6 +715,7 @@ else
 
             showAddPartyForm = false;
             ClearClientSelection();
+            manualOpponentName = null;
             newPartyClientStatus = "client";
             newPartyNotes = null;
 
@@ -686,7 +733,7 @@ else
 
     private async Task DeleteParty(Guid partyId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this party?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteParty"].Value);
         if (confirmed)
         {
             await CaseApi.DeletePartyAsync(Id, partyId);
@@ -783,7 +830,7 @@ else
 
     private async Task DeleteMemo(Guid memoId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this legal memo?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteMemo"].Value);
         if (confirmed)
         {
             await CaseApi.DeleteMemoAsync(Id, memoId);
@@ -834,7 +881,7 @@ else
 
     private async Task DeleteHearing(Guid hearingId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this hearing record?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteHearing"].Value);
         if (confirmed)
         {
             await CaseApi.DeleteHearingAsync(Id, hearingId);
@@ -890,7 +937,7 @@ else
 
     private async Task DeleteCaseDocument(Guid docId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this document?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteDoc"].Value);
         if (confirmed)
         {
             await CompanyApi.DeleteDocumentAsync(docId);

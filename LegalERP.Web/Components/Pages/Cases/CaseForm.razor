@@ -43,7 +43,7 @@ else
                         <InputSelect class="ios-select" @bind-Value="model.CaseType">
                             @foreach (var type in Enum.GetValues<CaseType>())
                             {
-                                <option value="@type">@type</option>
+                                <option value="@type">@Loc[type.ToString()]</option>
                             }
                         </InputSelect>
                     </div>
@@ -52,7 +52,7 @@ else
                         <InputSelect class="ios-select" @bind-Value="model.Status">
                             @foreach (var status in Enum.GetValues<CaseStatus>())
                             {
-                                <option value="@status">@status</option>
+                                <option value="@status">@Loc[status.ToString()]</option>
                             }
                         </InputSelect>
                     </div>
@@ -64,7 +64,7 @@ else
                                 <option value="">@Loc["SelectOutcome"]</option>
                                 @foreach (var outcome in Enum.GetValues<CaseOutcome>())
                                 {
-                                    <option value="@outcome">@outcome</option>
+                                    <option value="@outcome">@Loc[outcome.ToString()]</option>
                                 }
                             </InputSelect>
                         </div>
