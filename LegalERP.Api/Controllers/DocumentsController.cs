@@ -29,6 +29,7 @@ public class DocumentsController : ControllerBase
     public async Task<ActionResult<Guid>> Upload(
         [FromQuery] string ownerType,
         [FromQuery] Guid ownerId,
+        [FromQuery] string? title,
         IFormFile file,
         CancellationToken ct)
     {
@@ -44,9 +45,14 @@ public class DocumentsController : ControllerBase
         
         var storedFileName = await _storage.SaveFileAsync(stream, file.FileName, ownerType, ownerId, ct);
 
+        // Use the custom title if provided, otherwise fallback to the original filename
+        var displayName = !string.IsNullOrWhiteSpace(title)
+            ? title + ext  // keep the extension so download works correctly
+            : file.FileName;
+
         var document = new Document
         {
-            FileName = file.FileName,
+            FileName = displayName,
             StoredFileName = storedFileName,
             ContentType = file.ContentType,
             FileSizeBytes = file.Length,
@@ -70,6 +76,22 @@ public class DocumentsController : ControllerBase
         if (stream == null) return NotFound("File missing on disk.");
 
         return File(stream, doc.ContentType, doc.FileName);
+    }
+
+    /// <summary>
+    /// Serves the file inline in the browser (Content-Disposition: inline) for preview/viewing.
+    /// </summary>
+    [HttpGet("{id:guid}/view")]
+    public async Task<IActionResult> View(Guid id, CancellationToken ct)
+    {
+        var doc = await _db.Documents.FirstOrDefaultAsync(d => d.Id == id, ct);
+        if (doc == null) return NotFound();
+
+        var stream = await _storage.GetFileAsync(doc.OwnerType, doc.OwnerId, doc.StoredFileName, ct);
+        if (stream == null) return NotFound("File missing on disk.");
+
+        // Return without filename = Content-Disposition: inline (browser renders it)
+        return File(stream, doc.ContentType);
     }
 
     [HttpGet]

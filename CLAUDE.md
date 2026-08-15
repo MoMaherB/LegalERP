@@ -719,6 +719,17 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - **Smart Manual Opponent Entry:** When adding an "Opponent" (خصمنا), the system hides the Client Search dropdown and provides a simple manual text input, bypassing the need for a registered `ClientId`.
   - **Clickable Profile Links:** Case parties in the table now automatically convert to a clickable link to their respective Client Profile (`/clients/{id}`) if they are registered clients, while remaining standard text for manually entered opponents.
 
+**Feature 16: Advanced Document Previews & UI Refinements — ✅ COMPLETED (2026-08-15)**
+- **Word Document Previews:** Integrated `Mammoth.js` to render `.doc` and `.docx` files natively within the web application. `FileThumbnail.razor` now generates a miniature preview on the card and opens the full document text/HTML in the glassmorphism modal, mirroring the PDF and Image experience.
+- **Company Documents:** Expanded document uploads to the `CompanyDetail.razor` page. Users can now upload, preview, and delete general corporate documents in their own dedicated section, utilizing the same polymorphic `FileThumbnail` system.
+- **Responsive Navigation:** Converted the static top layout in `MainLayout.razor` into a fully responsive Bootstrap 5 `<nav>` with a collapsible hamburger menu (`navbar-toggler`) for seamless mobile and tablet viewing.
+- **Case Details Layout Upgrades:**
+  - Stacked the Case Title and Status Badges vertically for a cleaner hierarchy.
+  - Implemented conditional rendering for empty header fields (Judge Name, Court Name, Filing Date, Notes). Fields with no data completely collapse instead of displaying placeholder dashes.
+- **UI Bug Fixes:**
+  - **Trapped Modals:** Fixed a CSS conflict where `backdrop-filter` on the `ios-widget-card` trapped fixed-position modals (like the file previewer) inside the Memos card.
+  - **Financials Layout:** Fixed a flexbox compression issue by explicitly enforcing block layout (`d-block w-100`) on the Financials container, allowing it to stretch across the full screen.
+
 ### Active Agent Instructions
 
 - **User Builds and Tests**: The user is solely responsible for running `dotnet build`/`run` via Visual Studio and performing manual UI tests. The agent will wait for the user to report bugs or give the green light.
@@ -726,7 +737,7 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 - **Bug Tracking Loop**: If the user reports a bug, the agent must fix it, add it to `BUGS.md`, and update `CLAUDE.md` before returning to the user.
 - **Feature Loop**: Agent builds feature then updates CLAUDE.md then provides test instructions + edge cases then user builds/runs/tests then user reports results then agent logs to BUGS.md if needed then agent updates CLAUDE.md then repeat or move to next feature.
 - **No API-only testing needed**: Since the Web UI calls the API, testing the Web UI automatically tests the API. User only needs to test Web UI.
-- **File uploads**: Thumbnails + popup preview for all uploaded files. Allowed types: PDF, JPG, JPEG, PNG. Compress images over 10MB. No hard upload limit.
+- **File uploads**: Thumbnails + popup preview for all uploaded files. Allowed types: PDF, JPG, JPEG, PNG, DOC, DOCX. Compress images over 10MB. No hard upload limit.
 
 ---
 

@@ -113,7 +113,7 @@ public class CompanyApiClient
         return result ?? new List<DocumentDto>();
     }
 
-    public async Task<Guid> UploadDocumentAsync(string ownerType, Guid ownerId, Microsoft.AspNetCore.Components.Forms.IBrowserFile file)
+    public async Task<Guid> UploadDocumentAsync(string ownerType, Guid ownerId, Microsoft.AspNetCore.Components.Forms.IBrowserFile file, string? title = null)
     {
         using var content = new MultipartFormDataContent();
         using var fileStream = file.OpenReadStream(100 * 1024 * 1024); // max 100MB
@@ -122,7 +122,11 @@ public class CompanyApiClient
         
         content.Add(streamContent, "file", file.Name);
 
-        var response = await _http.PostAsync($"api/documents/upload?ownerType={ownerType}&ownerId={ownerId}", content);
+        var url = $"api/documents/upload?ownerType={ownerType}&ownerId={ownerId}";
+        if (!string.IsNullOrWhiteSpace(title))
+            url += $"&title={Uri.EscapeDataString(title)}";
+
+        var response = await _http.PostAsync(url, content);
         response.EnsureSuccessStatusCode();
         
         var idStr = await response.Content.ReadAsStringAsync();

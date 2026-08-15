@@ -1,141 +1,531 @@
 @using LegalERP.Application.Companies
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JS
+@implements IDisposable
 
 @if (Document != null)
 {
-    <a href="@GetFileUrl()" download target="_blank" class="file-thumbnail text-decoration-none text-dark">
-        @if (IsImage)
-        {
-            <img src="@GetFileUrl()" alt="@Document.FileName" class="thumbnail-img" />
-        }
-        else if (IsPdf)
-        {
-            <div class="pdf-icon">
-                <span class="oi oi-document" aria-hidden="true"></span>
-                <span class="file-ext">PDF</span>
+    <div class="doc-card" @onclick="OpenViewer">
+        <div class="doc-preview">
+            @if (IsImage)
+            {
+                <img src="@GetViewUrl()" alt="@Document.FileName" class="doc-preview-img" />
+            }
+            else if (IsPdf)
+            {
+                <canvas id="@_canvasId" class="doc-pdf-canvas"></canvas>
+            }
+            else if (IsWord)
+            {
+                <div id="@_wordThumbId" class="doc-word-thumb"></div>
+            }
+            else
+            {
+                <div class="doc-icon-wrap generic">
+                    <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" width="44" height="44">
+                        <rect width="48" height="48" rx="10" fill="rgba(108,117,125,0.12)"/>
+                        <path d="M14 8h14l10 10v22a2 2 0 01-2 2H14a2 2 0 01-2-2V10a2 2 0 012-2z" fill="#6c757d" opacity="0.85"/>
+                        <path d="M28 8l10 10H28V8z" fill="white" opacity="0.5"/>
+                        <text x="24" y="34" text-anchor="middle" font-size="8" font-weight="bold" fill="white">FILE</text>
+                    </svg>
+                </div>
+            }
+            <div class="doc-hover-overlay">
+                <span class="doc-open-icon">&#128269;</span>
             </div>
-        }
-        else if (IsWord)
-        {
-            <div class="pdf-icon" style="color: #0d6efd;">
-                <span class="oi oi-document" aria-hidden="true"></span>
-                <span class="file-ext">WORD</span>
+        </div>
+        <div class="doc-footer">
+            <span class="doc-name" title="@Document.FileName">@Document.FileName</span>
+            <a href="@GetDownloadUrl()" download="@Document.FileName" class="doc-download-btn" @onclick:stopPropagation="true" title="تنزيل">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+            </a>
+        </div>
+    </div>
+
+    @if (showViewer)
+    {
+        <div class="doc-modal-backdrop" @onclick="CloseViewer">
+            <div class="doc-modal-panel" @onclick:stopPropagation="true">
+                <div class="doc-modal-header">
+                    <span class="doc-modal-title">@Document.FileName</span>
+                    <div class="doc-modal-actions">
+                        <a href="@GetDownloadUrl()" download="@Document.FileName" class="doc-modal-download-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            تنزيل
+                        </a>
+                        <button class="doc-modal-close" @onclick="CloseViewer">&#10005;</button>
+                    </div>
+                </div>
+                <div class="doc-modal-body">
+                    @if (IsImage)
+                    {
+                        <img src="@GetViewUrl()" alt="@Document.FileName" class="doc-modal-img" />
+                    }
+                    else if (IsPdf)
+                    {
+                        <iframe src="@GetViewUrl()" class="doc-modal-frame" title="@Document.FileName"></iframe>
+                    }
+                    else if (IsWord)
+                    {
+                        <div id="@_wordModalId" class="doc-word-modal-content"></div>
+                    }
+                    else
+                    {
+                        <div class="doc-modal-unsupported">
+                            <p>لا يمكن عرض هذا النوع من الملفات مباشرة.</p>
+                            <a href="@GetDownloadUrl()" download="@Document.FileName" class="doc-modal-download-btn mt-3">
+                                تنزيل الملف
+                            </a>
+                        </div>
+                    }
+                </div>
             </div>
-        }
-        else
-        {
-            <div class="unknown-icon">
-                <span class="oi oi-file" aria-hidden="true"></span>
-                <span class="file-ext">FILE</span>
-            </div>
-        }
-        <div class="file-name" title="@Document.FileName">@Document.FileName</div>
-    </a>
+        </div>
+    }
 }
 
 @code {
-    [Parameter]
-    public DocumentDto? Document { get; set; }
+    [Parameter] public DocumentDto? Document { get; set; }
+    [Parameter] public string OwnerType { get; set; } = string.Empty;
+    [Parameter] public Guid OwnerId { get; set; }
 
-    [Parameter]
-    public string OwnerType { get; set; } = string.Empty;
+    private bool showViewer = false;
+    private string _canvasId = "pdf_" + Guid.NewGuid().ToString("N");
+    private string _wordThumbId = "wthumb_" + Guid.NewGuid().ToString("N");
+    private string _wordModalId = "wmodal_" + Guid.NewGuid().ToString("N");
+    private bool _thumbnailRendered = false;
+    private bool _wordModalRendered = false;
 
-    [Parameter]
-    public Guid OwnerId { get; set; }
+    private bool IsImage => Document?.ContentType?.StartsWith("image/") == true
+                            || new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" }
+                                .Any(e => Document?.FileName?.EndsWith(e, StringComparison.OrdinalIgnoreCase) == true);
 
-    private bool IsImage => Document?.ContentType?.StartsWith("image/") == true 
-                            || Document?.FileName?.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) == true
-                            || Document?.FileName?.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) == true
-                            || Document?.FileName?.EndsWith(".png", StringComparison.OrdinalIgnoreCase) == true;
-                            
     private bool IsPdf => Document?.ContentType == "application/pdf"
                           || Document?.FileName?.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) == true;
-                          
+
     private bool IsWord => Document?.ContentType?.Contains("word") == true
                            || Document?.FileName?.EndsWith(".doc", StringComparison.OrdinalIgnoreCase) == true
                            || Document?.FileName?.EndsWith(".docx", StringComparison.OrdinalIgnoreCase) == true;
 
-    // Assuming the API is running on https://localhost:7148 (standard dev port)
-    // In a real app, this base URL should come from config.
-    private string GetFileUrl()
+    private string ApiBase => "https://localhost:7148";
+
+    private string GetViewUrl()
     {
         if (Document == null) return string.Empty;
-        // Point to the API download endpoint
-        return $"https://localhost:7148/api/documents/{Document.Id}/download";
+        return $"{ApiBase}/api/documents/{Document.Id}/view";
     }
+
+    private string GetDownloadUrl()
+    {
+        if (Document == null) return string.Empty;
+        return $"{ApiBase}/api/documents/{Document.Id}/download";
+    }
+
+    private async Task OpenViewer()
+    {
+        showViewer = true;
+        _wordModalRendered = false;
+        StateHasChanged();
+
+        // Give Blazor a tick to render the modal DOM, then render Word content
+        if (IsWord)
+        {
+            await Task.Delay(100);
+            try
+            {
+                await JS.InvokeVoidAsync("renderWordPreview", GetViewUrl(), _wordModalId);
+                _wordModalRendered = true;
+            }
+            catch { }
+        }
+    }
+
+    private void CloseViewer() => showViewer = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_thumbnailRendered)
+        {
+            _thumbnailRendered = true;
+            try
+            {
+                if (IsPdf)
+                {
+                    await JS.InvokeVoidAsync("renderPdfThumbnail", GetViewUrl(), _canvasId);
+                }
+                else if (IsWord)
+                {
+                    await JS.InvokeVoidAsync("renderWordPreview", GetViewUrl(), _wordThumbId);
+                }
+            }
+            catch { }
+        }
+    }
+
+    public void Dispose() { }
 }
 
 <style>
-    .file-thumbnail {
-        width: 100px;
-        height: 120px;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 5px;
-        text-align: center;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        background: #f8f9fa;
-        overflow: hidden;
-    }
-
-    .file-thumbnail:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-
-    .thumbnail-img {
+    /* ── Thumbnail Card ── */
+    .doc-card {
         width: 100%;
-        height: 80px;
+        height: 220px;
+        display: flex;
+        flex-direction: column;
+        border-radius: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+        transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+
+    .doc-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.14);
+    }
+
+    /* ── Preview Area ── */
+    .doc-preview {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(240, 244, 255, 0.4);
+    }
+
+    .doc-preview-img {
+        width: 100%;
+        height: 100%;
         object-fit: cover;
+        object-position: top;
+        display: block;
+    }
+
+    .doc-pdf-canvas {
+        max-width: 100%;
+        max-height: 100%;
+        display: block;
+    }
+
+    /* Word thumbnail: small scaled preview */
+    .doc-word-thumb {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        padding: 8px 10px;
+        font-size: 0.5rem;
+        line-height: 1.3;
+        color: #333;
+        transform-origin: top left;
+        pointer-events: none;
+    }
+
+    .doc-word-thumb img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .doc-icon-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        padding: 20px;
+    }
+
+    .doc-hover-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
+    }
+
+    .doc-card:hover .doc-hover-overlay {
+        background: rgba(0, 0, 0, 0.25);
+    }
+
+    .doc-open-icon {
+        font-size: 2rem;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+    }
+
+    .doc-card:hover .doc-open-icon {
+        opacity: 1;
+    }
+
+    /* ── Footer ── */
+    .doc-footer {
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(255,255,255,0.7);
+        border-top: 1px solid rgba(0,0,0,0.05);
+        gap: 8px;
+    }
+
+    .doc-name {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #2c3e50;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+
+    .doc-download-btn {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        background: rgba(59, 130, 246, 0.12);
+        color: #3b82f6;
+        text-decoration: none;
+        transition: background 0.15s, color 0.15s;
+    }
+
+    .doc-download-btn:hover {
+        background: rgba(59, 130, 246, 0.25);
+        color: #1d4ed8;
+    }
+
+    /* ── Modal Backdrop ── */
+    .doc-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeInBackdrop 0.2s ease;
+    }
+
+    @@keyframes fadeInBackdrop {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    /* ── Modal Panel ── */
+    .doc-modal-panel {
+        width: 90vw;
+        max-width: 1000px;
+        height: 90vh;
+        background: rgba(255, 255, 255, 0.88);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.9);
+        box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: slideUpPanel 0.25s ease;
+    }
+
+    @@keyframes slideUpPanel {
+        from { transform: translateY(30px); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    .doc-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 20px;
+        border-bottom: 1px solid rgba(0,0,0,0.07);
+        background: rgba(255,255,255,0.6);
+        flex-shrink: 0;
+        gap: 12px;
+    }
+
+    .doc-modal-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1a1a2e;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+
+    .doc-modal-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+    }
+
+    .doc-modal-download-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        font-size: 0.82rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: opacity 0.15s, transform 0.15s;
+    }
+
+    .doc-modal-download-btn:hover {
+        opacity: 0.88;
+        transform: scale(1.03);
+        color: white;
+    }
+
+    .doc-modal-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0,0,0,0.07);
+        color: #555;
+        font-size: 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+    }
+
+    .doc-modal-close:hover {
+        background: rgba(220,53,69,0.12);
+        color: #dc3545;
+    }
+
+    .doc-modal-body {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(240,244,255,0.4);
+    }
+
+    .doc-modal-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
         border-radius: 4px;
     }
 
-    .pdf-icon, .unknown-icon {
-        width: 100%;
-        height: 80px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #dc3545;
-        font-size: 2rem;
-    }
-    
-    .unknown-icon {
-        color: #6c757d;
-    }
-
-    .file-ext {
-        font-size: 0.8rem;
-        font-weight: bold;
-        margin-top: 5px;
-    }
-
-    .file-name {
-        font-size: 0.75rem;
-        margin-top: 5px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .file-modal-content {
-        background-color: #f8f9fa;
-        height: 90vh;
-    }
-
-    .file-modal-body {
-        height: calc(90vh - 60px);
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .pdf-viewer {
+    .doc-modal-frame {
         width: 100%;
         height: 100%;
         border: none;
+        display: block;
+    }
+
+    /* Word modal: scrollable rendered HTML */
+    .doc-word-modal-content {
+        width: 100%;
+        height: 100%;
+        overflow-y: auto;
+        padding: 30px 40px;
+        font-size: 0.95rem;
+        line-height: 1.7;
+        color: #1a1a2e;
+        background: white;
+    }
+
+    .doc-word-modal-content img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .doc-word-modal-content table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 12px 0;
+    }
+
+    .doc-word-modal-content table td,
+    .doc-word-modal-content table th {
+        border: 1px solid #dee2e6;
+        padding: 8px 12px;
+    }
+
+    .doc-modal-unsupported {
+        text-align: center;
+        color: #555;
+    }
+
+    /* ── Dark Mode ── */
+    [data-bs-theme="dark"] .doc-card {
+        background: rgba(30, 35, 55, 0.65);
+        border-color: rgba(255,255,255,0.08);
+    }
+
+    [data-bs-theme="dark"] .doc-footer {
+        background: rgba(20,25,45,0.7);
+        border-top-color: rgba(255,255,255,0.05);
+    }
+
+    [data-bs-theme="dark"] .doc-name {
+        color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] .doc-preview {
+        background: rgba(20,25,50,0.5);
+    }
+
+    [data-bs-theme="dark"] .doc-word-thumb {
+        color: #c8ccd4;
+    }
+
+    [data-bs-theme="dark"] .doc-modal-panel {
+        background: rgba(18, 22, 42, 0.9);
+        border-color: rgba(255,255,255,0.1);
+    }
+
+    [data-bs-theme="dark"] .doc-modal-header {
+        background: rgba(255,255,255,0.05);
+        border-bottom-color: rgba(255,255,255,0.06);
+    }
+
+    [data-bs-theme="dark"] .doc-modal-title {
+        color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] .doc-modal-body {
+        background: rgba(10,14,30,0.5);
+    }
+
+    [data-bs-theme="dark"] .doc-word-modal-content {
+        background: #1e2235;
+        color: #e2e8f0;
+    }
+
+    [data-bs-theme="dark"] .doc-word-modal-content table td,
+    [data-bs-theme="dark"] .doc-word-modal-content table th {
+        border-color: rgba(255,255,255,0.1);
     }
 </style>

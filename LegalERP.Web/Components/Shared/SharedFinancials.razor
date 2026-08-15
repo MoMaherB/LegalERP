@@ -12,10 +12,10 @@
 }
 else
 {
-    <div class="row">
+    <div class="row row-cols-1 row-cols-md-3 g-4 w-100 m-0 p-0">
         <!-- Summary Cards -->
-        <div class="col-md-4 mb-3">
-            <div class="glass-card h-100">
+        <div class="col px-2">
+            <div class="glass-card h-100 w-100">
                 <div class="card-body">
                     <h5 class="card-title text-muted">@Loc["AgreedFee"]</h5>
                     <div class="d-flex align-items-center">
@@ -36,8 +36,8 @@ else
             </div>
         </div>
 
-        <div class="col-md-4 mb-3">
-            <div class="glass-card h-100">
+        <div class="col px-2">
+            <div class="glass-card h-100 w-100">
                 <div class="card-body">
                     <h5 class="card-title text-muted">@Loc["CollectedAmount"]</h5>
                     <h3 class="mb-0 text-success">@financials.TotalCollected.ToString("N2")</h3>
@@ -45,8 +45,8 @@ else
             </div>
         </div>
 
-        <div class="col-md-4 mb-3">
-            <div class="glass-card h-100">
+        <div class="col px-2">
+            <div class="glass-card h-100 w-100">
                 <div class="card-body">
                     <h5 class="card-title text-muted">@Loc["RemainingBalance"]</h5>
                     <h3 class="mb-0 @GetBalanceColor(financials.PaymentStatus)">
@@ -63,7 +63,7 @@ else
     </div>
 
     <!-- Transactions Ledger -->
-    <div class="glass-card mt-4">
+    <div class="glass-card mt-4 w-100">
         <div class="glass-card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">@Loc["FeeTransactions"]</h5>
             <button class="btn btn-sm btn-primary glass-panel" @onclick="ToggleAddTransaction">

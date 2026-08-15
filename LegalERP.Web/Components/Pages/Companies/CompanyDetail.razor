@@ -313,13 +313,76 @@ else
         </div>
     }
 
+    @* ── Company Documents Section (مستندات الشركة) ── *@
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["CompanyDocuments"]</h3>
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddCompanyDocForm" style="padding: 6px 12px; font-size: 0.9rem;">
+            @(showAddCompanyDocForm ? Loc["Cancel"].Value : Loc["UploadDocument"].Value)
+        </button>
+    </div>
+
+    @if (showAddCompanyDocForm)
+    {
+        <div class="ios-widget-card mb-4">
+            <div class="p-4">
+                <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">@Loc["UploadDocCustomTitle"]</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label ios-details fw-bold">@Loc["DocTitleDescription"]</label>
+                        <input class="ios-input" @bind="newCompanyDocTitle" placeholder="@Loc["DocTitlePlaceholder"]" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label ios-details fw-bold">@Loc["DocFile"]</label>
+                        <InputFile class="ios-input" OnChange="LoadCompanyDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                    </div>
+                    <div class="col-12">
+                        <button class="ios-btn ios-btn-primary me-2" @onclick="UploadCompanyDocument" disabled="@isUploadingCompanyDoc">
+                            @(isUploadingCompanyDoc ? Loc["Saving"].Value : Loc["UploadSaveDoc"].Value)
+                        </button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddCompanyDocForm">@Loc["Cancel"]</button>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(companyDocErrorMessage))
+                {
+                    <p class="text-danger mt-2 mb-0">@companyDocErrorMessage</p>
+                }
+            </div>
+        </div>
+    }
+
+    @if (companyDocuments is null)
+    {
+        <p>@Loc["Loading"]</p>
+    }
+    else if (companyDocuments.Count == 0)
+    {
+        <div class="alert alert-light border" style="border-radius: 12px;">@Loc["NoCompanyDocuments"]</div>
+    }
+    else
+    {
+        <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+            @foreach (var doc in companyDocuments)
+            {
+                <div class="col">
+                    <div class="d-flex flex-column h-100 gap-2">
+                        <FileThumbnail Document="doc" OwnerType="companydoc" OwnerId="company.Id" />
+                        <div class="d-flex justify-content-between align-items-center px-1">
+                            <small class="ios-details fw-bold text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
+                            <button class="ios-btn ios-btn-danger" style="padding: 3px 10px; font-size: 0.78rem;" @onclick="() => DeleteCompanyDocument(doc.Id)">@Loc["Delete"]</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
     @if (Auth.IsAdmin)
     {
         <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
             <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Financials"]</h3>
         </div>
-        <div class="ios-widget-card mb-5">
-            <div class="p-4">
+        <div class="ios-widget-card d-block w-100 mb-5">
+            <div class="p-4 w-100">
                 <SharedFinancials OwnerId="company.Id" OwnerType="company" />
             </div>
         </div>
@@ -410,6 +473,14 @@ else
     private Guid? selectedClientId;
     private string? selectedClientName;
 
+    // Company Documents state
+    private List<LegalERP.Application.Companies.DocumentDto>? companyDocuments;
+    private bool showAddCompanyDocForm;
+    private string? newCompanyDocTitle;
+    private IBrowserFile? newCompanyDocFile;
+    private bool isUploadingCompanyDoc;
+    private string? companyDocErrorMessage;
+
     protected override async Task OnInitializedAsync()
     {
         Auth.OnRoleChanged += StateHasChanged;
@@ -424,10 +495,86 @@ else
     private async Task LoadCompany()
     {
         company = await CompanyApi.GetByIdAsync(Id);
+        await LoadCompanyDocuments();
+    }
+
+    private async Task LoadCompanyDocuments()
+    {
+        try
+        {
+            companyDocuments = await CompanyApi.GetDocumentsAsync("companydoc", Id);
+        }
+        catch
+        {
+            companyDocuments = new List<LegalERP.Application.Companies.DocumentDto>();
+        }
+    }
+
+    // ── Company Documents ──
+
+    private void ToggleAddCompanyDocForm()
+    {
+        showAddCompanyDocForm = !showAddCompanyDocForm;
+        companyDocErrorMessage = null;
+        newCompanyDocTitle = null;
+        newCompanyDocFile = null;
+    }
+
+    private void LoadCompanyDocFile(InputFileChangeEventArgs e)
+    {
+        newCompanyDocFile = e.File;
+        companyDocErrorMessage = null;
+    }
+
+    private async Task UploadCompanyDocument()
+    {
+        if (newCompanyDocFile == null)
+        {
+            companyDocErrorMessage = "يرجى اختيار ملف.";
+            return;
+        }
+
+        isUploadingCompanyDoc = true;
+        companyDocErrorMessage = null;
+
+        try
+        {
+            var docId = await CompanyApi.UploadDocumentAsync("companydoc", Id, newCompanyDocFile, newCompanyDocTitle);
+            
+            showAddCompanyDocForm = false;
+            newCompanyDocTitle = null;
+            newCompanyDocFile = null;
+            
+            await LoadCompanyDocuments();
+        }
+        catch (Exception ex)
+        {
+            companyDocErrorMessage = "فشل رفع المستند: " + ex.Message;
+        }
+        finally
+        {
+            isUploadingCompanyDoc = false;
+        }
+    }
+
+    private async Task DeleteCompanyDocument(Guid docId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteDoc"].Value);
+        if (confirmed)
+        {
+            try
+            {
+                await CompanyApi.DeleteDocumentAsync(docId);
+                await LoadCompanyDocuments();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", "فشل حذف المستند: " + ex.Message);
+            }
+        }
     }
 
     private void GoBack() => NavManager.NavigateTo("/companies");
-
     // ── Amendments ──
 
     private void ToggleAddAmendmentForm()

@@ -40,9 +40,9 @@ else
     </div>
 
     <div class="ios-widget-card mb-4 p-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-column align-items-start mb-4 gap-2">
             <h3 class="ios-title mb-0" style="font-size: 1.5rem;">@caseDto.Title</h3>
-            <div class="d-flex gap-2 align-items-center">
+            <div class="d-flex gap-2">
                 <span class="ios-status-badge ios-status-gray fs-6">@Loc[caseDto.CaseType.ToString()]</span>
                 @if (caseDto.Status == CaseStatus.Active)
                 {
@@ -72,24 +72,34 @@ else
                     <strong>@Loc["CaseNumber"]:</strong>
                     <p class="fs-5 text-primary mb-0">@caseDto.CaseNumber</p>
                 </div>
-                <div class="col-md-4">
-                    <strong>@Loc["CourtName"]:</strong>
-                    <p class="mb-0">@(string.IsNullOrWhiteSpace(caseDto.CourtName) ? "—" : caseDto.CourtName)</p>
-                </div>
-                <div class="col-md-4">
-                    <strong>@Loc["JudgeName"]:</strong>
-                    <p class="mb-0">@(string.IsNullOrWhiteSpace(caseDto.JudgeName) ? "—" : caseDto.JudgeName)</p>
-                </div>
-                <div class="col-md-4">
-                    <strong>@Loc["FilingDate"]:</strong>
-                    <p class="mb-0">@(caseDto.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</p>
-                </div>
-                <div class="col-12 mt-3">
-                    <strong>@Loc["NotesRemarks"]:</strong>
-                    <p class="border p-3 rounded bg-light mb-0">
-                        @(string.IsNullOrWhiteSpace(caseDto.Notes) ? Loc["NoNotes"].Value : caseDto.Notes)
-                    </p>
-                </div>
+                @if (!string.IsNullOrWhiteSpace(caseDto.CourtName))
+                {
+                    <div class="col-md-4">
+                        <strong>@Loc["CourtName"]:</strong>
+                        <p class="mb-0">@caseDto.CourtName</p>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(caseDto.JudgeName))
+                {
+                    <div class="col-md-4">
+                        <strong>@Loc["JudgeName"]:</strong>
+                        <p class="mb-0">@caseDto.JudgeName</p>
+                    </div>
+                }
+                @if (caseDto.FilingDate.HasValue)
+                {
+                    <div class="col-md-4">
+                        <strong>@Loc["FilingDate"]:</strong>
+                        <p class="mb-0">@caseDto.FilingDate.Value.ToString("yyyy-MM-dd")</p>
+                    </div>
+                }
+                @if (!string.IsNullOrWhiteSpace(caseDto.Notes))
+                {
+                    <div class="col-12 mt-3">
+                        <strong>@Loc["NotesRemarks"]:</strong>
+                        <p class="border p-3 rounded bg-light mb-0" style="white-space: pre-wrap;">@caseDto.Notes</p>
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -331,47 +341,45 @@ else
     }
     else
     {
-        <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+        <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
             @foreach (var memo in caseDto.Memos)
             {
                 <div class="col">
-                    <div class="ios-widget-card h-100 d-flex flex-column">
-                        <div class="ios-content d-flex flex-column h-100 justify-content-between p-4">
-                            <div>
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <strong class="ios-title mb-0" style="font-size: 1.1rem; color: #1d4ed8;">@memo.Title</strong>
-                                    <span class="ios-status-badge ios-status-gray">📅 @memo.MemoDate.ToString("yyyy-MM-dd")</span>
-                                </div>
-                                @if (!string.IsNullOrWhiteSpace(memo.Content))
-                                {
-                                    <p class="text-dark border-start border-4 ps-3 py-1 mb-3" style="border-color: rgba(59, 130, 246, 0.5) !important; white-space: pre-wrap; font-size: 0.95rem;">@memo.Content</p>
-                                }
-                                else
-                                {
-                                    <p class="text-muted italic mb-3">No content recorded.</p>
-                                }
+                    <div class="h-100 d-flex flex-column p-3 gap-2" style="background: rgba(255, 255, 255, 0.75); border: 1.5px solid rgba(255, 255, 255, 0.6); border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.06);">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong class="ios-title mb-0 text-truncate" style="font-size: 1rem; color: #1d4ed8;" title="@memo.Title">@memo.Title</strong>
+                            <small class="ios-status-badge ios-status-gray px-1 py-0">📅 @memo.MemoDate.ToString("yyyy-MM-dd")</small>
+                        </div>
+                        
+                        @if (!string.IsNullOrWhiteSpace(memo.Content))
+                        {
+                            <p class="text-dark border-start border-3 ps-2 py-1 mb-0 flex-grow-1" style="border-color: rgba(59, 130, 246, 0.5) !important; font-size: 0.85rem; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;" title="@memo.Content">@memo.Content</p>
+                        }
+                        else
+                        {
+                            <p class="text-muted fst-italic mb-0 flex-grow-1" style="font-size: 0.85rem;">No content recorded.</p>
+                        }
 
-                                @if (memo.Document != null)
-                                {
-                                    <div class="mt-2 p-3 rounded text-center" style="background: rgba(0,0,0,0.02);">
-                                        <FileThumbnail Document="memo.Document" OwnerType="casememo" OwnerId="memo.Id" />
-                                    </div>
-                                }
+                        @if (memo.Document != null)
+                        {
+                            <div class="mt-1" style="height: 160px;">
+                                <FileThumbnail Document="memo.Document" OwnerType="casememo" OwnerId="memo.Id" />
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top" style="border-color: rgba(0,0,0,0.05) !important;">
-                                @if (memo.Document != null)
-                                {
-                                    <label class="ios-btn ios-btn-secondary mb-0" style="padding: 4px 10px; font-size: 0.85rem; cursor: pointer;">
-                                        @Loc["UpdateFile"]
-                                        <InputFile OnChange="@((e) => UpdateMemoFile(memo.Id, e))" style="display: none;" accept=".pdf,.doc,.docx" />
-                                    </label>
-                                }
-                                else
-                                {
-                                    <div></div>
-                                }
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteMemo(memo.Id)">@Loc["DeleteMemo"]</button>
-                            </div>
+                        }
+
+                        <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top" style="border-color: rgba(0,0,0,0.05) !important;">
+                            @if (memo.Document != null)
+                            {
+                                <label class="ios-btn ios-btn-secondary mb-0" style="padding: 2px 8px; font-size: 0.75rem; cursor: pointer;">
+                                    @Loc["UpdateFile"]
+                                    <InputFile OnChange="@((e) => UpdateMemoFile(memo.Id, e))" style="display: none;" accept=".pdf,.doc,.docx" />
+                                </label>
+                            }
+                            else
+                            {
+                                <div></div>
+                            }
+                            <button class="ios-btn ios-btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" @onclick="() => DeleteMemo(memo.Id)">@Loc["Delete"]</button>
                         </div>
                     </div>
                 </div>
@@ -389,7 +397,7 @@ else
 
     @if (showAddHearingForm)
     {
-        <div class="ios-widget-card mb-4">
+        <div class="ios-widget-card d-block w-100 mb-4">
             <div class="p-4">
                 <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">@Loc["RecordNewHearing"]</h5>
                 <div class="row g-3">
@@ -430,7 +438,7 @@ else
     }
     else
     {
-        <div class="ios-table-container mb-4">
+        <div class="ios-table-container mb-4 w-100">
             <table class="ios-table">
                 <thead>
                     <tr>
@@ -469,7 +477,7 @@ else
 
     @if (showAddDocForm)
     {
-        <div class="ios-widget-card mb-4">
+        <div class="ios-widget-card d-block w-100 mb-4">
             <div class="p-4">
                 <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">@Loc["UploadDocCustomTitle"]</h5>
                 <div class="row g-3">
@@ -498,7 +506,7 @@ else
 
     @if (caseDocuments is null)
     {
-        <p>Loading documents...</p>
+        <p>@Loc["Loading"]</p>
     }
     else if (caseDocuments.Count == 0)
     {
@@ -506,22 +514,15 @@ else
     }
     else
     {
-        <div class="row row-cols-1 row-cols-md-3 g-3 mb-4">
+        <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
             @foreach (var doc in caseDocuments)
             {
                 <div class="col">
-                    <div class="ios-widget-card h-100">
-                        <div class="ios-content text-center d-flex flex-column align-items-center justify-content-between">
-                            <h6 class="ios-title text-start w-100 text-truncate font-weight-bold" style="font-size: 1.1rem;" title="@doc.FileName">
-                                @doc.FileName
-                            </h6>
-                            <div class="my-3 p-3 rounded w-100" style="background: rgba(0,0,0,0.02);">
-                                <FileThumbnail Document="doc" OwnerType="case" OwnerId="caseDto.Id" />
-                            </div>
-                            <div class="mt-auto w-100 d-flex justify-content-between align-items-center border-top pt-3" style="border-color: rgba(0,0,0,0.05) !important;">
-                                <small class="ios-details fw-bold text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteCaseDocument(doc.Id)">@Loc["Delete"]</button>
-                            </div>
+                    <div class="d-flex flex-column h-100 gap-2">
+                        <FileThumbnail Document="doc" OwnerType="case" OwnerId="caseDto.Id" />
+                        <div class="d-flex justify-content-between align-items-center px-1">
+                            <small class="ios-details fw-bold text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
+                            <button class="ios-btn ios-btn-danger" style="padding: 3px 10px; font-size: 0.78rem;" @onclick="() => DeleteCaseDocument(doc.Id)">@Loc["Delete"]</button>
                         </div>
                     </div>
                 </div>
@@ -531,10 +532,10 @@ else
     @if (Auth.IsAdmin)
     {
         <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
-            <h3 class="ios-title mb-0" style="font-size: 1.4rem;">Financials (الماليات)</h3>
+            <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Financials"]</h3>
         </div>
-        <div class="ios-widget-card mb-5">
-            <div class="p-4">
+        <div class="ios-widget-card d-block w-100 mb-5">
+            <div class="p-4 w-100">
                 <SharedFinancials OwnerId="caseDto.Id" OwnerType="case" />
             </div>
         </div>
@@ -919,7 +920,7 @@ else
 
         try
         {
-            var docId = await CompanyApi.UploadDocumentAsync("case", Id, newDocFile);
+            var docId = await CompanyApi.UploadDocumentAsync("case", Id, newDocFile, newDocTitle);
             showAddDocForm = false;
             newDocTitle = null;
             newDocFile = null;

@@ -657,4 +657,10 @@
   <data name="PlaintiffCivil" xml:space="preserve">
     <value>Plaintiff</value>
   </data>
+  <data name="CompanyDocuments" xml:space="preserve">
+    <value>Company Documents</value>
+  </data>
+  <data name="NoCompanyDocuments" xml:space="preserve">
+    <value>No company documents recorded yet.</value>
+  </data>
 </root>
