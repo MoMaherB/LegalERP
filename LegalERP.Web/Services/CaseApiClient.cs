@@ -44,7 +44,10 @@ public class CaseApiClient
 
     public async Task<CaseDto?> GetByIdAsync(Guid id)
     {
-        return await _http.GetFromJsonAsync<CaseDto>($"api/cases/{id}", JsonOptions);
+        var response = await _http.GetAsync($"api/cases/{id}");
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<CaseDto>(JsonOptions);
     }
 
     public async Task<CaseDto?> CreateAsync(CreateCaseDto dto)

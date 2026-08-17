@@ -34,7 +34,10 @@ public class ClientApiClient
 
     public async Task<ClientDto?> GetByIdAsync(Guid id)
     {
-        return await _http.GetFromJsonAsync<ClientDto>($"api/clients/{id}", JsonOptions);
+        var response = await _http.GetAsync($"api/clients/{id}");
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<ClientDto>(JsonOptions);
     }
 
     public async Task<ClientSummaryDto?> CreateAsync(CreateClientDto dto)

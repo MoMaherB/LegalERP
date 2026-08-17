@@ -215,6 +215,10 @@ else
     }
     else
     {
+        @if (!string.IsNullOrEmpty(partyListErrorMessage))
+        {
+            <div class="alert alert-danger border mb-3" style="border-radius: 12px;">@partyListErrorMessage</div>
+        }
         <div class="ios-table-container mb-4">
             <table class="ios-table">
                 <thead>
@@ -235,7 +239,7 @@ else
                             <td>
                                 @if (party.ClientId.HasValue)
                                 {
-                                    <a href="/clients/@party.ClientId.Value" class="text-decoration-none fw-bold" style="color: #2c3e50;">
+                                    <a @onclick="() => NavigateToClientSafe(party.ClientId.Value)" class="text-decoration-none fw-bold" style="cursor: pointer; color: #2c3e50;">
                                         @party.FullName
                                     </a>
                                 }
@@ -558,6 +562,7 @@ else
     private string? newPartyNotes;
     private bool isSavingParty;
     private string? partyErrorMessage;
+    private string? partyListErrorMessage;
 
     // Client Search State
     private string? clientSearchTerm;
@@ -642,11 +647,26 @@ else
     {
         showAddPartyForm = !showAddPartyForm;
         partyErrorMessage = null;
+        partyListErrorMessage = null;
         ClearClientSelection();
         manualOpponentName = null;
         clientSearchTerm = null;
         clientSearchResults = null;
         showNoClientFound = false;
+    }
+
+    private async Task NavigateToClientSafe(Guid clientId)
+    {
+        partyListErrorMessage = null;
+        var clientExists = await ClientApi.GetByIdAsync(clientId);
+        if (clientExists == null)
+        {
+            partyListErrorMessage = "العميل تم حذفه من قبل برجاء اضافة الطرف من جديد";
+        }
+        else
+        {
+            NavManager.NavigateTo($"/clients/{clientId}");
+        }
     }
 
     // --- Client Quick-Search ---

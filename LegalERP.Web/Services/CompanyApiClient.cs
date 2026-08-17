@@ -48,7 +48,10 @@ public class CompanyApiClient
 
     public async Task<CompanyDto?> GetByIdAsync(Guid id)
     {
-        return await _http.GetFromJsonAsync<CompanyDto>($"api/companies/{id}", JsonOptions);
+        var response = await _http.GetAsync($"api/companies/{id}");
+        if (response.StatusCode == System.Net.HttpStatusCode.NotFound) return null;
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<CompanyDto>(JsonOptions);
     }
 
     public async Task UpdateAsync(Guid id, UpdateCompanyDto dto)
