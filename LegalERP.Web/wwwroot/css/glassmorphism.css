@@ -706,4 +706,28 @@ body {
     -webkit-backdrop-filter: none !important;
     transform: none !important;
     z-index: 9999 !important;
+}/* Glassmorphism Toasts */
+.glassmorphism-toast {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.2);
+    color: white;
+}
+.glassmorphism-toast.bg-success { background: rgba(34, 197, 94, 0.8) !important; }
+.glassmorphism-toast.bg-danger { background: rgba(239, 68, 68, 0.8) !important; }
+.glassmorphism-toast.bg-warning { background: rgba(245, 158, 11, 0.8) !important; }
+.glassmorphism-toast.bg-info { background: rgba(59, 130, 246, 0.8) !important; }
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }

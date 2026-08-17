@@ -1,5 +1,9 @@
-@page "/clients/new"
+﻿@page "/clients/new"
+@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
 @page "/clients/edit/{Id:guid}"
+@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
 @using LegalERP.Application.Clients
 @using LegalERP.Application.Companies
 @using LegalERP.Web.Services
@@ -98,10 +102,7 @@ else
             </div>
         </div>
 
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="alert alert-danger mb-3">@errorMessage</div>
-        }
+
 
         <div class="d-flex gap-2">
             <button type="submit" class="ios-btn ios-btn-primary" disabled="@isSubmitting">
@@ -119,7 +120,6 @@ else
     private ClientFormModel model = new();
     private bool isLoading = true;
     private bool isSubmitting;
-    private string? errorMessage;
 
     private IBrowserFile? nationalIdFile;
     private IBrowserFile? attorneyFile;
@@ -150,7 +150,7 @@ else
             }
             else
             {
-                errorMessage = Loc["ClientNotFound"].Value;
+                ToastService.ShowError(Loc["ClientNotFound"].Value);
             }
         }
         isLoading = false;
@@ -170,18 +170,17 @@ else
     {
         if (string.IsNullOrWhiteSpace(model.FullName))
         {
-            errorMessage = Loc["FullNameRequired"].Value;
+            ToastService.ShowWarning(Loc["FullNameRequired"].Value);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(model.NationalIdNumber))
         {
-            errorMessage = Loc["NationalIdRequired"].Value;
+            ToastService.ShowWarning(Loc["NationalIdRequired"].Value);
             return;
         }
 
         isSubmitting = true;
-        errorMessage = null;
 
         try
         {
@@ -235,13 +234,13 @@ else
                 }
                 else
                 {
-                    NavManager.NavigateTo("/clients");
+                    ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " " + Loc["Saving"].Value); NavManager.NavigateTo("/clients");
                 }
             }
         }
         catch (Exception ex)
         {
-            errorMessage = Loc["FailedToSaveClient"].Value + ": " + ex.Message;
+            ToastService.ShowError(Loc["FailedToSaveClient"].Value + ": " + ex.Message);
         }
         finally
         {
@@ -262,3 +261,4 @@ else
         public Guid? AttorneyDocumentId { get; set; }
     }
 }
+

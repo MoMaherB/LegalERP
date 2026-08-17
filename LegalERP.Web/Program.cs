@@ -1,5 +1,6 @@
 using LegalERP.Web.Components;
 using LegalERP.Web.Services;
+using LegalERP.Web.Services.Toast;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Services.AddScoped<ClientApiClient>();
 builder.Services.AddScoped<NotificationApiClient>();
 builder.Services.AddScoped<FinancialsApiClient>();
 builder.Services.AddScoped<MockAuthService>();
+builder.Services.AddScoped<IToastService, ToastService>();
 
 var app = builder.Build();
 

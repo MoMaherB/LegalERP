@@ -1,4 +1,6 @@
-@page "/cases/{id:guid}"
+﻿@page "/cases/{Id:guid}"
+@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
 @using LegalERP.Application.Cases
 @using LegalERP.Application.Clients
 @using LegalERP.Domain.Enums
@@ -201,10 +203,7 @@ else
                         <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddPartyForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
-                @if (!string.IsNullOrEmpty(partyErrorMessage))
-                {
-                    <p class="text-danger mt-2 mb-0">@partyErrorMessage</p>
-                }
+
             </div>
         </div>
     }
@@ -215,10 +214,7 @@ else
     }
     else
     {
-        @if (!string.IsNullOrEmpty(partyListErrorMessage))
-        {
-            <div class="alert alert-danger border mb-3" style="border-radius: 12px;">@partyListErrorMessage</div>
-        }
+
         <div class="ios-table-container mb-4">
             <table class="ios-table">
                 <thead>
@@ -331,10 +327,7 @@ else
                         <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddMemoForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
-                @if (!string.IsNullOrEmpty(memoErrorMessage))
-                {
-                    <p class="text-danger mt-2 mb-0">@memoErrorMessage</p>
-                }
+
             </div>
         </div>
     }
@@ -428,10 +421,7 @@ else
                         <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddHearingForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
-                @if (!string.IsNullOrEmpty(hearingErrorMessage))
-                {
-                    <p class="text-danger mt-2 mb-0">@hearingErrorMessage</p>
-                }
+
             </div>
         </div>
     }
@@ -500,10 +490,7 @@ else
                         <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddDocForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
-                @if (!string.IsNullOrEmpty(docErrorMessage))
-                {
-                    <p class="text-danger mt-2 mb-0">@docErrorMessage</p>
-                }
+
             </div>
         </div>
     }
@@ -561,8 +548,6 @@ else
     private string newPartyClientStatus = "client";
     private string? newPartyNotes;
     private bool isSavingParty;
-    private string? partyErrorMessage;
-    private string? partyListErrorMessage;
 
     // Client Search State
     private string? clientSearchTerm;
@@ -578,7 +563,6 @@ else
     private DateOnly newMemoDate = DateOnly.FromDateTime(DateTime.UtcNow);
     private IBrowserFile? newMemoFile;
     private bool isSavingMemo;
-    private string? memoErrorMessage;
 
     // Hearing State
     private bool showAddHearingForm;
@@ -587,14 +571,12 @@ else
     private string? newHearingDecision;
     private string? newPostponementReason;
     private bool isSavingHearing;
-    private string? hearingErrorMessage;
 
     // General Document State
     private bool showAddDocForm;
     private string? newDocTitle;
     private IBrowserFile? newDocFile;
     private bool isUploadingDoc;
-    private string? docErrorMessage;
 
     private Guid _lastLoadedId;
 
@@ -638,7 +620,7 @@ else
         }
         catch (Exception ex)
         {
-            docErrorMessage = "Failed to load documents: " + ex.Message;
+            ToastService.ShowError("Failed to load documents: " + ex.Message);
             caseDocuments = new List<LegalERP.Application.Companies.DocumentDto>();
         }
     }
@@ -646,8 +628,7 @@ else
     private void ToggleAddPartyForm()
     {
         showAddPartyForm = !showAddPartyForm;
-        partyErrorMessage = null;
-        partyListErrorMessage = null;
+
         ClearClientSelection();
         manualOpponentName = null;
         clientSearchTerm = null;
@@ -657,11 +638,11 @@ else
 
     private async Task NavigateToClientSafe(Guid clientId)
     {
-        partyListErrorMessage = null;
+
         var clientExists = await ClientApi.GetByIdAsync(clientId);
         if (clientExists == null)
         {
-            partyListErrorMessage = "العميل تم حذفه من قبل برجاء اضافة الطرف من جديد";
+            ToastService.ShowError("العميل تم حذفه من قبل برجاء اضافة الطرف من جديد");
         }
         else
         {
@@ -713,18 +694,17 @@ else
     {
         if (newPartyClientStatus == "client" && !selectedClientId.HasValue)
         {
-            partyErrorMessage = "You must select a Client from the search results. If the person is not in the system, click 'Add new client' to register them first.";
+            ToastService.ShowWarning("You must select a Client from the search results. If the person is not in the system, click 'Add new client' to register them first.");
             return;
         }
 
         if (newPartyClientStatus == "opponent" && string.IsNullOrWhiteSpace(manualOpponentName))
         {
-            partyErrorMessage = "You must enter the opponent's name.";
+            ToastService.ShowWarning("You must enter the opponent's name.");
             return;
         }
 
         isSavingParty = true;
-        partyErrorMessage = null;
 
         try
         {
@@ -754,7 +734,7 @@ else
         }
         catch (Exception ex)
         {
-            partyErrorMessage = "Failed to add party: " + ex.Message;
+            ToastService.ShowError("Failed to add party: " + ex.Message);
         }
         finally
         {
@@ -777,7 +757,7 @@ else
     private void ToggleAddMemoForm()
     {
         showAddMemoForm = !showAddMemoForm;
-        memoErrorMessage = null;
+
         newMemoTitle = null;
         newMemoContent = null;
         newMemoDate = DateOnly.FromDateTime(DateTime.UtcNow);
@@ -793,12 +773,11 @@ else
     {
         if (string.IsNullOrWhiteSpace(newMemoTitle))
         {
-            memoErrorMessage = "Memo Title (عنوان المذكرة) is required.";
+            ToastService.ShowWarning("Memo Title (عنوان المذكرة) is required.");
             return;
         }
 
         isSavingMemo = true;
-        memoErrorMessage = null;
 
         try
         {
@@ -821,7 +800,7 @@ else
         }
         catch (Exception ex)
         {
-            memoErrorMessage = "Failed to add memo: " + ex.Message;
+            ToastService.ShowError("Failed to add memo: " + ex.Message);
         }
         finally
         {
@@ -855,7 +834,7 @@ else
         }
         catch (Exception ex)
         {
-            memoErrorMessage = "Failed to update memo file: " + ex.Message;
+            ToastService.ShowError("Failed to update memo file: " + ex.Message);
         }
     }
 
@@ -874,13 +853,12 @@ else
     private void ToggleAddHearingForm()
     {
         showAddHearingForm = !showAddHearingForm;
-        hearingErrorMessage = null;
+
     }
 
     private async Task SaveHearing()
     {
         isSavingHearing = true;
-        hearingErrorMessage = null;
 
         try
         {
@@ -902,7 +880,7 @@ else
         }
         catch (Exception ex)
         {
-            hearingErrorMessage = "Failed to record hearing: " + ex.Message;
+            ToastService.ShowError("Failed to record hearing: " + ex.Message);
         }
         finally
         {
@@ -925,7 +903,7 @@ else
     private void ToggleAddDocForm()
     {
         showAddDocForm = !showAddDocForm;
-        docErrorMessage = null;
+
     }
 
     private void LoadDocFile(InputFileChangeEventArgs e)
@@ -941,12 +919,11 @@ else
     {
         if (newDocFile == null)
         {
-            docErrorMessage = "Please select a file to upload.";
+            ToastService.ShowWarning("Please select a file to upload.");
             return;
         }
 
         isUploadingDoc = true;
-        docErrorMessage = null;
 
         try
         {
@@ -958,7 +935,7 @@ else
         }
         catch (Exception ex)
         {
-            docErrorMessage = "Failed to upload document: " + ex.Message;
+            ToastService.ShowError("Failed to upload document: " + ex.Message);
         }
         finally
         {
@@ -986,4 +963,5 @@ else
         }
     }
 }
+
 

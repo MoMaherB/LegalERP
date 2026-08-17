@@ -1,5 +1,9 @@
-@page "/companies/new"
+﻿@page "/companies/new"
+@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
 @page "/companies/edit/{Id:guid}"
+@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
 @using LegalERP.Application.Companies
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
@@ -100,10 +104,7 @@ else
         </button>
     </EditForm>
 
-    @if (!string.IsNullOrEmpty(errorMessage))
-    {
-        <div class="alert alert-danger mt-3">@errorMessage</div>
-    }
+
 }
 
 @code {
@@ -113,7 +114,7 @@ else
     private bool IsEdit => Id.HasValue;
     private bool isInitializing = true;
     private bool isSaving = false;
-    private string? errorMessage;
+
     private IBrowserFile? selectedFile;
 
     private class CompanyFormModel
@@ -153,7 +154,7 @@ else
             }
             else
             {
-                errorMessage = Loc["CompanyNotFound"].Value;
+                ToastService.ShowError(Loc["CompanyNotFound"].Value);
             }
         }
         isInitializing = false;
@@ -166,12 +167,12 @@ else
 
     private async Task HandleSubmit()
     {
-        errorMessage = null;
+
         isSaving = true;
 
         if (string.IsNullOrWhiteSpace(model.CompanyName))
         {
-            errorMessage = Loc["CompanyNameRequired"].Value;
+            ToastService.ShowWarning(Loc["CompanyNameRequired"].Value);
             isSaving = false;
             return;
         }
@@ -245,7 +246,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = Loc["FailedToSaveCompany"].Value + ": " + ex.Message;
+            ToastService.ShowError(Loc["FailedToSaveCompany"].Value + ": " + ex.Message);
         }
         finally
         {
@@ -255,6 +256,7 @@ else
 
     private void GoBack()
     {
-        NavManager.NavigateTo("/companies");
+        ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Company"].Value + " " + Loc["Saving"].Value); NavManager.NavigateTo("/companies");
     }
 }
+

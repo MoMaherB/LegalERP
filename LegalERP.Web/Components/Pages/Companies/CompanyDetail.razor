@@ -1,4 +1,6 @@
-@page "/companies/{Id:guid}"
+﻿@page "/companies/{Id:guid}"
+@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
 @using LegalERP.Application.Companies
 @using LegalERP.Application.Clients
 @using LegalERP.Web.Services
@@ -96,10 +98,7 @@ else
                             </button>
                         }
                     }
-                    @if (!string.IsNullOrEmpty(incorporationContractErrorMessage))
-                    {
-                        <p class="text-danger small mt-2 mb-0">@incorporationContractErrorMessage</p>
-                    }
+
                 </div>
             </div>
         </div>
@@ -170,10 +169,7 @@ else
                         <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddPartnerForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
-                @if (!string.IsNullOrEmpty(partnerErrorMessage))
-                {
-                    <p class="text-danger mt-2 mb-0">@partnerErrorMessage</p>
-                }
+
             </div>
         </div>
     }
@@ -264,10 +260,7 @@ else
                         <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddAmendmentForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
-                @if (!string.IsNullOrEmpty(amendmentErrorMessage))
-                {
-                    <p class="text-danger mt-2 mb-0">@amendmentErrorMessage</p>
-                }
+
             </div>
         </div>
     }
@@ -337,10 +330,7 @@ else
                         <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddCompanyDocForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
-                @if (!string.IsNullOrEmpty(companyDocErrorMessage))
-                {
-                    <p class="text-danger mt-2 mb-0">@companyDocErrorMessage</p>
-                }
+
             </div>
         </div>
     }
@@ -393,12 +383,11 @@ else
     // Incorporation Contract state
     private IBrowserFile? incorporationContractFile;
     private bool isUploadingIncorporationContract;
-    private string? incorporationContractErrorMessage;
 
     private void LoadIncorporationFile(InputFileChangeEventArgs e)
     {
         incorporationContractFile = e.File;
-        incorporationContractErrorMessage = null;
+
     }
 
     private async Task UploadIncorporationContract()
@@ -406,7 +395,6 @@ else
         if (company == null || incorporationContractFile == null) return;
 
         isUploadingIncorporationContract = true;
-        incorporationContractErrorMessage = null;
 
         try
         {
@@ -428,7 +416,7 @@ else
         }
         catch (Exception ex)
         {
-            incorporationContractErrorMessage = "Failed to upload contract: " + ex.Message;
+            ToastService.ShowError("Failed to upload contract: " + ex.Message);
         }
         finally
         {
@@ -460,13 +448,11 @@ else
     private DateOnly? newAmendmentDate;
     private IBrowserFile? newAmendmentFile;
     private bool isSavingAmendment;
-    private string? amendmentErrorMessage;
 
     // Partner state
     private bool showAddPartnerForm;
     private decimal? newPartnerOwnership;
     private bool isSavingPartner;
-    private string? partnerErrorMessage;
 
     // Client Search state for Partner selection
     private string? clientSearchTerm;
@@ -480,7 +466,6 @@ else
     private string? newCompanyDocTitle;
     private IBrowserFile? newCompanyDocFile;
     private bool isUploadingCompanyDoc;
-    private string? companyDocErrorMessage;
 
     private Guid _lastLoadedId;
 
@@ -526,7 +511,7 @@ else
     private void ToggleAddCompanyDocForm()
     {
         showAddCompanyDocForm = !showAddCompanyDocForm;
-        companyDocErrorMessage = null;
+
         newCompanyDocTitle = null;
         newCompanyDocFile = null;
     }
@@ -534,19 +519,18 @@ else
     private void LoadCompanyDocFile(InputFileChangeEventArgs e)
     {
         newCompanyDocFile = e.File;
-        companyDocErrorMessage = null;
+
     }
 
     private async Task UploadCompanyDocument()
     {
         if (newCompanyDocFile == null)
         {
-            companyDocErrorMessage = Loc["PleaseSelectFile"].Value;
+            ToastService.ShowWarning(Loc["PleaseSelectFile"].Value);
             return;
         }
 
         isUploadingCompanyDoc = true;
-        companyDocErrorMessage = null;
 
         try
         {
@@ -560,7 +544,7 @@ else
         }
         catch (Exception ex)
         {
-            companyDocErrorMessage = Loc["FailedToUploadDoc"].Value + ": " + ex.Message;
+            ToastService.ShowError(Loc["FailedToUploadDoc"].Value + ": " + ex.Message);
         }
         finally
         {
@@ -591,7 +575,7 @@ else
     private void ToggleAddAmendmentForm()
     {
         showAddAmendmentForm = !showAddAmendmentForm;
-        amendmentErrorMessage = null;
+
         newAmendmentTitle = null;
         newAmendmentDate = null;
         newAmendmentFile = null;
@@ -604,7 +588,7 @@ else
 
     private async Task AddAmendment()
     {
-        amendmentErrorMessage = null;
+
         isSavingAmendment = true;
 
         try
@@ -627,7 +611,7 @@ else
         }
         catch (Exception ex)
         {
-            amendmentErrorMessage = Loc["FailedToAddAmendment"].Value + ": " + ex.Message;
+            ToastService.ShowError(Loc["FailedToAddAmendment"].Value + ": " + ex.Message);
         }
         finally
         {
@@ -679,18 +663,17 @@ else
     private void ToggleAddPartnerForm()
     {
         showAddPartnerForm = !showAddPartnerForm;
-        partnerErrorMessage = null;
+
         newPartnerOwnership = null;
         ClearClientSelection();
     }
 
     private async Task AddPartner()
     {
-        partnerErrorMessage = null;
 
         if (!selectedClientId.HasValue)
         {
-            partnerErrorMessage = Loc["MustSelectClient"].Value;
+            ToastService.ShowWarning(Loc["MustSelectClient"].Value);
             return;
         }
 
@@ -708,7 +691,7 @@ else
         }
         catch (Exception ex)
         {
-            partnerErrorMessage = Loc["FailedToAddPartner"].Value + ": " + ex.Message;
+            ToastService.ShowError(Loc["FailedToAddPartner"].Value + ": " + ex.Message);
         }
         finally
         {
@@ -762,3 +745,4 @@ else
         }
     }
 }
+

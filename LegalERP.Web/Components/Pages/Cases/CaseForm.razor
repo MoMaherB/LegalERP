@@ -1,5 +1,9 @@
-@page "/cases/new"
+﻿@page "/cases/new"
+@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
 @page "/cases/edit/{id:guid}"
+@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
 @using LegalERP.Application.Cases
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
@@ -98,10 +102,7 @@ else
             </div>
         </div>
 
-        @if (!string.IsNullOrEmpty(errorMessage))
-        {
-            <div class="alert alert-danger mb-3" style="border-radius: 12px; backdrop-filter: blur(8px);">@errorMessage</div>
-        }
+
 
         <div class="d-flex gap-2">
             <button type="submit" class="ios-btn ios-btn-primary" disabled="@isSubmitting">
@@ -120,7 +121,6 @@ else
     private CaseFormModel model = new();
     private bool isLoading = true;
     private bool isSubmitting;
-    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -144,7 +144,7 @@ else
             }
             else
             {
-                errorMessage = "Case not found.";
+                ToastService.ShowError("Case not found.");
             }
         }
         isLoading = false;
@@ -154,12 +154,11 @@ else
     {
         if (string.IsNullOrWhiteSpace(model.CaseNumber) || string.IsNullOrWhiteSpace(model.Title))
         {
-            errorMessage = "Case Number and Title are required.";
+            ToastService.ShowWarning("Case Number and Title are required.");
             return;
         }
 
         isSubmitting = true;
-        errorMessage = null;
 
         try
         {
@@ -199,13 +198,13 @@ else
                 }
                 else
                 {
-                    NavManager.NavigateTo("/cases");
+                    ToastService.ShowSuccess("Case saved."); NavManager.NavigateTo("/cases");
                 }
             }
         }
         catch (Exception ex)
         {
-            errorMessage = "Failed to save case: " + ex.Message;
+            ToastService.ShowError("Failed to save case: " + ex.Message);
         }
         finally
         {
@@ -226,3 +225,4 @@ else
         public string? Notes { get; set; }
     }
 }
+

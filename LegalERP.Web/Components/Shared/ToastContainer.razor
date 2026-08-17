@@ -1,0 +1,56 @@
+﻿@using LegalERP.Web.Services.Toast
+@inject IToastService ToastService
+@implements IDisposable
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+    @foreach (var toast in ToastService.GetToasts())
+    {
+        var cssClass = GetToastClass(toast.Level);
+        var icon = GetToastIcon(toast.Level);
+
+        <div class="toast show align-items-center text-white border-0 @cssClass glassmorphism-toast mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="animation: slideInRight 0.3s ease-out;">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center" style="font-size: 1.05rem;">
+                    <span class="me-2 fs-5">@icon</span>
+                    @toast.Message
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" @onclick="() => RemoveToast(toast.Id)" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ToastService.OnChanged += StateHasChanged;
+    }
+
+    private void RemoveToast(Guid id)
+    {
+        ToastService.RemoveToast(id);
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnChanged -= StateHasChanged;
+    }
+
+    private string GetToastClass(ToastLevel level) => level switch
+    {
+        ToastLevel.Success => "bg-success bg-opacity-75",
+        ToastLevel.Error => "bg-danger bg-opacity-75",
+        ToastLevel.Warning => "bg-warning bg-opacity-75 text-dark",
+        ToastLevel.Info => "bg-info bg-opacity-75 text-dark",
+        _ => "bg-secondary bg-opacity-75"
+    };
+
+    private string GetToastIcon(ToastLevel level) => level switch
+    {
+        ToastLevel.Success => "✅",
+        ToastLevel.Error => "⚠️",
+        ToastLevel.Warning => "⚠️",
+        ToastLevel.Info => "ℹ️",
+        _ => "✉️"
+    };
+}
