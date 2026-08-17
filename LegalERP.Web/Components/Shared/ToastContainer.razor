@@ -1,4 +1,4 @@
-﻿@using LegalERP.Web.Services.Toast
+@using LegalERP.Web.Services.Toast
 @inject IToastService ToastService
 @implements IDisposable
 
@@ -21,9 +21,14 @@
 </div>
 
 @code {
+    private void ToastService_OnChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     protected override void OnInitialized()
     {
-        ToastService.OnChanged += StateHasChanged;
+        ToastService.OnChanged += ToastService_OnChanged;
     }
 
     private void RemoveToast(Guid id)
@@ -33,7 +38,7 @@
 
     public void Dispose()
     {
-        ToastService.OnChanged -= StateHasChanged;
+        ToastService.OnChanged -= ToastService_OnChanged;
     }
 
     private string GetToastClass(ToastLevel level) => level switch

@@ -175,8 +175,7 @@ else
                     model.JudgeName,
                     model.Notes
                 );
-                await CaseApi.UpdateAsync(Id!.Value, updateDto);
-                NavManager.NavigateTo($"/cases/{Id.Value}");
+                await CaseApi.UpdateAsync(Id!.Value, updateDto); ToastService.ShowSuccess("Case updated successfully."); NavManager.NavigateTo($"/cases/{Id.Value}");
             }
             else
             {
@@ -192,10 +191,7 @@ else
                     model.Notes
                 );
                 var created = await CaseApi.CreateAsync(createDto);
-                if (created != null)
-                {
-                    NavManager.NavigateTo($"/cases/{created.Id}");
-                }
+                if (created != null) { ToastService.ShowSuccess("Case created successfully."); NavManager.NavigateTo($"/cases/{created.Id}"); }
                 else
                 {
                     ToastService.ShowSuccess("Case saved."); NavManager.NavigateTo("/cases");
@@ -225,4 +221,5 @@ else
         public string? Notes { get; set; }
     }
 }
+
 
