@@ -482,10 +482,20 @@ else
     private bool isUploadingCompanyDoc;
     private string? companyDocErrorMessage;
 
-    protected override async Task OnInitializedAsync()
+    private Guid _lastLoadedId;
+
+    protected override void OnInitialized()
     {
         Auth.OnRoleChanged += StateHasChanged;
-        await LoadCompany();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != _lastLoadedId)
+        {
+            _lastLoadedId = Id;
+            await LoadCompany();
+        }
     }
 
     public void Dispose()

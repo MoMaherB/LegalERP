@@ -744,6 +744,7 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Synced all Arabic and English translations across `SharedResources.ar.resx` and `SharedResources.resx`.
 - **Bug Fixes:**
   - Resolved a critical localization duplication bug in `SharedResources.ar.resx` where `DefendantCivil` was mapped to both "إلغاء" (Cancel) and "المدعى عليه" (Defendant), causing the UI dropdowns to display "إلغاء" incorrectly. Removed the corrupted duplicate key and restored missing dictionary mappings.
+  - Fixed a Blazor routing lifecycle bug where clicking a notification to navigate to a different record of the same type (e.g. from `/cases/1` to `/cases/2`) updated the URL but failed to reload the UI. Moved data loading logic from `OnInitializedAsync` to `OnParametersSetAsync` across `CaseDetail.razor`, `CompanyDetail.razor`, and `ClientDetail.razor` to ensure components cleanly reload when the URL parameter `Id` changes.
 
 ### Active Agent Instructions
 

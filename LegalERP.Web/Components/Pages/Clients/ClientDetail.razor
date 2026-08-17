@@ -234,12 +234,18 @@ else
     private ClientDto? client;
     private bool notFound;
 
-    protected override async Task OnInitializedAsync()
+    private Guid _lastLoadedId;
+
+    protected override async Task OnParametersSetAsync()
     {
-        client = await ClientApi.GetByIdAsync(Id);
-        if (client is null)
+        if (Id != _lastLoadedId)
         {
-            notFound = true;
+            _lastLoadedId = Id;
+            client = await ClientApi.GetByIdAsync(Id);
+            if (client is null)
+            {
+                notFound = true;
+            }
         }
     }
 
