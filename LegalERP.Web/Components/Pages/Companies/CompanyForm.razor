@@ -153,7 +153,7 @@ else
             }
             else
             {
-                errorMessage = "Company not found.";
+                errorMessage = Loc["CompanyNotFound"].Value;
             }
         }
         isInitializing = false;
@@ -171,7 +171,7 @@ else
 
         if (string.IsNullOrWhiteSpace(model.CompanyName))
         {
-            errorMessage = "Company Name is required.";
+            errorMessage = Loc["CompanyNameRequired"].Value;
             isSaving = false;
             return;
         }
@@ -245,7 +245,7 @@ else
         }
         catch (Exception ex)
         {
-            errorMessage = "An error occurred while saving the company: " + ex.Message;
+            errorMessage = Loc["FailedToSaveCompany"].Value + ": " + ex.Message;
         }
         finally
         {

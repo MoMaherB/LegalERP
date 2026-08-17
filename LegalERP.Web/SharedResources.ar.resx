@@ -858,4 +858,364 @@
   <data name="NoCompanyDocuments" xml:space="preserve">
     <value>لا توجد مستندات للشركة.</value>
   </data>
+  <data name="FullNameRequired" xml:space="preserve">
+    <value>الاسم الكامل مطلوب.</value>
+  </data>
+  <data name="NationalIdRequired" xml:space="preserve">
+    <value>رقم الهوية مطلوب.</value>
+  </data>
+  <data name="FailedToSaveClient" xml:space="preserve">
+    <value>فشل حفظ بيانات الموكل</value>
+  </data>
+  <data name="CompanyNotFound" xml:space="preserve">
+    <value>الشركة غير موجودة.</value>
+  </data>
+  <data name="CompanyNameRequired" xml:space="preserve">
+    <value>اسم الشركة مطلوب.</value>
+  </data>
+  <data name="FailedToSaveCompany" xml:space="preserve">
+    <value>حدث خطأ أثناء حفظ بيانات الشركة</value>
+  </data>
+  <data name="PleaseSelectFile" xml:space="preserve">
+    <value>يرجى اختيار ملف.</value>
+  </data>
+  <data name="FailedToUploadDoc" xml:space="preserve">
+    <value>فشل رفع المستند</value>
+  </data>
+  <data name="FailedToDeleteDoc" xml:space="preserve">
+    <value>فشل حذف المستند</value>
+  </data>
+  <data name="ConfirmDeleteCompany" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذه الشركة؟ لا يمكن التراجع عن هذا الإجراء.</value>
+  </data>
+  <data name="ConfirmDeleteAmendment" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذا التعديل؟</value>
+  </data>
+  <data name="MustSelectClient" xml:space="preserve">
+    <value>يجب اختيار موكل من نتائج البحث. إذا لم يكن مسجلاً، أضفه أولاً.</value>
+  </data>
+  <data name="FailedToAddPartner" xml:space="preserve">
+    <value>فشل إضافة شريك</value>
+  </data>
+  <data name="ConfirmDeletePartner" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذا الشريك؟</value>
+  </data>
+  <data name="FailedToAddAmendment" xml:space="preserve">
+    <value>فشل إضافة التعديل</value>
+  </data>
+  <data name="ClientNotFound" xml:space="preserve">
+    <value>العميل غير موجود.</value>
+  </data>
+  <data name="SoleProprietorship" xml:space="preserve">
+    <value>مؤسسة فردية</value>
+  </data>
+  <data name="LimitedLiabilityCompany" xml:space="preserve">
+    <value>شركة ذات مسؤولية محدودة</value>
+  </data>
+  <data name="JointStockCompany" xml:space="preserve">
+    <value>شركة مساهمة</value>
+  </data>
+  <data name="Partnership" xml:space="preserve">
+    <value>شركة تضامن</value>
+  </data>
+  <data name="CompanyInfo" xml:space="preserve">
+    <value>بيانات الشركة</value>
+  </data>
+  <data name="EnglishName" xml:space="preserve">
+    <value>الاسم باللغة الإنجليزية</value>
+  </data>
+  <data name="TradeName" xml:space="preserve">
+    <value>السمة التجارية</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>التصنيف</value>
+  </data>
+  <data name="EstablishmentDate" xml:space="preserve">
+    <value>تاريخ التأسيس</value>
+  </data>
+  <data name="RegistrationNumber" xml:space="preserve">
+    <value>رقم السجل</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>العنوان</value>
+  </data>
+  <data name="BackToList" xml:space="preserve">
+    <value>العودة للقائمة</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>التفاصيل</value>
+  </data>
+  <data name="Print" xml:space="preserve">
+    <value>طباعة</value>
+  </data>
+  <data name="Replace" xml:space="preserve">
+    <value>استبدال</value>
+  </data>
+  <data name="Download" xml:space="preserve">
+    <value>تنزيل</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>إغلاق</value>
+  </data>
+  <data name="CannotPreviewFileType" xml:space="preserve">
+    <value>لا يمكن عرض هذا النوع من الملفات مباشرة.</value>
+  </data>
+  <data name="AddPartner" xml:space="preserve">
+    <value>إضافة شريك</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>الاسم</value>
+  </data>
+  <data name="NationalID" xml:space="preserve">
+    <value>رقم البطاقة</value>
+  </data>
+  <data name="OwnershipPercentage" xml:space="preserve">
+    <value>نسبة الشراكة</value>
+  </data>
+  <data name="IDDocument" xml:space="preserve">
+    <value>صورة الهوية</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>إجراءات</value>
+  </data>
+  <data name="AddAmendment" xml:space="preserve">
+    <value>إضافة تعديل</value>
+  </data>
+  <data name="Title" xml:space="preserve">
+    <value>المسمى</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>التاريخ</value>
+  </data>
+  <data name="Contract" xml:space="preserve">
+    <value>العقد</value>
+  </data>
+  <data name="CompaniesManagement" xml:space="preserve">
+    <value>إدارة الشركات</value>
+  </data>
+  <data name="AddNewCompany" xml:space="preserve">
+    <value>إضافة شركة جديدة</value>
+  </data>
+  <data name="SearchNameTradeNameEnglish" xml:space="preserve">
+    <value>البحث بالاسم أو السمة التجارية أو الاسم الإنجليزي</value>
+  </data>
+  <data name="SearchCompaniesPlaceholder" xml:space="preserve">
+    <value>أدخل اسم الشركة...</value>
+  </data>
+  <data name="CategoryFilter" xml:space="preserve">
+    <value>تصفية حسب التصنيف</value>
+  </data>
+  <data name="AllCategories" xml:space="preserve">
+    <value>جميع التصنيفات</value>
+  </data>
+  <data name="NoCompaniesMatch" xml:space="preserve">
+    <value>لا توجد شركات تطابق شروط البحث.</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>عرض</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>تعديل</value>
+  </data>
+  <data name="AddCompanyPartner" xml:space="preserve">
+    <value>إضافة شريك للشركة</value>
+  </data>
+  <data name="SearchClientByName" xml:space="preserve">
+    <value>بحث عن موكل بالاسم *</value>
+  </data>
+  <data name="TypeClientNameSearch" xml:space="preserve">
+    <value>أدخل اسم الموكل للبحث</value>
+  </data>
+  <data name="ClientNotFoundAddNew" xml:space="preserve">
+    <value>الموكل غير موجود؟ إضافة جديد</value>
+  </data>
+  <data name="SavePartner" xml:space="preserve">
+    <value>حفظ الشريك</value>
+  </data>
+  <data name="NoPartnersRecorded" xml:space="preserve">
+    <value>لم يتم تسجيل شركاء</value>
+  </data>
+  <data name="NewAmendment" xml:space="preserve">
+    <value>تعديل جديد</value>
+  </data>
+  <data name="TitleLeaveBlankAuto" xml:space="preserve">
+    <value>المسمى (اتركه فارغاً للتلقائي)</value>
+  </data>
+  <data name="SaveAmendment" xml:space="preserve">
+    <value>حفظ التعديل</value>
+  </data>
+  <data name="NoAmendmentsRecorded" xml:space="preserve">
+    <value>لم يتم تسجيل تعديلات</value>
+  </data>
+  <data name="FirmFinancialsOverview" xml:space="preserve">
+    <value>نظرة عامة على ماليات المكتب</value>
+  </data>
+  <data name="CasesTotal" xml:space="preserve">
+    <value>إجمالي القضايا</value>
+  </data>
+  <data name="CompaniesTotal" xml:space="preserve">
+    <value>إجمالي الشركات</value>
+  </data>
+  <data name="FirmGrandTotal" xml:space="preserve">
+    <value>الإجمالي العام للمكتب</value>
+  </data>
+  <data name="Agreed" xml:space="preserve">
+    <value>المتفق عليه</value>
+  </data>
+  <data name="Collected" xml:space="preserve">
+    <value>المُحصّل</value>
+  </data>
+  <data name="TotalExpected" xml:space="preserve">
+    <value>إجمالي المتوقع</value>
+  </data>
+  <data name="AllFinancialRecords" xml:space="preserve">
+    <value>جميع السجلات المالية</value>
+  </data>
+  <data name="NoFinancialRecordsFound" xml:space="preserve">
+    <value>لا توجد سجلات مالية</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>النوع</value>
+  </data>
+  <data name="ReferenceNo" xml:space="preserve">
+    <value>رقم المرجع</value>
+  </data>
+  <data name="AgreedFee" xml:space="preserve">
+    <value>المبلغ المتفق عليه</value>
+  </data>
+  <data name="Remaining" xml:space="preserve">
+    <value>المتبقي</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>الحالة</value>
+  </data>
+  <data name="Case" xml:space="preserve">
+    <value>قضية</value>
+  </data>
+  <data name="Company" xml:space="preserve">
+    <value>شركة</value>
+  </data>
+  <data name="ViewCase" xml:space="preserve">
+    <value>عرض القضية</value>
+  </data>
+  <data name="ViewCompany" xml:space="preserve">
+    <value>عرض الشركة</value>
+  </data>
+  <data name="AccessDeniedFirmFinancials" xml:space="preserve">
+    <value>صلاحيات غير كافية: الإدارة فقط يمكنها عرض ماليات المكتب.</value>
+  </data>
+  <data name="LoadingFinancialData" xml:space="preserve">
+    <value>جاري تحميل البيانات المالية...</value>
+  </data>
+  <data name="ClientDetails" xml:space="preserve">
+    <value>تفاصيل الموكل</value>
+  </data>
+  <data name="LoadingClientDetails" xml:space="preserve">
+    <value>جاري تحميل تفاصيل الموكل...</value>
+  </data>
+  <data name="BackToClients" xml:space="preserve">
+    <value>العودة للموكلين</value>
+  </data>
+  <data name="EditClient" xml:space="preserve">
+    <value>تعديل الموكل</value>
+  </data>
+  <data name="DeleteClient" xml:space="preserve">
+    <value>حذف الموكل</value>
+  </data>
+  <data name="Phone" xml:space="preserve">
+    <value>الهاتف</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>البريد الإلكتروني</value>
+  </data>
+  <data name="NoNotesRecorded" xml:space="preserve">
+    <value>لا توجد ملاحظات مسجلة.</value>
+  </data>
+  <data name="Documents" xml:space="preserve">
+    <value>المستندات</value>
+  </data>
+  <data name="NationalIdScan" xml:space="preserve">
+    <value>صورة الهوية</value>
+  </data>
+  <data name="UploadNow" xml:space="preserve">
+    <value>ارفعها الآن</value>
+  </data>
+  <data name="PowerOfAttorney" xml:space="preserve">
+    <value>التوكيل / الوكالة</value>
+  </data>
+  <data name="NoAttorneyDocumentUploaded" xml:space="preserve">
+    <value>لم يتم رفع مستند الوكالة.</value>
+  </data>
+  <data name="NoNationalIdUploaded" xml:space="preserve">
+    <value>لم يتم رفع مستند الهوية.</value>
+  </data>
+  <data name="RelatedCases" xml:space="preserve">
+    <value>القضايا المرتبطة</value>
+  </data>
+  <data name="ClientNoRelatedCases" xml:space="preserve">
+    <value>لا يوجد قضايا مرتبطة بهذا الموكل.</value>
+  </data>
+  <data name="CaseNumber" xml:space="preserve">
+    <value>رقم القضية</value>
+  </data>
+  <data name="Role" xml:space="preserve">
+    <value>الصفة</value>
+  </data>
+  <data name="Representation" xml:space="preserve">
+    <value>التمثيل</value>
+  </data>
+  <data name="Defendant" xml:space="preserve">
+    <value>مدعى عليه</value>
+  </data>
+  <data name="Victim" xml:space="preserve">
+    <value>مجني عليه / شاكي</value>
+  </data>
+  <data name="Client" xml:space="preserve">
+    <value>موكل</value>
+  </data>
+  <data name="Opponent" xml:space="preserve">
+    <value>خصم</value>
+  </data>
+  <data name="ClosedWon" xml:space="preserve">
+    <value>مغلقة (كسب)</value>
+  </data>
+  <data name="ClosedLost" xml:space="preserve">
+    <value>مغلقة (خسارة)</value>
+  </data>
+  <data name="ClosedSettled" xml:space="preserve">
+    <value>مغلقة (صلح)</value>
+  </data>
+  <data name="Closed" xml:space="preserve">
+    <value>مغلقة</value>
+  </data>
+  <data name="RelatedCompanies" xml:space="preserve">
+    <value>الشركات المرتبطة</value>
+  </data>
+  <data name="ClientNoRelatedCompanies" xml:space="preserve">
+    <value>هذا الموكل ليس شريكاً في أي شركة.</value>
+  </data>
+  <data name="ConfirmDeleteClient" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذا الموكل؟</value>
+  </data>
+  <data name="ClientsManagement" xml:space="preserve">
+    <value>إدارة الموكلين</value>
+  </data>
+  <data name="Clients" xml:space="preserve">
+    <value>الموكلين</value>
+  </data>
+  <data name="AddClient" xml:space="preserve">
+    <value>إضافة موكل</value>
+  </data>
+  <data name="SearchByName" xml:space="preserve">
+    <value>البحث بالاسم</value>
+  </data>
+  <data name="SearchClientsPlaceholder" xml:space="preserve">
+    <value>ابحث عن الموكلين...</value>
+  </data>
+  <data name="NoClientsFound" xml:space="preserve">
+    <value>لم يتم العثور على موكلين.</value>
+  </data>
+  <data name="AddFirstClient" xml:space="preserve">
+    <value>إضافة أول موكل</value>
+  </data>
 </root>

@@ -1,5 +1,8 @@
 @using LegalERP.Application.Companies
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Localization
 @inject IJSRuntime JS
+@inject IStringLocalizer<LegalERP.Web.SharedResources> Loc
 @implements IDisposable
 
 @if (Document != null)
@@ -52,15 +55,41 @@
                 <div class="doc-modal-header">
                     <span class="doc-modal-title">@Document.FileName</span>
                     <div class="doc-modal-actions">
-                        <a href="@GetDownloadUrl()" download="@Document.FileName" class="doc-modal-download-btn">
+                        @if (AllowReplace)
+                        {
+                            <label class="doc-modal-btn doc-modal-replace-btn" style="cursor:pointer; margin-bottom:0;">
+                                <InputFile style="display:none;" OnChange="HandleReplace" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.3"/>
+                                </svg>
+                                @Loc["Replace"]
+                            </label>
+                        }
+                        
+                        <button class="doc-modal-btn" @onclick="PrintDocument">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                <rect x="6" y="14" width="12" height="8"></rect>
+                            </svg>
+                            @Loc["Print"]
+                        </button>
+
+                        <a href="@GetDownloadUrl()" download="@Document.FileName" class="doc-modal-btn doc-modal-download-btn">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
                                 <polyline points="7 10 12 15 17 10"/>
                                 <line x1="12" y1="15" x2="12" y2="3"/>
                             </svg>
-                            تنزيل
+                            @Loc["Download"]
                         </a>
-                        <button class="doc-modal-close" @onclick="CloseViewer">&#10005;</button>
+                        <button class="doc-modal-btn doc-modal-close" @onclick="CloseViewer">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                            @Loc["Close"]
+                        </button>
                     </div>
                 </div>
                 <div class="doc-modal-body">
@@ -79,9 +108,9 @@
                     else
                     {
                         <div class="doc-modal-unsupported">
-                            <p>لا يمكن عرض هذا النوع من الملفات مباشرة.</p>
-                            <a href="@GetDownloadUrl()" download="@Document.FileName" class="doc-modal-download-btn mt-3">
-                                تنزيل الملف
+                            <p>@Loc["CannotPreviewFileType"]</p>
+                            <a href="@GetDownloadUrl()" download="@Document.FileName" class="doc-modal-btn doc-modal-download-btn mt-3">
+                                @Loc["Download"]
                             </a>
                         </div>
                     }
@@ -95,6 +124,8 @@
     [Parameter] public DocumentDto? Document { get; set; }
     [Parameter] public string OwnerType { get; set; } = string.Empty;
     [Parameter] public Guid OwnerId { get; set; }
+    [Parameter] public bool AllowReplace { get; set; } = false;
+    [Parameter] public EventCallback<IBrowserFile> OnReplace { get; set; }
 
     private bool showViewer = false;
     private string _canvasId = "pdf_" + Guid.NewGuid().ToString("N");
@@ -126,6 +157,20 @@
     {
         if (Document == null) return string.Empty;
         return $"{ApiBase}/api/documents/{Document.Id}/download";
+    }
+
+    private async Task HandleReplace(InputFileChangeEventArgs e)
+    {
+        if (AllowReplace && OnReplace.HasDelegate)
+        {
+            await OnReplace.InvokeAsync(e.File);
+            CloseViewer();
+        }
+    }
+
+    private async Task PrintDocument()
+    {
+        await JS.InvokeVoidAsync("eval", $"var w = window.open('{GetViewUrl()}', '_blank'); w.onload = function() {{ w.print(); }};");
     }
 
     private async Task OpenViewer()
@@ -381,44 +426,68 @@
         flex-shrink: 0;
     }
 
-    .doc-modal-download-btn {
+    .doc-modal-btn {
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         gap: 6px;
         padding: 6px 14px;
         border-radius: 10px;
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: white;
         font-size: 0.82rem;
         font-weight: 600;
         text-decoration: none;
-        transition: opacity 0.15s, transform 0.15s;
+        transition: opacity 0.15s, transform 0.15s, background 0.15s;
+        border: none;
+        cursor: pointer;
     }
 
-    .doc-modal-download-btn:hover {
+    .doc-modal-btn:hover {
         opacity: 0.88;
         transform: scale(1.03);
+    }
+
+    .doc-modal-download-btn {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+    }
+    
+    .doc-modal-download-btn:hover { color: white; }
+
+    .doc-modal-replace-btn {
+        background: linear-gradient(135deg, #10b981, #059669);
         color: white;
     }
 
+    .doc-modal-replace-btn:hover { color: white; }
+
     .doc-modal-close {
-        width: 32px;
-        height: 32px;
+        width: 34px;
+        height: 34px;
+        padding: 0;
         border-radius: 50%;
-        border: none;
-        background: rgba(0,0,0,0.07);
-        color: #555;
-        font-size: 1rem;
-        cursor: pointer;
-        display: flex;
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        transition: background 0.15s;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
     }
 
     .doc-modal-close:hover {
-        background: rgba(220,53,69,0.12);
-        color: #dc3545;
+        background: rgba(239, 68, 68, 0.2);
+        transform: scale(1.05);
+    }
+    
+    /* Default modal btn styling for print */
+    button.doc-modal-btn:not(.doc-modal-download-btn):not(.doc-modal-close) {
+        background: rgba(0,0,0,0.05);
+        color: #333;
+    }
+    button.doc-modal-btn:not(.doc-modal-download-btn):not(.doc-modal-close):hover {
+        background: rgba(0,0,0,0.1);
     }
 
     .doc-modal-body {

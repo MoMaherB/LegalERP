@@ -5,7 +5,7 @@
 @inject NavigationManager NavManager
 @implements IDisposable
 
-<div class="notification-bell-wrapper position-relative d-inline-block">
+<div class="notification-bell-wrapper position-relative d-inline-block" tabindex="-1" @onfocusout="HandleFocusOut">
     <button class="btn btn-link text-dark position-relative p-1" @onclick="ToggleDropdown" title="Notifications">
         <i class="bi bi-bell-fill fs-5"></i>
         @if (unreadCount > 0)
@@ -61,6 +61,20 @@
     private int unreadCount;
     private bool showDropdown;
     private Timer? _pollTimer;
+
+    protected override void OnInitialized()
+    {
+        NavManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        if (showDropdown)
+        {
+            showDropdown = false;
+            StateHasChanged();
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -141,6 +155,17 @@
         }
     }
 
+    private async Task HandleFocusOut()
+    {
+        // Delay closing slightly so clicks inside the dropdown register before it vanishes
+        await Task.Delay(200);
+        if (showDropdown)
+        {
+            showDropdown = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task MarkAllRead()
     {
         await NotifApi.MarkAllAsReadAsync();
@@ -170,6 +195,7 @@
     public void Dispose()
     {
         _pollTimer?.Dispose();
+        NavManager.LocationChanged -= OnLocationChanged;
     }
 
     // Helper class for JS interop deserialization

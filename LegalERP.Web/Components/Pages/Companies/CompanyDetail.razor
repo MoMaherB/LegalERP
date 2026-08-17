@@ -24,36 +24,51 @@ else
 
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="ios-title mb-0">@company.CompanyName</h1>
-        <div>
-            <button class="ios-btn ios-btn-secondary me-2 text-decoration-none" @onclick="GoBack">@Loc["BackToList"]</button>
-            <a href="/companies/edit/@company.Id" class="ios-btn ios-btn-primary text-decoration-none">@Loc["Edit"]</a>
+        <div class="d-flex align-items-center gap-2">
+            <button class="ios-btn ios-btn-secondary text-decoration-none m-0" @onclick="GoBack">@Loc["BackToList"]</button>
+            <a href="/companies/edit/@company.Id" class="ios-btn ios-btn-primary text-decoration-none m-0">@Loc["Edit"]</a>
         </div>
     </div>
     
-    <div class="row">
+    <div class="row align-items-stretch mb-4">
         @* ── Company Info Card ── *@
         <div class="col-md-8">
-            <div class="ios-widget-card mb-4 h-100">
+            <div class="ios-widget-card h-100">
                 <div class="p-4">
                     <h5 class="ios-title" style="font-size: 1.25rem;">@Loc["CompanyInfo"]</h5>
                     <dl class="row mt-3">
-                        <dt class="col-sm-4 ios-details fw-bold">@Loc["EnglishName"]</dt>
-                        <dd class="col-sm-8 mb-3">@(company.CompanyNameEn ?? "—")</dd>
-
-                        <dt class="col-sm-4 ios-details fw-bold">@Loc["TradeName"]</dt>
-                        <dd class="col-sm-8 mb-3">@(company.TradeName ?? "—")</dd>
-
                         <dt class="col-sm-4 ios-details fw-bold">@Loc["Category"]</dt>
-                        <dd class="col-sm-8 mb-3"><span class="ios-status-badge ios-status-gray">@company.Category</span></dd>
+                        <dd class="col-sm-8 mb-3"><span class="ios-status-badge ios-status-gray">@Loc[company.Category.ToString()]</span></dd>
 
-                        <dt class="col-sm-4 ios-details fw-bold">@Loc["EstablishmentDate"]</dt>
-                        <dd class="col-sm-8 mb-3">@(company.EstablishmentDate?.ToString("yyyy-MM-dd") ?? "—")</dd>
+                        @if (!string.IsNullOrWhiteSpace(company.CompanyNameEn))
+                        {
+                            <dt class="col-sm-4 ios-details fw-bold">@Loc["EnglishName"]</dt>
+                            <dd class="col-sm-8 mb-3">@company.CompanyNameEn</dd>
+                        }
 
-                        <dt class="col-sm-4 ios-details fw-bold">@Loc["RegistrationNumber"]</dt>
-                        <dd class="col-sm-8 mb-3">@(company.RegistrationNumber ?? "—")</dd>
+                        @if (!string.IsNullOrWhiteSpace(company.TradeName))
+                        {
+                            <dt class="col-sm-4 ios-details fw-bold">@Loc["TradeName"]</dt>
+                            <dd class="col-sm-8 mb-3">@company.TradeName</dd>
+                        }
 
-                        <dt class="col-sm-4 ios-details fw-bold">@Loc["Address"]</dt>
-                        <dd class="col-sm-8 mb-3">@(company.Address ?? "—")</dd>
+                        @if (company.EstablishmentDate.HasValue)
+                        {
+                            <dt class="col-sm-4 ios-details fw-bold">@Loc["EstablishmentDate"]</dt>
+                            <dd class="col-sm-8 mb-3">@company.EstablishmentDate.Value.ToString("yyyy-MM-dd")</dd>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(company.RegistrationNumber))
+                        {
+                            <dt class="col-sm-4 ios-details fw-bold">@Loc["RegistrationNumber"]</dt>
+                            <dd class="col-sm-8 mb-3">@company.RegistrationNumber</dd>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(company.Address))
+                        {
+                            <dt class="col-sm-4 ios-details fw-bold">@Loc["Address"]</dt>
+                            <dd class="col-sm-8 mb-3">@company.Address</dd>
+                        }
                     </dl>
                 </div>
             </div>
@@ -61,37 +76,25 @@ else
 
         @* ── Incorporation Contract Card ── *@
         <div class="col-md-4">
-            <div class="ios-widget-card mb-4 h-100">
-                <div class="p-4 text-center d-flex flex-column align-items-center justify-content-center h-100">
-                    <h5 class="ios-title w-100 text-start" style="font-size: 1.25rem;">@Loc["IncorporationContract"]</h5>
+            <div class="ios-widget-card h-100">
+                <div class="p-4 d-flex flex-column">
+                    <h5 class="ios-title mb-3" style="font-size: 1.25rem;">@Loc["IncorporationContract"]</h5>
                     @if (company.IncorporationDocument != null)
                     {
-                        <div class="my-3 p-3 rounded w-100" style="background: rgba(0,0,0,0.02);">
-                            <FileThumbnail Document="company.IncorporationDocument" OwnerType="company" OwnerId="company.Id" />
-                        </div>
-                        <div class="mt-auto w-100 border-top pt-3" style="border-color: rgba(0,0,0,0.05) !important;">
-                            <label class="form-label text-muted small ios-details fw-bold">@Loc["ReplaceContract"]</label>
-                            <InputFile class="ios-input mb-3" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
-                            @if (incorporationContractFile != null)
-                            {
-                                <button class="ios-btn ios-btn-primary w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
-                                    @(isUploadingIncorporationContract ? Loc["Uploading"] : Loc["SaveNewContract"])
-                                </button>
-                            }
+                        <div class="mb-3 flex-grow-1">
+                            <FileThumbnail Document="company.IncorporationDocument" OwnerType="company" OwnerId="company.Id" AllowReplace="true" OnReplace="HandleContractReplace" />
                         </div>
                     }
                     else
                     {
-                        <p class="text-muted mb-4 mt-3">@Loc["NoContractUploaded"]</p>
-                        <div class="w-100 mt-auto">
-                            <InputFile class="ios-input mb-3" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png" />
-                            @if (incorporationContractFile != null)
-                            {
-                                <button class="ios-btn ios-btn-primary w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
-                                    @(isUploadingIncorporationContract ? Loc["Uploading"] : Loc["UploadContract"])
-                                </button>
-                            }
-                        </div>
+                        <p class="text-muted mb-4 flex-grow-1">@Loc["NoContractUploaded"]</p>
+                        <InputFile class="ios-input mb-3" OnChange="LoadIncorporationFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                        @if (incorporationContractFile != null)
+                        {
+                            <button class="ios-btn ios-btn-primary w-100" @onclick="UploadIncorporationContract" disabled="@isUploadingIncorporationContract">
+                                @(isUploadingIncorporationContract ? Loc["Uploading"].Value : Loc["UploadContract"].Value)
+                            </button>
+                        }
                     }
                     @if (!string.IsNullOrEmpty(incorporationContractErrorMessage))
                     {
@@ -275,41 +278,33 @@ else
     }
     else
     {
-        <div class="ios-table-container mb-4">
-            <table class="ios-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>@Loc["Title"]</th>
-                        <th>@Loc["Date"]</th>
-                        <th>@Loc["Contract"]</th>
-                        <th>@Loc["Actions"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var amendment in company.Amendments.OrderBy(a => a.SequenceNumber))
-                    {
-                        <tr>
-                            <td><span class="ios-status-badge ios-status-gray">@amendment.SequenceNumber</span></td>
-                            <td><strong>@amendment.Title</strong></td>
-                            <td>@(amendment.AmendmentDate?.ToString("yyyy-MM-dd") ?? "—")</td>
-                            <td>
-                                @if (amendment.Document != null)
-                                {
-                                    <FileThumbnail Document="amendment.Document" OwnerType="amendment" OwnerId="amendment.Id" />
-                                }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
-                                }
-                            </td>
-                            <td>
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteAmendment(amendment.Id)">@Loc["Delete"]</button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-4">
+            @foreach (var amendment in company.Amendments.OrderBy(a => a.SequenceNumber))
+            {
+                <div class="col">
+                    <div class="ios-widget-card h-100 p-3 d-flex flex-column gap-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="ios-status-badge ios-status-gray">#@amendment.SequenceNumber</span>
+                            <span class="text-muted small">@(amendment.AmendmentDate?.ToString("yyyy-MM-dd") ?? "—")</span>
+                        </div>
+                        <h6 class="fw-bold mb-2">@amendment.Title</h6>
+                        
+                        <div class="flex-grow-1">
+                        @if (amendment.Document != null)
+                        {
+                            <FileThumbnail Document="amendment.Document" OwnerType="amendment" OwnerId="amendment.Id" AllowReplace="true" OnReplace="@(e => HandleAmendmentReplace(amendment.Id, e))" />
+                        }
+                        else
+                        {
+                            <div class="doc-card d-flex align-items-center justify-content-center bg-light text-muted" style="border:1px dashed #ccc; height:220px; border-radius:12px;">
+                                @Loc["NoContractUploaded"]
+                            </div>
+                        }
+                        </div>
+                        <button class="ios-btn ios-btn-danger w-100 mt-2" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteAmendment(amendment.Id)">@Loc["Delete"]</button>
+                    </div>
+                </div>
+            }
         </div>
     }
 
@@ -365,7 +360,7 @@ else
             {
                 <div class="col">
                     <div class="d-flex flex-column h-100 gap-2">
-                        <FileThumbnail Document="doc" OwnerType="companydoc" OwnerId="company.Id" />
+                        <FileThumbnail Document="doc" OwnerType="companydoc" OwnerId="company.Id" AllowReplace="true" OnReplace="@(e => HandleCompanyDocumentReplace(doc.Id, e))" />
                         <div class="d-flex justify-content-between align-items-center px-1">
                             <small class="ios-details fw-bold text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
                             <button class="ios-btn ios-btn-danger" style="padding: 3px 10px; font-size: 0.78rem;" @onclick="() => DeleteCompanyDocument(doc.Id)">@Loc["Delete"]</button>
@@ -439,6 +434,12 @@ else
         {
             isUploadingIncorporationContract = false;
         }
+    }
+
+    private async Task HandleContractReplace(IBrowserFile newFile)
+    {
+        incorporationContractFile = newFile;
+        await UploadIncorporationContract();
     }
 
     private string NextAmendmentPlaceholder
@@ -530,7 +531,7 @@ else
     {
         if (newCompanyDocFile == null)
         {
-            companyDocErrorMessage = "يرجى اختيار ملف.";
+            companyDocErrorMessage = Loc["PleaseSelectFile"].Value;
             return;
         }
 
@@ -549,7 +550,7 @@ else
         }
         catch (Exception ex)
         {
-            companyDocErrorMessage = "فشل رفع المستند: " + ex.Message;
+            companyDocErrorMessage = Loc["FailedToUploadDoc"].Value + ": " + ex.Message;
         }
         finally
         {
@@ -569,7 +570,7 @@ else
             }
             catch (Exception ex)
             {
-                await JS.InvokeVoidAsync("alert", "فشل حذف المستند: " + ex.Message);
+                await JS.InvokeVoidAsync("alert", Loc["FailedToDeleteDoc"].Value + ": " + ex.Message);
             }
         }
     }
@@ -616,7 +617,7 @@ else
         }
         catch (Exception ex)
         {
-            amendmentErrorMessage = "Failed to add amendment: " + ex.Message;
+            amendmentErrorMessage = Loc["FailedToAddAmendment"].Value + ": " + ex.Message;
         }
         finally
         {
@@ -626,8 +627,7 @@ else
 
     private async Task DeleteAmendment(Guid amendmentId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm",
-            "Are you sure you want to delete this amendment?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteAmendment"].Value);
         if (confirmed)
         {
             await CompanyApi.DeleteAmendmentAsync(Id, amendmentId);
@@ -680,7 +680,7 @@ else
 
         if (!selectedClientId.HasValue)
         {
-            partnerErrorMessage = "You must select a Client from the search results. If the person is not in the system, click 'Add new client' to register them first.";
+            partnerErrorMessage = Loc["MustSelectClient"].Value;
             return;
         }
 
@@ -698,7 +698,7 @@ else
         }
         catch (Exception ex)
         {
-            partnerErrorMessage = "Failed to add partner: " + ex.Message;
+            partnerErrorMessage = Loc["FailedToAddPartner"].Value + ": " + ex.Message;
         }
         finally
         {
@@ -708,12 +708,47 @@ else
 
     private async Task DeletePartner(Guid partnerId)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm",
-            "Are you sure you want to delete this partner?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeletePartner"].Value);
         if (confirmed)
         {
             await CompanyApi.DeletePartnerAsync(Id, partnerId);
             await LoadCompany();
+        }
+    }
+
+    private async Task HandleAmendmentReplace(Guid amendmentId, IBrowserFile newFile)
+    {
+        try
+        {
+            var amendment = company.Amendments.First(a => a.Id == amendmentId);
+            var docId = await CompanyApi.UploadDocumentAsync("amendment", amendmentId, newFile);
+            var updateDto = new UpdateCompanyAmendmentDto(amendment.Title, amendment.AmendmentDate, docId);
+            await CompanyApi.UpdateAmendmentAsync(Id, amendmentId, updateDto);
+            
+            if (amendment.DocumentId.HasValue)
+            {
+                try { await CompanyApi.DeleteDocumentAsync(amendment.DocumentId.Value); } catch { /* ignore */ }
+            }
+
+            await LoadCompany();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", Loc["FailedToUploadDoc"].Value + ": " + ex.Message);
+        }
+    }
+
+    private async Task HandleCompanyDocumentReplace(Guid docId, IBrowserFile newFile)
+    {
+        try
+        {
+            await CompanyApi.UploadDocumentAsync("companydoc", Id, newFile);
+            await CompanyApi.DeleteDocumentAsync(docId);
+            await LoadCompanyDocuments();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", Loc["FailedToUploadDoc"].Value + ": " + ex.Message);
         }
     }
 }

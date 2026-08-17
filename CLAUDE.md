@@ -730,6 +730,18 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - **Trapped Modals:** Fixed a CSS conflict where `backdrop-filter` on the `ios-widget-card` trapped fixed-position modals (like the file previewer) inside the Memos card.
   - **Financials Layout:** Fixed a flexbox compression issue by explicitly enforcing block layout (`d-block w-100`) on the Financials container, allowing it to stretch across the full screen.
 
+**Feature 17: UI Standardization & Comprehensive Localization — ✅ COMPLETED (2026-08-17)**
+- **UI Button Alignment & Color Coding:**
+  - Standardized action buttons (View, Edit, Delete) across the system (Companies, Cases, Clients, Financials) to use a unified flexbox container (`d-flex justify-content-center align-items-center gap-2`).
+  - Standardized button colors for actions: Info (Blue) for View, Secondary (Gray) for Edit, Danger (Red) for Delete.
+- **Document Replacement Logic:**
+  - Implemented automatic backend and UI replacement logic (`HandleAmendmentReplace`, `HandleCompanyDocumentReplace`) for dynamic file updates, including automatic deletion of old documents upon replacement without needing a hard reload.
+- **Comprehensive Localization Mappings:**
+  - Fully translated and mapped the `CompanyDetail.razor` (Partners and Amendments sections).
+  - Fully translated and mapped the `FinancialsOverview.razor` dashboard.
+  - Fully translated and mapped the `ClientDetail.razor` and `ClientList.razor` pages, resolving case-sensitivity mismatches (e.g., `NationalId` vs `NationalID`) with `IStringLocalizer` in Blazor.
+  - Synced all Arabic and English translations across `SharedResources.ar.resx` and `SharedResources.resx`.
+
 ### Active Agent Instructions
 
 - **User Builds and Tests**: The user is solely responsible for running `dotnet build`/`run` via Visual Studio and performing manual UI tests. The agent will wait for the user to report bugs or give the green light.
