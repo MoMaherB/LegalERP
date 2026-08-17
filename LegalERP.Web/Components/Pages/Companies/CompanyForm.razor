@@ -34,7 +34,7 @@ else
                         <InputSelect class="ios-select" @bind-Value="model.Category">
                             @foreach (var category in Enum.GetValues<CompanyCategory>())
                             {
-                                <option value="@category">@category</option>
+                                <option value="@category">@Loc[category.ToString()]</option>
                             }
                         </InputSelect>
                     </div>

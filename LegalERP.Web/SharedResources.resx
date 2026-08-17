@@ -1020,4 +1020,88 @@
   <data name="AddFirstClient" xml:space="preserve">
     <value>Add the first client</value>
   </data>
+  <data name="AddNewClient" xml:space="preserve">
+    <value>Add New Client</value>
+  </data>
+  <data name="PersonalInformation" xml:space="preserve">
+    <value>Personal Information</value>
+  </data>
+  <data name="FullNameArabic" xml:space="preserve">
+    <value>Full Name (Arabic)</value>
+  </data>
+  <data name="FullNameArabicPlaceholder" xml:space="preserve">
+    <value>Enter full Arabic name...</value>
+  </data>
+  <data name="FullNameEnglish" xml:space="preserve">
+    <value>Full Name (English)</value>
+  </data>
+  <data name="FullNameEnglishPlaceholder" xml:space="preserve">
+    <value>Enter full English name...</value>
+  </data>
+  <data name="NationalIdNumber" xml:space="preserve">
+    <value>National ID Number</value>
+  </data>
+  <data name="NationalIdNumberPlaceholder" xml:space="preserve">
+    <value>Enter 14-digit National ID...</value>
+  </data>
+  <data name="PhoneNumber" xml:space="preserve">
+    <value>Phone Number</value>
+  </data>
+  <data name="PhoneNumberPlaceholder" xml:space="preserve">
+    <value>Enter phone number...</value>
+  </data>
+  <data name="EmailPlaceholder" xml:space="preserve">
+    <value>Enter email address...</value>
+  </data>
+  <data name="AddressPlaceholder" xml:space="preserve">
+    <value>Enter physical address...</value>
+  </data>
+  <data name="NotesPlaceholder" xml:space="preserve">
+    <value>Enter any additional notes...</value>
+  </data>
+  <data name="CreateClient" xml:space="preserve">
+    <value>Create Client</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>Save Changes</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>Saving...</value>
+  </data>
+  <data name="Current" xml:space="preserve">
+    <value>Current</value>
+  </data>
+  <data name="NewFile" xml:space="preserve">
+    <value>New File</value>
+  </data>
+  <data name="AddCompany" xml:space="preserve">
+    <value>Add Company</value>
+  </data>
+  <data name="EditCompany" xml:space="preserve">
+    <value>Edit Company</value>
+  </data>
+  <data name="CompanyNameArabic" xml:space="preserve">
+    <value>Company Name (Arabic)</value>
+  </data>
+  <data name="CompanyNameEnglish" xml:space="preserve">
+    <value>Company Name (English)</value>
+  </data>
+  <data name="SoleProprietorship" xml:space="preserve">
+    <value>Sole Proprietorship</value>
+  </data>
+  <data name="CapitalCompany" xml:space="preserve">
+    <value>Capital Company</value>
+  </data>
+  <data name="Partnership" xml:space="preserve">
+    <value>Partnership</value>
+  </data>
+  <data name="ContractUploaded" xml:space="preserve">
+    <value>Contract Uploaded</value>
+  </data>
+  <data name="AllowedTypes" xml:space="preserve">
+    <value>Allowed types: PDF, JPG, PNG</value>
+  </data>
+  <data name="SaveCompany" xml:space="preserve">
+    <value>Save Company</value>
+  </data>
 </root>

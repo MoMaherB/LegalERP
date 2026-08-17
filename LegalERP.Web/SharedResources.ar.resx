@@ -651,9 +651,6 @@
   <data name="UploadSaveDoc" xml:space="preserve">
     <value>رفع وحفظ المستند</value>
   </data>
-  <data name="DefendantCivil" xml:space="preserve">
-    <value>إلغاء</value>
-  </data>
   <data name="NoPartiesRecorded" xml:space="preserve">
     <value>لم يتم تسجيل أطراف لهذه القضية بعد.</value>
   </data>
@@ -1214,6 +1211,90 @@
   </data>
   <data name="NoClientsFound" xml:space="preserve">
     <value>لم يتم العثور على موكلين.</value>
+  </data>
+  <data name="AddNewClient" xml:space="preserve">
+    <value>إضافة موكل جديد</value>
+  </data>
+  <data name="PersonalInformation" xml:space="preserve">
+    <value>البيانات الشخصية</value>
+  </data>
+  <data name="FullNameArabic" xml:space="preserve">
+    <value>الاسم بالكامل (عربي)</value>
+  </data>
+  <data name="FullNameArabicPlaceholder" xml:space="preserve">
+    <value>أدخل الاسم الرباعي باللغة العربية...</value>
+  </data>
+  <data name="FullNameEnglish" xml:space="preserve">
+    <value>الاسم بالكامل (إنجليزي)</value>
+  </data>
+  <data name="FullNameEnglishPlaceholder" xml:space="preserve">
+    <value>أدخل الاسم باللغة الإنجليزية (اختياري)...</value>
+  </data>
+  <data name="NationalIdNumber" xml:space="preserve">
+    <value>رقم الهوية / الرقم القومي</value>
+  </data>
+  <data name="NationalIdNumberPlaceholder" xml:space="preserve">
+    <value>أدخل الرقم القومي (١٤ رقم)...</value>
+  </data>
+  <data name="PhoneNumber" xml:space="preserve">
+    <value>رقم الهاتف</value>
+  </data>
+  <data name="PhoneNumberPlaceholder" xml:space="preserve">
+    <value>أدخل رقم الهاتف...</value>
+  </data>
+  <data name="EmailPlaceholder" xml:space="preserve">
+    <value>أدخل البريد الإلكتروني...</value>
+  </data>
+  <data name="AddressPlaceholder" xml:space="preserve">
+    <value>أدخل العنوان بالتفصيل...</value>
+  </data>
+  <data name="NotesPlaceholder" xml:space="preserve">
+    <value>أدخل أي ملاحظات إضافية...</value>
+  </data>
+  <data name="CreateClient" xml:space="preserve">
+    <value>إضافة الموكل</value>
+  </data>
+  <data name="SaveChanges" xml:space="preserve">
+    <value>حفظ التعديلات</value>
+  </data>
+  <data name="Saving" xml:space="preserve">
+    <value>جاري الحفظ...</value>
+  </data>
+  <data name="Current" xml:space="preserve">
+    <value>الحالي</value>
+  </data>
+  <data name="NewFile" xml:space="preserve">
+    <value>الملف الجديد</value>
+  </data>
+  <data name="AddCompany" xml:space="preserve">
+    <value>إضافة شركة</value>
+  </data>
+  <data name="EditCompany" xml:space="preserve">
+    <value>تعديل بيانات الشركة</value>
+  </data>
+  <data name="CompanyNameArabic" xml:space="preserve">
+    <value>اسم الشركة (عربي)</value>
+  </data>
+  <data name="CompanyNameEnglish" xml:space="preserve">
+    <value>اسم الشركة (إنجليزي)</value>
+  </data>
+  <data name="SoleProprietorship" xml:space="preserve">
+    <value>شركة فردية / فردي</value>
+  </data>
+  <data name="CapitalCompany" xml:space="preserve">
+    <value>شركة أموال</value>
+  </data>
+  <data name="Partnership" xml:space="preserve">
+    <value>شركة أشخاص</value>
+  </data>
+  <data name="ContractUploaded" xml:space="preserve">
+    <value>تم رفع العقد</value>
+  </data>
+  <data name="AllowedTypes" xml:space="preserve">
+    <value>الملفات المسموحة: PDF, JPG, PNG</value>
+  </data>
+  <data name="SaveCompany" xml:space="preserve">
+    <value>حفظ الشركة</value>
   </data>
   <data name="AddFirstClient" xml:space="preserve">
     <value>إضافة أول موكل</value>

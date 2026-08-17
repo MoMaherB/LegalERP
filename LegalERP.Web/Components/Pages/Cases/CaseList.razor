@@ -110,10 +110,12 @@ else
                             }
                         </td>
                         <td>@(c.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</td>
-                        <td class="text-center">
-                            <a href="/cases/@c.Id" class="ios-btn ios-btn-secondary me-1 text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["View"]</a>
-                            <a href="/cases/edit/@c.Id" class="ios-btn ios-btn-secondary me-1 text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["Edit"]</a>
-                            <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteCase(c.Id)">@Loc["Delete"]</button>
+                        <td>
+                            <div class="d-flex justify-content-center align-items-center gap-2">
+                                <a href="/cases/@c.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 12px; font-size: 0.85rem;">@Loc["View"]</a>
+                                <a href="/cases/edit/@c.Id" class="ios-btn ios-btn-secondary text-decoration-none m-0" style="padding: 4px 12px; font-size: 0.85rem;">@Loc["Edit"]</a>
+                                <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 12px; font-size: 0.85rem;" @onclick="() => DeleteCase(c.Id)">@Loc["Delete"]</button>
+                            </div>
                         </td>
                     </tr>
                 }

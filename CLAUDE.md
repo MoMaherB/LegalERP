@@ -740,7 +740,10 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Fully translated and mapped the `CompanyDetail.razor` (Partners and Amendments sections).
   - Fully translated and mapped the `FinancialsOverview.razor` dashboard.
   - Fully translated and mapped the `ClientDetail.razor` and `ClientList.razor` pages, resolving case-sensitivity mismatches (e.g., `NationalId` vs `NationalID`) with `IStringLocalizer` in Blazor.
+  - Fully translated and mapped the Add/Edit forms: `ClientForm.razor` and `CompanyForm.razor`, including dynamically localizing `Enum` dropdown options (`CompanyCategory`).
   - Synced all Arabic and English translations across `SharedResources.ar.resx` and `SharedResources.resx`.
+- **Bug Fixes:**
+  - Resolved a critical localization duplication bug in `SharedResources.ar.resx` where `DefendantCivil` was mapped to both "إلغاء" (Cancel) and "المدعى عليه" (Defendant), causing the UI dropdowns to display "إلغاء" incorrectly. Removed the corrupted duplicate key and restored missing dictionary mappings.
 
 ### Active Agent Instructions
 
