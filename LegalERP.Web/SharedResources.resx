@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1103,5 +1103,32 @@
   </data>
   <data name="SaveCompany" xml:space="preserve">
     <value>Save Company</value>
+  </data>
+  <data name="ClientCreated" xml:space="preserve">
+    <value>A new client was added successfully.</value>
+  </data>
+  <data name="ClientUpdated" xml:space="preserve">
+    <value>The client was updated successfully.</value>
+  </data>
+  <data name="ClientDeleted" xml:space="preserve">
+    <value>The client was deleted successfully.</value>
+  </data>
+  <data name="CompanyCreated" xml:space="preserve">
+    <value>A new company was added successfully.</value>
+  </data>
+  <data name="CompanyUpdated" xml:space="preserve">
+    <value>The company was updated successfully.</value>
+  </data>
+  <data name="CompanyDeleted" xml:space="preserve">
+    <value>The company was deleted successfully.</value>
+  </data>
+  <data name="CaseCreated" xml:space="preserve">
+    <value>A new case was added successfully.</value>
+  </data>
+  <data name="CaseUpdated" xml:space="preserve">
+    <value>The case was updated successfully.</value>
+  </data>
+  <data name="CaseDeleted" xml:space="preserve">
+    <value>The case was deleted successfully.</value>
   </data>
 </root>

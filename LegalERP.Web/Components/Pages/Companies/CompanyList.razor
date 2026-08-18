@@ -1,9 +1,10 @@
-@page "/companies"
+﻿@page "/companies"
 @using LegalERP.Application.Companies
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
 @inject CompanyApiClient CompanyApi
 @inject NavigationManager NavManager
+@inject LegalERP.Web.Services.Toast.IToastService ToastService
 @inject IJSRuntime JS
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
@@ -126,7 +127,10 @@ else
         if (confirmed)
         {
             await CompanyApi.DeleteAsync(id);
+            ToastService.ShowSuccess(Loc["CompanyDeleted"].Value);
             await PerformSearch();
         }
     }
 }
+
+

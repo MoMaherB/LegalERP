@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1299,4 +1299,32 @@
   <data name="AddFirstClient" xml:space="preserve">
     <value>إضافة أول موكل</value>
   </data>
+  <data name="ClientCreated" xml:space="preserve">
+    <value>تم إضافة موكل جديد بنجاح</value>
+  </data>
+  <data name="ClientUpdated" xml:space="preserve">
+    <value>تم تعديل بيانات الموكل بنجاح</value>
+  </data>
+  <data name="ClientDeleted" xml:space="preserve">
+    <value>تم حذف الموكل بنجاح</value>
+  </data>
+  <data name="CompanyCreated" xml:space="preserve">
+    <value>تم إضافة شركة جديدة بنجاح</value>
+  </data>
+  <data name="CompanyUpdated" xml:space="preserve">
+    <value>تم تعديل بيانات الشركة بنجاح</value>
+  </data>
+  <data name="CompanyDeleted" xml:space="preserve">
+    <value>تم حذف الشركة بنجاح</value>
+  </data>
+  <data name="CaseCreated" xml:space="preserve">
+    <value>تم إضافة قضية جديدة بنجاح</value>
+  </data>
+  <data name="CaseUpdated" xml:space="preserve">
+    <value>تم تعديل بيانات القضية بنجاح</value>
+  </data>
+  <data name="CaseDeleted" xml:space="preserve">
+    <value>تم حذف القضية بنجاح</value>
+  </data>
 </root>
+

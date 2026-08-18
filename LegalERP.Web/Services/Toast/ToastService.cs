@@ -1,4 +1,4 @@
-﻿namespace LegalERP.Web.Services.Toast;
+namespace LegalERP.Web.Services.Toast;
 
 public enum ToastLevel
 {
@@ -32,8 +32,8 @@ public class ToastService : IToastService
     private readonly List<ToastMessage> _toasts = new();
     public event Action? OnChanged;
     
-    // Auto-dismiss timer (10 seconds as requested)
-    private readonly int _timeoutMs = 10000;
+    // Auto-dismiss timer (6 seconds as requested)
+    private readonly int _timeoutMs = 6000;
 
     public List<ToastMessage> GetToasts() => _toasts;
 
