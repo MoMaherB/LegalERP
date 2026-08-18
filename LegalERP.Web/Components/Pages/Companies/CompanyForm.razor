@@ -254,10 +254,9 @@ else
         }
     }
 
-    private void GoBack()
-    {
-        ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Company"].Value + " " + Loc["Saving"].Value); NavManager.NavigateTo("/companies");
-    }
+    private void GoBack() { NavManager.NavigateTo("/companies"); }
 }
+
+
 
 

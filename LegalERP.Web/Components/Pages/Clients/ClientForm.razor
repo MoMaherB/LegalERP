@@ -211,7 +211,7 @@ else
                     natIdDocId,
                     attDocId
                 );
-                await ClientApi.UpdateAsync(Id!.Value, updateDto); ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " updated."); NavManager.NavigateTo($"/clients/{Id.Value}");
+                await ClientApi.UpdateAsync(Id!.Value, updateDto); ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " updated."); await Task.Delay(500); NavManager.NavigateTo($"/clients/{Id.Value}");
             }
             else
             {
@@ -227,10 +227,10 @@ else
                     attDocId
                 );
                 var created = await ClientApi.CreateAsync(createDto);
-                if (created != null) { ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " created."); NavManager.NavigateTo($"/clients/{created.Id}"); }
+                if (created != null) { ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " created."); await Task.Delay(500); NavManager.NavigateTo($"/clients/{created.Id}"); }
                 else
                 {
-                    ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " " + Loc["Saving"].Value); NavManager.NavigateTo("/clients");
+                    ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " " + Loc["Saving"].Value); await Task.Delay(500); NavManager.NavigateTo("/clients");
                 }
             }
         }
@@ -257,5 +257,6 @@ else
         public Guid? AttorneyDocumentId { get; set; }
     }
 }
+
 
 

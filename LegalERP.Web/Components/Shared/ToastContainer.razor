@@ -1,4 +1,4 @@
-@using LegalERP.Web.Services.Toast
+﻿@using LegalERP.Web.Services.Toast
 @inject IToastService ToastService
 @implements IDisposable
 
@@ -8,7 +8,7 @@
         var cssClass = GetToastClass(toast.Level);
         var icon = GetToastIcon(toast.Level);
 
-        <div class="toast show align-items-center text-white border-0 @cssClass glassmorphism-toast mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="animation: slideInRight 0.3s ease-out;">
+        <div @key="toast.Id" class="toast show align-items-center text-white border-0 @cssClass glassmorphism-toast mb-2" role="alert" aria-live="assertive" aria-atomic="true" style="animation: slideInRight 0.3s ease-out;">
             <div class="d-flex">
                 <div class="toast-body d-flex align-items-center" style="font-size: 1.05rem;">
                     <span class="me-2 fs-5">@icon</span>
@@ -59,3 +59,4 @@
         _ => "✉️"
     };
 }
+
