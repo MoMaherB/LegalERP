@@ -1131,4 +1131,8 @@
   <data name="CaseDeleted" xml:space="preserve">
     <value>The case was deleted successfully.</value>
   </data>
+  <data name="OperationSuccess" xml:space="preserve">
+    <value>Operation completed successfully.</value>
+  </data>
 </root>
+

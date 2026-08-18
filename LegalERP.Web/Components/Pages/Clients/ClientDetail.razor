@@ -6,6 +6,7 @@
 @using LegalERP.Web.Components.Shared
 @inject ClientApiClient ClientApi
 @inject NavigationManager NavManager
+@inject LegalERP.Web.Services.Toast.IToastService ToastService
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
@@ -255,6 +256,7 @@ else
         if (confirmed)
         {
             await ClientApi.DeleteAsync(Id);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             NavManager.NavigateTo("/clients");
         }
     }

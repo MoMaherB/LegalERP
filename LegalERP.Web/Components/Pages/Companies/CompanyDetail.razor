@@ -9,6 +9,7 @@
 @inject CompanyApiClient CompanyApi
 @inject ClientApiClient ClientApi
 @inject NavigationManager NavManager
+@inject LegalERP.Web.Services.Toast.IToastService ToastService
 @inject IJSRuntime JS
 @inject MockAuthService Auth
 @using Microsoft.Extensions.Localization
@@ -399,6 +400,7 @@ else
         try
         {
             var docId = await CompanyApi.UploadDocumentAsync("company", company.Id, incorporationContractFile);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             var updateDto = new UpdateCompanyDto(
                 company.Category,
                 company.CompanyName,
@@ -410,6 +412,7 @@ else
                 docId
             );
             await CompanyApi.UpdateAsync(company.Id, updateDto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
 
             incorporationContractFile = null;
             await LoadCompany();
@@ -535,6 +538,7 @@ else
         try
         {
             var docId = await CompanyApi.UploadDocumentAsync("companydoc", Id, newCompanyDocFile, newCompanyDocTitle);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             
             showAddCompanyDocForm = false;
             newCompanyDocTitle = null;
@@ -560,6 +564,7 @@ else
             try
             {
                 await CompanyApi.DeleteDocumentAsync(docId);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                 await LoadCompanyDocuments();
             }
             catch (Exception ex)
@@ -595,12 +600,15 @@ else
         {
             var dto = new CreateCompanyAmendmentDto(newAmendmentTitle, newAmendmentDate, null);
             var result = await CompanyApi.AddAmendmentAsync(Id, dto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
 
             if (result != null && newAmendmentFile != null)
             {
                 var docId = await CompanyApi.UploadDocumentAsync("amendment", result.Id, newAmendmentFile);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                 var updateDto = new UpdateCompanyAmendmentDto(result.Title, result.AmendmentDate, docId);
                 await CompanyApi.UpdateAmendmentAsync(Id, result.Id, updateDto);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             }
 
             showAddAmendmentForm = false;
@@ -625,6 +633,7 @@ else
         if (confirmed)
         {
             await CompanyApi.DeleteAmendmentAsync(Id, amendmentId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadCompany();
         }
     }
@@ -683,6 +692,7 @@ else
         {
             var dto = new CreateCompanyPartnerDto(selectedClientId.Value, newPartnerOwnership);
             await CompanyApi.AddPartnerAsync(Id, dto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
 
             showAddPartnerForm = false;
             newPartnerOwnership = null;
@@ -705,6 +715,7 @@ else
         if (confirmed)
         {
             await CompanyApi.DeletePartnerAsync(Id, partnerId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadCompany();
         }
     }
@@ -715,12 +726,15 @@ else
         {
             var amendment = company.Amendments.First(a => a.Id == amendmentId);
             var docId = await CompanyApi.UploadDocumentAsync("amendment", amendmentId, newFile);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             var updateDto = new UpdateCompanyAmendmentDto(amendment.Title, amendment.AmendmentDate, docId);
             await CompanyApi.UpdateAmendmentAsync(Id, amendmentId, updateDto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             
             if (amendment.DocumentId.HasValue)
             {
                 try { await CompanyApi.DeleteDocumentAsync(amendment.DocumentId.Value); } catch { /* ignore */ }
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             }
 
             await LoadCompany();
@@ -736,7 +750,9 @@ else
         try
         {
             await CompanyApi.UploadDocumentAsync("companydoc", Id, newFile);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await CompanyApi.DeleteDocumentAsync(docId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadCompanyDocuments();
         }
         catch (Exception ex)

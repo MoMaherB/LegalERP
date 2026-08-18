@@ -10,6 +10,7 @@
 @inject ClientApiClient ClientApi
 @inject MockAuthService Auth
 @inject NavigationManager NavManager
+@inject LegalERP.Web.Services.Toast.IToastService ToastService
 @inject IJSRuntime JS
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
@@ -723,6 +724,7 @@ else
             );
 
             await CaseApi.AddPartyAsync(Id, dto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
 
             showAddPartyForm = false;
             ClearClientSelection();
@@ -748,6 +750,7 @@ else
         if (confirmed)
         {
             await CaseApi.DeletePartyAsync(Id, partyId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadCase();
         }
     }
@@ -789,6 +792,7 @@ else
 
             var dto = new CreateCaseMemoDto(newMemoTitle, newMemoContent, newMemoDate, docId);
             await CaseApi.AddMemoAsync(Id, dto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
 
             showAddMemoForm = false;
             newMemoTitle = null;
@@ -819,6 +823,7 @@ else
             
             // Upload new file
             var newDocId = await CompanyApi.UploadDocumentAsync("casememo", memoId, file);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             
             var updateDto = new UpdateCaseMemoDto(
                 existingMemo.Title, 
@@ -827,6 +832,7 @@ else
                 newDocId);
                 
             await CaseApi.UpdateMemoAsync(Id, memoId, updateDto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             
             // Reload case to see new doc
             caseDto = await CaseApi.GetByIdAsync(Id);
@@ -844,6 +850,7 @@ else
         if (confirmed)
         {
             await CaseApi.DeleteMemoAsync(Id, memoId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadCase();
         }
     }
@@ -870,6 +877,7 @@ else
             );
 
             await CaseApi.AddHearingAsync(Id, dto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             
             showAddHearingForm = false;
             newHearingPurpose = null;
@@ -894,6 +902,7 @@ else
         if (confirmed)
         {
             await CaseApi.DeleteHearingAsync(Id, hearingId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadCase();
         }
     }
@@ -928,6 +937,7 @@ else
         try
         {
             var docId = await CompanyApi.UploadDocumentAsync("case", Id, newDocFile, newDocTitle);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             showAddDocForm = false;
             newDocTitle = null;
             newDocFile = null;
@@ -949,6 +959,7 @@ else
         if (confirmed)
         {
             await CompanyApi.DeleteDocumentAsync(docId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadCase();
         }
     }
@@ -959,6 +970,7 @@ else
         if (confirmed)
         {
             await CaseApi.DeleteAsync(Id);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             NavManager.NavigateTo("/cases");
         }
     }

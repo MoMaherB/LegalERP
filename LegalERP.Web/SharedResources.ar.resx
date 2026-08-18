@@ -1326,5 +1326,9 @@
   <data name="CaseDeleted" xml:space="preserve">
     <value>تم حذف القضية بنجاح</value>
   </data>
+  <data name="OperationSuccess" xml:space="preserve">
+    <value>تمت العملية بنجاح</value>
+  </data>
 </root>
+
 

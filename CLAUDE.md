@@ -1,4 +1,4 @@
-# Legal Management System (ERP/CRM) — Requirements Reference Document
+﻿# Legal Management System (ERP/CRM) — Requirements Reference Document
 
 **Project:** Self-Hosted Legal Management System for Investment Lawyer
 **Document Type:** Business Requirements Document (BRD) + Technical Requirements Document (TRD)
@@ -746,6 +746,13 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Resolved a critical localization duplication bug in `SharedResources.ar.resx` where `DefendantCivil` was mapped to both "إلغاء" (Cancel) and "المدعى عليه" (Defendant), causing the UI dropdowns to display "إلغاء" incorrectly. Removed the corrupted duplicate key and restored missing dictionary mappings.
   - Fixed a Blazor routing lifecycle bug where clicking a notification to navigate to a different record of the same type (e.g. from `/cases/1` to `/cases/2`) updated the URL but failed to reload the UI. Moved data loading logic from `OnInitializedAsync` to `OnParametersSetAsync` across `CaseDetail.razor`, `CompanyDetail.razor`, and `ClientDetail.razor` to ensure components cleanly reload when the URL parameter `Id` changes.
 
+**Feature 18: Global Toast Messaging & Status Notifications — ✅ COMPLETED (2026-08-18)**
+- **Glassmorphism Toast Service:** Built a custom ToastService and ToastContainer from scratch to provide sleek, animated glassmorphism notification popups across the entire application without relying on heavy third-party libraries.
+- **Smart Navigation Handling:** Implemented a 500ms Task.Delay yield mechanism combined with DOM @key tracking to allow CSS slide-in animations to play fully before Single Page Application (SPA) navigations tear down the originating form.
+- **System-Wide Action Coverage:** Automatically injected ToastService.ShowSuccess() responses to trigger after *every single database modification action* across all modules (Cases, Clients, Companies) including creating, updating, and deleting top-level records, as well as inner entities like case parties, hearings, amendments, documents, and partners.
+- **Full Arabic Localization:** Integrated dynamic dictionary translations (تمت العملية بنجاح) alongside explicit module-specific action messages (e.g. تم إضافة موكل جديد, تم حذف الشركة) to ensure complete alignment with the Arabic UI experience.
+- **Guaranteed UI Stacking:** Applied explicit lex-direction: column CSS rules directly to the .toast-container to guarantee proper vertical stacking of multiple rapid-fire notifications, preventing absolute positioning overlaps when triggering back-to-back actions.
+
 ### Active Agent Instructions
 
 - **User Builds and Tests**: The user is solely responsible for running `dotnet build`/`run` via Visual Studio and performing manual UI tests. The agent will wait for the user to report bugs or give the green light.
@@ -758,4 +765,5 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 ---
 
 *End of reference document.*
+
 

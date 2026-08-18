@@ -2,7 +2,7 @@
 @inject IToastService ToastService
 @implements IDisposable
 
-<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055; display: flex; flex-direction: column; gap: 0.5rem;">
     @foreach (var toast in ToastService.GetToasts())
     {
         var cssClass = GetToastClass(toast.Level);
@@ -59,4 +59,5 @@
         _ => "✉️"
     };
 }
+
 

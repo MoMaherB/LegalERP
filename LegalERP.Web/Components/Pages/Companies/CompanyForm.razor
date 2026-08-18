@@ -9,6 +9,7 @@
 @using LegalERP.Web.Services
 @inject CompanyApiClient CompanyApi
 @inject NavigationManager NavManager
+@inject LegalERP.Web.Services.Toast.IToastService ToastService
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
@@ -189,6 +190,7 @@ else
                 if (selectedFile != null)
                 {
                     var docId = await CompanyApi.UploadDocumentAsync("company", companyId, selectedFile);
+                    ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                     model.IncorporationDocumentId = docId;
                 }
 
@@ -203,6 +205,7 @@ else
                     model.IncorporationDocumentId);
 
                 await CompanyApi.UpdateAsync(companyId, dto);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             }
             else
             {
@@ -218,6 +221,7 @@ else
                     null); // No document ID yet
 
                 var newCompany = await CompanyApi.CreateAsync(createDto);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                 if (newCompany == null) throw new Exception("Creation failed");
                 
                 companyId = newCompany.Id;
@@ -226,6 +230,7 @@ else
                 if (selectedFile != null)
                 {
                     var docId = await CompanyApi.UploadDocumentAsync("company", companyId, selectedFile);
+                    ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                     
                     var updateDto = new UpdateCompanyDto(
                         model.Category,
@@ -238,6 +243,7 @@ else
                         docId);
                         
                     await CompanyApi.UpdateAsync(companyId, updateDto);
+                    ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                 }
             }
 
