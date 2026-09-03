@@ -1,4 +1,4 @@
-﻿@page "/companies/{Id:guid}"
+@page "/companies/{Id:guid}"
 @using LegalERP.Web.Services.Toast
 @inject IToastService ToastService
 @using LegalERP.Application.Companies
@@ -11,9 +11,10 @@
 @inject NavigationManager NavManager
 @inject LegalERP.Web.Services.Toast.IToastService ToastService
 @inject IJSRuntime JS
-@inject MockAuthService Auth
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -29,7 +30,9 @@ else
         <h1 class="ios-title mb-0">@company.CompanyName</h1>
         <div class="d-flex align-items-center gap-2">
             <button class="ios-btn ios-btn-secondary text-decoration-none m-0" @onclick="GoBack">@Loc["BackToList"]</button>
-            <a href="/companies/edit/@company.Id" class="ios-btn ios-btn-primary text-decoration-none m-0">@Loc["Edit"]</a>
+            @if (_canEdit) { 
+                <a href="/companies/edit/@company.Id" class="ios-btn ios-btn-primary text-decoration-none m-0">@Loc["Edit"]</a> 
+            }
         </div>
     </div>
     
@@ -186,9 +189,9 @@ else
                 <thead>
                     <tr>
                         <th>@Loc["Name"]</th>
-                        <th>@Loc["NationalID"]</th>
+                        <th class="d-none d-md-table-cell">@Loc["NationalID"]</th>
                         <th>@Loc["OwnershipPercentage"]</th>
-                        <th>@Loc["IDDocument"]</th>
+                        <th class="d-none d-lg-table-cell">@Loc["IDDocument"]</th>
                         <th>@Loc["Actions"]</th>
                     </tr>
                 </thead>
@@ -196,8 +199,14 @@ else
                     @foreach (var partner in company.Partners)
                     {
                         <tr>
-                            <td><strong>@partner.FullName</strong></td>
-                            <td>@(partner.NationalIdNumber ?? "—")</td>
+                            <td>
+                                <strong>@partner.FullName</strong>
+                                @if (!string.IsNullOrWhiteSpace(partner.NationalIdNumber))
+                                {
+                                    <div class="d-md-none text-muted small mt-1">@partner.NationalIdNumber</div>
+                                }
+                            </td>
+                            <td class="d-none d-md-table-cell">@(partner.NationalIdNumber ?? "—")</td>
                             <td>
                                 @if (partner.OwnershipPercentage.HasValue)
                                 {
@@ -208,7 +217,7 @@ else
                                     <span class="text-muted">—</span>
                                 }
                             </td>
-                            <td>
+                            <td class="d-none d-lg-table-cell">
                                 @if (partner.NationalIdDocument != null)
                                 {
                                     <FileThumbnail Document="partner.NationalIdDocument" OwnerType="partner" OwnerId="partner.Id" />
@@ -219,7 +228,9 @@ else
                                 }
                             </td>
                             <td>
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button>
+                                @if (_canDelete) { 
+                                    <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button> 
+                                }
                             </td>
                         </tr>
                     }
@@ -354,7 +365,9 @@ else
                         <FileThumbnail Document="doc" OwnerType="companydoc" OwnerId="company.Id" AllowReplace="true" OnReplace="@(e => HandleCompanyDocumentReplace(doc.Id, e))" />
                         <div class="d-flex justify-content-between align-items-center px-1">
                             <small class="ios-details fw-bold text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
-                            <button class="ios-btn ios-btn-danger" style="padding: 3px 10px; font-size: 0.78rem;" @onclick="() => DeleteCompanyDocument(doc.Id)">@Loc["Delete"]</button>
+                            @if (_canDelete) { 
+                                <button class="ios-btn ios-btn-danger" style="padding: 3px 10px; font-size: 0.78rem;" @onclick="() => DeleteCompanyDocument(doc.Id)">@Loc["Delete"]</button> 
+                            }
                         </div>
                     </div>
                 </div>
@@ -362,17 +375,18 @@ else
         </div>
     }
 
-    @if (Auth.IsAdmin)
-    {
-        <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
-            <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Financials"]</h3>
-        </div>
-        <div class="ios-widget-card d-block w-100 mb-5">
-            <div class="p-4 w-100">
-                <SharedFinancials OwnerId="company.Id" OwnerType="company" />
+    <AuthorizeView Roles="SuperAdmin,Admin">
+        <Authorized>
+            <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
+                <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Financials"]</h3>
             </div>
-        </div>
-    }
+            <div class="ios-widget-card d-block w-100 mb-5">
+                <div class="p-4 w-100">
+                    <SharedFinancials OwnerId="company.Id" OwnerType="company" />
+                </div>
+            </div>
+        </Authorized>
+    </AuthorizeView>
 }
 
 @code {
@@ -380,6 +394,9 @@ else
     public Guid Id { get; set; }
 
     private CompanyDto? company;
+
+    private bool _canEdit;
+    private bool _canDelete;
 
     // Incorporation Contract state
     private IBrowserFile? incorporationContractFile;
@@ -474,7 +491,7 @@ else
 
     protected override void OnInitialized()
     {
-        Auth.OnRoleChanged += StateHasChanged;
+        
     }
 
     protected override async Task OnParametersSetAsync()
@@ -482,13 +499,17 @@ else
         if (Id != _lastLoadedId)
         {
             _lastLoadedId = Id;
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            _canEdit   = user.IsInRole("SuperAdmin") || user.IsInRole("Admin") || user.IsInRole("Editor");
+            _canDelete = user.IsInRole("SuperAdmin") || user.IsInRole("Admin") || user.IsInRole("Editor");
             await LoadCompany();
         }
     }
 
     public void Dispose()
     {
-        Auth.OnRoleChanged -= StateHasChanged;
+        
     }
 
     private async Task LoadCompany()
@@ -761,4 +782,5 @@ else
         }
     }
 }
+
 

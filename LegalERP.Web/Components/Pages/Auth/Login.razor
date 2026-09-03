@@ -1,0 +1,502 @@
+@page "/login"
+@attribute [AllowAnonymous]
+@layout LegalERP.Web.Components.Layout.EmptyLayout
+@inject LegalERP.Web.Services.AuthApiClient AuthApi
+@inject LegalERP.Web.Services.CustomAuthStateProvider AuthStateProvider
+@inject NavigationManager NavManager
+@inject IStringLocalizer<SharedResources> Loc
+@inject LegalERP.Web.Services.Toast.IToastService Toast
+
+<PageTitle>تسجيل الدخول - ركائز للمحاماة</PageTitle>
+
+<div class="login-page">
+
+    <!-- LEFT PANEL — Law Firm Branding (hidden on mobile) -->
+    <div class="login-left d-none d-lg-flex">
+        <div class="login-left-overlay"></div>
+        <img src="/images/law-firm-hero.jpg" alt="ركائز للمحاماة" class="login-bg-img" />
+
+        <div class="login-left-content">
+            <!-- Top badge -->
+            <div class="law-badge">
+                <i class="fa-solid fa-scale-balanced me-2"></i>
+                نظام إدارة قانوني متكامل
+            </div>
+
+            <!-- Main branding -->
+            <div class="law-branding">
+                <div class="law-seal">
+                    <i class="fa-solid fa-pen-nib"></i>
+                </div>
+                <h1 class="law-firm-name">شركة ركائز</h1>
+                <h2 class="law-firm-sub">لخدمات المحاماة</h2>
+                <div class="law-divider">
+                    <span></span><i class="fa-solid fa-scale-balanced"></i><span></span>
+                </div>
+                <p class="law-attorney-name">أ/ أحمد حمدي</p>
+                <p class="law-attorney-title">المحامي</p>
+            </div>
+
+            <!-- Bottom quote -->
+            <div class="law-quote">
+                <i class="fa-solid fa-quote-right mb-2 d-block"></i>
+                <p class="mb-0">العدل أساس الملك</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL — Login Form -->
+    <div class="login-right">
+        <div class="login-form-wrap">
+
+            <!-- Mobile logo (only shows on small screens) -->
+            <div class="d-flex d-lg-none flex-column align-items-center mb-4">
+                <div class="login-mobile-seal">
+                    <i class="fa-solid fa-pen-nib"></i>
+                </div>
+                <h3 class="fw-bold mt-3 mb-0">شركة ركائز</h3>
+                <p class="text-muted small mb-0">لخدمات المحاماة</p>
+            </div>
+
+            <!-- Desktop heading -->
+            <div class="d-none d-lg-block mb-5">
+                <h3 class="fw-bold mb-1">مرحباً بعودتك</h3>
+                <p class="text-muted small">سجّل دخولك للوصول إلى لوحة التحكم</p>
+            </div>
+
+            <!-- Error Message -->
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="login-error mb-4">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i> @_errorMessage
+                </div>
+            }
+
+            <!-- Email Field -->
+            <div class="login-field mb-4">
+                <label class="login-label">البريد الإلكتروني</label>
+                <div class="login-input-wrap">
+                    <i class="fa-solid fa-envelope login-field-icon"></i>
+                    <input type="email"
+                           class="login-input"
+                           @bind="_email"
+                           @bind:event="oninput"
+                           placeholder="name@example.com"
+                           @onkeyup="HandleKeyUp"
+                           autocomplete="username" />
+                </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="login-field mb-5">
+                <label class="login-label">كلمة المرور</label>
+                <div class="login-input-wrap">
+                    <i class="fa-solid fa-lock login-field-icon"></i>
+                    <input type="@(_showPassword ? "text" : "password")"
+                           class="login-input"
+                           @bind="_password"
+                           @bind:event="oninput"
+                           placeholder="••••••••"
+                           @onkeyup="HandleKeyUp"
+                           autocomplete="current-password" />
+                    <button type="button" class="login-eye-btn" @onclick="() => _showPassword = !_showPassword">
+                        <i class="fa-solid @(_showPassword ? "fa-eye-slash" : "fa-eye")"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button class="login-btn" @onclick="HandleLogin" disabled="@_isLoading">
+                @if (_isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    <span>جارٍ التحقق...</span>
+                }
+                else
+                {
+                    <i class="fa-solid fa-arrow-right-to-bracket me-2"></i>
+                    <span>تسجيل الدخول</span>
+                }
+            </button>
+
+            <!-- Footer -->
+            <p class="login-footer-text mt-5 text-center">
+                ركائز للمحاماة &copy; @DateTime.Now.Year
+            </p>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    /* ── Page Layout ───────────────────────────────────────── */
+    .login-page {
+        display: flex;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+        direction: rtl;
+    }
+
+    /* ── LEFT PANEL ─────────────────────────────────────────── */
+    .login-left {
+        position: relative;
+        flex: 1.1;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .login-bg-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        opacity: 0.4;
+    }
+
+    .login-left-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            135deg,
+            rgba(15, 23, 42, 0.85) 0%,
+            rgba(30, 41, 59, 0.75) 50%,
+            rgba(15, 23, 42, 0.90) 100%
+        );
+        z-index: 1;
+    }
+
+    .login-left-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        height: 100%;
+        padding: 3rem 2.5rem;
+        text-align: center;
+        color: white;
+    }
+
+    /* Top badge */
+    .law-badge {
+        background: rgba(212, 175, 55, 0.12);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        backdrop-filter: blur(12px);
+        color: #d4af37;
+        font-size: 0.78rem;
+        font-weight: 600;
+        padding: 0.45rem 1.2rem;
+        border-radius: 50px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Branding block */
+    .law-branding {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .law-seal {
+        width: 90px;
+        height: 90px;
+        border-radius: 24px;
+        background: rgba(212, 175, 55, 0.12);
+        border: 1.5px solid rgba(212, 175, 55, 0.35);
+        backdrop-filter: blur(16px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.4rem;
+        color: #d4af37;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0 50px rgba(212, 175, 55, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+
+    .law-firm-name {
+        font-size: 2.8rem;
+        font-weight: 800;
+        color: #ffffff;
+        margin-bottom: 0.1rem;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+        letter-spacing: -0.5px;
+    }
+
+    .law-firm-sub {
+        font-size: 1.3rem;
+        font-weight: 400;
+        color: rgba(255,255,255,0.7);
+        margin-bottom: 1.5rem;
+    }
+
+    .law-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        margin-bottom: 1.5rem;
+        color: #d4af37;
+        opacity: 0.6;
+    }
+    .law-divider span {
+        width: 60px;
+        height: 1px;
+        background: rgba(212, 175, 55, 0.5);
+    }
+
+    .law-attorney-name {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #d4af37;
+        margin-bottom: 0.2rem;
+    }
+
+    .law-attorney-title {
+        font-size: 0.95rem;
+        color: rgba(255,255,255,0.5);
+        font-weight: 400;
+        margin-bottom: 0;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+    }
+
+    /* Bottom quote */
+    .law-quote {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(212, 175, 55, 0.15);
+        border-radius: 14px;
+        padding: 1.2rem 2rem;
+        font-size: 1rem;
+        color: rgba(255,255,255,0.55);
+        font-style: italic;
+    }
+    .law-quote i { color: #d4af37; opacity: 0.6; }
+
+    /* ── RIGHT PANEL ─────────────────────────────────────────── */
+    .login-right {
+        flex: 0.9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: rgba(255,255,255,0.02);
+        backdrop-filter: blur(8px);
+        border-right: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .login-form-wrap {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    /* Mobile seal */
+    .login-mobile-seal {
+        width: 68px;
+        height: 68px;
+        border-radius: 18px;
+        background: rgba(212, 175, 55, 0.1);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        color: #d4af37;
+        box-shadow: 0 0 30px rgba(212, 175, 55, 0.2);
+    }
+
+    /* Form fields */
+    .login-field {}
+    .login-label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.3px;
+    }
+
+    .login-input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .login-field-icon {
+        position: absolute;
+        right: 1rem;
+        color: rgba(255,255,255,0.3);
+        font-size: 0.85rem;
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    .login-input {
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 0.75rem 2.8rem 0.75rem 1rem;
+        color: #f1f5f9;
+        font-size: 0.95rem;
+        transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+        outline: none;
+        font-family: inherit;
+    }
+
+    .login-input::placeholder {
+        color: rgba(255,255,255,0.2);
+    }
+
+    .login-input:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(212, 175, 55, 0.5);
+        box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
+    }
+
+    .login-eye-btn {
+        position: absolute;
+        left: 0.75rem;
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.3);
+        cursor: pointer;
+        padding: 0.2rem;
+        font-size: 0.85rem;
+        transition: color 0.2s;
+        z-index: 2;
+    }
+    .login-eye-btn:hover { color: rgba(255,255,255,0.6); }
+
+    /* Error */
+    .login-error {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.25);
+        color: #fca5a5;
+        border-radius: 10px;
+        padding: 0.65rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    /* Submit button */
+    .login-btn {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        background: linear-gradient(135deg, #c9963a 0%, #d4af37 50%, #b8860b 100%);
+        border: none;
+        border-radius: 12px;
+        color: #0f172a;
+        font-weight: 800;
+        font-size: 1rem;
+        font-family: inherit;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.25s;
+        box-shadow: 0 4px 24px rgba(212, 175, 55, 0.35);
+        letter-spacing: 0.2px;
+    }
+
+    .login-btn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(212, 175, 55, 0.5);
+    }
+
+    .login-btn:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    .login-btn:disabled {
+        opacity: 0.65;
+        cursor: not-allowed;
+    }
+
+    .login-footer-text {
+        color: rgba(255,255,255,0.2);
+        font-size: 0.78rem;
+    }
+
+    /* ── RESPONSIVE ───────────────────────────────────────── */
+    @@media (max-width: 991.98px) {
+        .login-page {
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .login-right {
+            flex: unset;
+            width: 100%;
+            max-width: 440px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 2.5rem 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+        }
+    }
+</style>
+
+@code {
+    private string _email = "";
+    private string _password = "";
+    private string _errorMessage = "";
+    private bool _isLoading = false;
+    private bool _showPassword = false;
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !_isLoading)
+            await HandleLogin();
+    }
+
+    private async Task HandleLogin()
+    {
+        _errorMessage = "";
+
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _errorMessage = "يرجى إدخال البريد الإلكتروني.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_password))
+        {
+            _errorMessage = "يرجى إدخال كلمة المرور.";
+            return;
+        }
+
+        _isLoading = true;
+
+        try
+        {
+            var dto = new LegalERP.Application.Auth.LoginDto(_email.Trim().ToLowerInvariant(), _password);
+            var user = await AuthApi.LoginAsync(dto);
+
+            if (user != null)
+            {
+                await AuthStateProvider.NotifyUserLoggedIn(user);
+                NavManager.NavigateTo("/", forceLoad: false);
+            }
+            else
+            {
+                _errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "تعذّر الاتصال بالخادم. تأكد أن تطبيق الـ API يعمل.";
+            Console.WriteLine($"[LOGIN ERROR] {ex.Message}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+}

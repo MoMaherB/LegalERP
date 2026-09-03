@@ -48,3 +48,7 @@ appsettings.Local.json
 
 # Custom project paths
 LegalERP.Web/wwwroot/uploads/
+LegalERP.Api/wwwroot/uploads/
+FixRole/
+*.csx
+add_translations.ps1

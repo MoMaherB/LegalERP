@@ -1,6 +1,7 @@
 using LegalERP.Application.Clients;
 using LegalERP.Application.Companies;
 using LegalERP.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
@@ -10,6 +11,7 @@ namespace LegalERP.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]   // All endpoints require authentication
 public class ClientsController : ControllerBase
 {
     private readonly IClientRepository _clientRepository;
@@ -44,6 +46,7 @@ public class ClientsController : ControllerBase
         return Ok(ToDto(client));
     }
 
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateClientDto dto)
     {
@@ -66,6 +69,7 @@ public class ClientsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = client.Id }, ToSummaryDto(client));
     }
 
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateClientDto dto)
     {
@@ -88,6 +92,7 @@ public class ClientsController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

@@ -5,12 +5,14 @@ using LegalERP.Application.Cases;
 using LegalERP.Application.Companies;
 using LegalERP.Application.Financials;
 using LegalERP.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LegalERP.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "SuperAdmin,Admin")]
 public class FinancialsController : ControllerBase
 {
     private readonly ICaseRepository _caseRepository;

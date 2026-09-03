@@ -145,18 +145,16 @@
                            || Document?.FileName?.EndsWith(".doc", StringComparison.OrdinalIgnoreCase) == true
                            || Document?.FileName?.EndsWith(".docx", StringComparison.OrdinalIgnoreCase) == true;
 
-    private string ApiBase => "https://localhost:7148";
-
     private string GetViewUrl()
     {
         if (Document == null) return string.Empty;
-        return $"{ApiBase}/api/documents/{Document.Id}/view";
+        return $"/api/documents/{Document.Id}/view";
     }
 
     private string GetDownloadUrl()
     {
         if (Document == null) return string.Empty;
-        return $"{ApiBase}/api/documents/{Document.Id}/download";
+        return $"/api/documents/{Document.Id}/download";
     }
 
     private async Task HandleReplace(InputFileChangeEventArgs e)

@@ -1,4 +1,4 @@
-﻿@page "/companies"
+@page "/companies"
 @using LegalERP.Application.Companies
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
@@ -12,20 +12,26 @@
 
 <PageTitle>@Loc["CompaniesManagement"]</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="ios-title">@Loc["CompaniesManagement"]</h1>
-    <a href="/companies/new" class="ios-btn ios-btn-primary text-decoration-none">@Loc["AddNewCompany"]</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="ios-title mb-0">@Loc["CompaniesManagement"]</h1>
+    <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+        <Authorized>
+            <a href="/companies/new" class="ios-btn ios-btn-primary text-decoration-none">
+                <i class="fa-solid fa-plus me-1"></i> @Loc["AddNewCompany"]
+            </a>
+        </Authorized>
+    </AuthorizeView>
 </div>
 
 <!-- Search & Filter Controls -->
-<div class="ios-widget-card mb-4">
+<div class="ios-widget-card mb-4 p-3 p-md-4">
     <div class="row g-3 align-items-end w-100 m-0">
-        <div class="col-md-5">
+        <div class="col-12 col-md-5 px-1">
             <label class="form-label font-weight-bold ios-details">@Loc["SearchNameTradeNameEnglish"]</label>
             <input type="text" class="ios-input" placeholder="@Loc["SearchCompaniesPlaceholder"]" 
                    @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
         </div>
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 px-1">
             <label class="form-label font-weight-bold ios-details">@Loc["CategoryFilter"]</label>
             <select class="ios-select" @bind="selectedCategory">
                 <option value="">@Loc["AllCategories"]</option>
@@ -35,7 +41,7 @@
                 }
             </select>
         </div>
-        <div class="col-md-3 d-flex gap-2">
+        <div class="col-12 col-md-3 px-1 d-flex gap-2">
             <button class="ios-btn ios-btn-primary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
             <button class="ios-btn ios-btn-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
         </div>
@@ -59,7 +65,7 @@ else
             <thead>
                 <tr>
                     <th>@Loc["Name"]</th>
-                    <th>@Loc["TradeName"]</th>
+                    <th class="d-none d-md-table-cell">@Loc["TradeName"]</th>
                     <th>@Loc["Category"]</th>
                     <th class="text-center">@Loc["Actions"]</th>
                 </tr>
@@ -74,14 +80,26 @@ else
                             {
                                 <br /><small class="text-muted">@c.CompanyNameEn</small>
                             }
+                            @if (!string.IsNullOrWhiteSpace(c.TradeName))
+                            {
+                                <div class="d-md-none text-muted small mt-1">@c.TradeName</div>
+                            }
                         </td>
-                        <td>@(string.IsNullOrWhiteSpace(c.TradeName) ? "—" : c.TradeName)</td>
+                        <td class="d-none d-md-table-cell">@(string.IsNullOrWhiteSpace(c.TradeName) ? "—" : c.TradeName)</td>
                         <td><span class="ios-status-badge ios-status-gray">@Loc[c.Category.ToString()]</span></td>
                         <td>
-                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                <a href="/companies/@c.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 12px; font-size: 0.85rem;">@Loc["View"]</a>
-                                <a href="/companies/edit/@c.Id" class="ios-btn ios-btn-secondary text-decoration-none m-0" style="padding: 4px 12px; font-size: 0.85rem;">@Loc["Edit"]</a>
-                                <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 12px; font-size: 0.85rem;" @onclick="() => DeleteCompany(c.Id)">@Loc["Delete"]</button>
+                            <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                <a href="/companies/@c.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["View"]</a>
+                                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                    <Authorized>
+                                        <a href="/companies/edit/@c.Id" class="ios-btn ios-btn-secondary text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["Edit"]</a>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                    <Authorized>
+                                        <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 8px; font-size: 0.8rem;" @onclick="() => DeleteCompany(c.Id)">@Loc["Delete"]</button>
+                                    </Authorized>
+                                </AuthorizeView>
                             </div>
                         </td>
                     </tr>
@@ -132,5 +150,6 @@ else
         }
     }
 }
+
 
 

@@ -8,12 +8,14 @@ using LegalERP.Application.Companies;
 using LegalERP.Application.Financials;
 using LegalERP.Domain.Entities;
 using LegalERP.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LegalERP.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]   // All endpoints require authentication
 public class CasesController : ControllerBase
 {
     private readonly ICaseRepository _repository;
@@ -48,6 +50,7 @@ public class CasesController : ControllerBase
     }
 
     // POST /api/cases
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPost]
     public async Task<ActionResult<CaseDto>> Create(CreateCaseDto dto, CancellationToken ct)
     {
@@ -71,6 +74,7 @@ public class CasesController : ControllerBase
     }
 
     // PUT /api/cases/{id}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{id:guid}")]
     public async Task<ActionResult> Update(Guid id, UpdateCaseDto dto, CancellationToken ct)
     {
@@ -94,6 +98,7 @@ public class CasesController : ControllerBase
     }
 
     // DELETE /api/cases/{id}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> Delete(Guid id, CancellationToken ct)
     {
@@ -109,6 +114,7 @@ public class CasesController : ControllerBase
     // --- Case Parties endpoints ---
 
     // POST /api/cases/{caseId}/parties
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPost("{caseId:guid}/parties")]
     public async Task<ActionResult<CasePartyDto>> AddParty(Guid caseId, CreateCasePartyDto dto, CancellationToken ct)
     {
@@ -136,6 +142,7 @@ public class CasesController : ControllerBase
     }
 
     // PUT /api/cases/{caseId}/parties/{partyId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{caseId:guid}/parties/{partyId:guid}")]
     public async Task<ActionResult> UpdateParty(Guid caseId, Guid partyId, UpdateCasePartyDto dto, CancellationToken ct)
     {
@@ -158,6 +165,7 @@ public class CasesController : ControllerBase
     }
 
     // DELETE /api/cases/{caseId}/parties/{partyId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpDelete("{caseId:guid}/parties/{partyId:guid}")]
     public async Task<ActionResult> DeleteParty(Guid caseId, Guid partyId, CancellationToken ct)
     {
@@ -173,6 +181,7 @@ public class CasesController : ControllerBase
     // --- Case Memos endpoints ---
 
     // POST /api/cases/{caseId}/memos
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPost("{caseId:guid}/memos")]
     public async Task<ActionResult<CaseMemoDto>> AddMemo(Guid caseId, CreateCaseMemoDto dto, CancellationToken ct)
     {
@@ -196,6 +205,7 @@ public class CasesController : ControllerBase
     }
 
     // PUT /api/cases/{caseId}/memos/{memoId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{caseId:guid}/memos/{memoId:guid}")]
     public async Task<ActionResult> UpdateMemo(Guid caseId, Guid memoId, UpdateCaseMemoDto dto, CancellationToken ct)
     {
@@ -214,6 +224,7 @@ public class CasesController : ControllerBase
     }
 
     // DELETE /api/cases/{caseId}/memos/{memoId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpDelete("{caseId:guid}/memos/{memoId:guid}")]
     public async Task<ActionResult> DeleteMemo(Guid caseId, Guid memoId, CancellationToken ct)
     {
@@ -229,6 +240,7 @@ public class CasesController : ControllerBase
     // --- Case Hearings endpoints ---
 
     // POST /api/cases/{caseId}/hearings
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPost("{caseId:guid}/hearings")]
     public async Task<ActionResult<CaseHearingDto>> AddHearing(Guid caseId, CreateCaseHearingDto dto, CancellationToken ct)
     {
@@ -251,6 +263,7 @@ public class CasesController : ControllerBase
     }
 
     // PUT /api/cases/{caseId}/hearings/{hearingId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{caseId:guid}/hearings/{hearingId:guid}")]
     public async Task<ActionResult> UpdateHearing(Guid caseId, Guid hearingId, UpdateCaseHearingDto dto, CancellationToken ct)
     {
@@ -269,6 +282,7 @@ public class CasesController : ControllerBase
     }
 
     // DELETE /api/cases/{caseId}/hearings/{hearingId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpDelete("{caseId:guid}/hearings/{hearingId:guid}")]
     public async Task<ActionResult> DeleteHearing(Guid caseId, Guid hearingId, CancellationToken ct)
     {
@@ -284,6 +298,7 @@ public class CasesController : ControllerBase
     // --- Financials endpoints ---
 
     // GET /api/cases/{caseId}/financials
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpGet("{caseId:guid}/financials")]
     public async Task<ActionResult<EntityFinancialsDto>> GetFinancials(Guid caseId, CancellationToken ct)
     {
@@ -314,6 +329,7 @@ public class CasesController : ControllerBase
     }
 
     // PUT /api/cases/{caseId}/agreed-fee
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpPut("{caseId:guid}/agreed-fee")]
     public async Task<ActionResult> UpdateAgreedFee(Guid caseId, UpdateAgreedFeeDto dto, CancellationToken ct)
     {
@@ -328,6 +344,7 @@ public class CasesController : ControllerBase
     }
 
     // POST /api/cases/{caseId}/fee-transactions
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpPost("{caseId:guid}/fee-transactions")]
     public async Task<ActionResult<FeeTransactionDto>> AddFeeTransaction(Guid caseId, AddFeeTransactionDto dto, CancellationToken ct)
     {
@@ -350,6 +367,7 @@ public class CasesController : ControllerBase
     }
 
     // DELETE /api/cases/{caseId}/fee-transactions/{transactionId}
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpDelete("{caseId:guid}/fee-transactions/{transactionId:guid}")]
     public async Task<ActionResult> DeleteFeeTransaction(Guid caseId, Guid transactionId, CancellationToken ct)
     {
@@ -416,3 +434,4 @@ public class CasesController : ControllerBase
         t.Notes
     );
 }
+

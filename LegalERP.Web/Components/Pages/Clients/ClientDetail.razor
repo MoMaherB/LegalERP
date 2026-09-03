@@ -1,4 +1,4 @@
-@page "/clients/{Id:guid}"
+﻿@page "/clients/{Id:guid}"
 @using LegalERP.Application.Clients
 @using LegalERP.Application.Companies
 @using LegalERP.Domain.Enums
@@ -12,6 +12,8 @@
 
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
 
 <PageTitle>@Loc["ClientDetails"] - @(client?.FullName ?? Loc["Loading"])</PageTitle>
 
@@ -33,9 +35,13 @@ else
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <a href="/clients" class="ios-btn ios-btn-secondary me-2 text-decoration-none">@Loc["BackToList"]</a>
-            <a href="/clients/edit/@client.Id" class="ios-btn ios-btn-primary me-2 text-decoration-none">@Loc["EditClient"]</a>
+            @if (_canEdit) { 
+                <a href="/clients/edit/@client.Id" class="ios-btn ios-btn-primary me-2 text-decoration-none">@Loc["EditClient"]</a> 
+            }
         </div>
-        <button class="ios-btn ios-btn-danger" @onclick="DeleteClient">@Loc["DeleteClient"]</button>
+        @if (_canDelete) { 
+            <button class="ios-btn ios-btn-danger" @onclick="DeleteClient">@Loc["DeleteClient"]</button> 
+        }
     </div>
 
     @* ── Personal Information Card ── *@
@@ -124,9 +130,9 @@ else
                             <tr>
                                 <th>@Loc["CaseNumber"]</th>
                                 <th>@Loc["Title"]</th>
-                                <th>@Loc["Type"]</th>
-                                <th>@Loc["Role"]</th>
-                                <th>@Loc["Representation"]</th>
+                                <th class="d-none d-md-table-cell">@Loc["Type"]</th>
+                                <th class="d-none d-lg-table-cell">@Loc["Role"]</th>
+                                <th class="d-none d-md-table-cell">@Loc["Representation"]</th>
                                 <th>@Loc["Status"]</th>
                                 <th>@Loc["Actions"]</th>
                             </tr>
@@ -137,13 +143,13 @@ else
                                 <tr>
                                     <td><strong>@c.CaseNumber</strong></td>
                                     <td>@c.CaseTitle</td>
-                                    <td><span class="ios-status-badge ios-status-gray">@c.CaseType</span></td>
-                                    <td>
+                                    <td class="d-none d-md-table-cell"><span class="ios-status-badge ios-status-gray">@c.CaseType</span></td>
+                                    <td class="d-none d-lg-table-cell">
                                         <span class="ios-status-badge ios-status-gray">
                                             @(c.PartyRole == PartyRole.Defendant ? Loc["Defendant"] : Loc["Victim"])
                                         </span>
                                     </td>
-                                    <td>
+                                    <td class="d-none d-md-table-cell">
                                         @if (c.IsOurClient)
                                         {
                                             <span class="ios-status-badge ios-status-green">@Loc["Client"]</span>
@@ -179,7 +185,7 @@ else
                                         }
                                     </td>
                                     <td>
-                                        <a href="/cases/@c.CaseId" class="ios-btn ios-btn-info text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["ViewCase"]</a>
+                                        <a href="/cases/@c.CaseId" class="ios-btn ios-btn-info text-decoration-none" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["ViewCase"]</a>
                                     </td>
                                 </tr>
                             }
@@ -216,7 +222,7 @@ else
                                     <td><strong>@co.CompanyName</strong></td>
                                     <td>@(co.OwnershipPercentage.HasValue ? $"{co.OwnershipPercentage.Value:F2}%" : "—")</td>
                                     <td>
-                                        <a href="/companies/@co.CompanyId" class="ios-btn ios-btn-info text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["ViewCompany"]</a>
+                                        <a href="/companies/@co.CompanyId" class="ios-btn ios-btn-info text-decoration-none" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["ViewCompany"]</a>
                                     </td>
                                 </tr>
                             }
@@ -234,6 +240,8 @@ else
 
     private ClientDto? client;
     private bool notFound;
+    private bool _canEdit;
+    private bool _canDelete;
 
     private Guid _lastLoadedId;
 
@@ -242,6 +250,10 @@ else
         if (Id != _lastLoadedId)
         {
             _lastLoadedId = Id;
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            _canEdit   = user.IsInRole("SuperAdmin") || user.IsInRole("Admin") || user.IsInRole("Editor");
+            _canDelete = user.IsInRole("SuperAdmin") || user.IsInRole("Admin") || user.IsInRole("Editor");
             client = await ClientApi.GetByIdAsync(Id);
             if (client is null)
             {

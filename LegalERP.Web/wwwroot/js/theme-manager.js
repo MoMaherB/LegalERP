@@ -4,11 +4,13 @@
 (function() {
     const savedTheme = localStorage.getItem('app-theme') || 'light';
     document.documentElement.setAttribute('data-theme', savedTheme);
+    document.documentElement.setAttribute('data-bs-theme', savedTheme);
 })();
 
 window.themeManager = {
     setTheme: function(theme) {
         document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.setAttribute('data-bs-theme', theme);
         localStorage.setItem('app-theme', theme);
     },
     getTheme: function() {

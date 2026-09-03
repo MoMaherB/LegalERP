@@ -1,0 +1,197 @@
+@inject LegalERP.Web.Services.UserApiClient UserApi
+@inject IStringLocalizer<SharedResources> Loc
+@inject LegalERP.Web.Services.Toast.IToastService Toast
+
+@if (_isVisible)
+{
+    <div class="modal fade show d-block" style="background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="background: rgba(30,35,50,0.92); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 18px;">
+                <div class="modal-header border-bottom border-secondary border-opacity-25 pb-3">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid @(_isEdit ? "fa-pen" : "fa-user-plus") me-2 text-primary"></i>
+                        @(_isEdit ? Loc["EditUser"] : Loc["AddNewUser"])
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="Close"></button>
+                </div>
+
+                <div class="modal-body pt-4">
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert py-2 mb-3 d-flex align-items-center gap-2 small"
+                             style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 10px;">
+                            <i class="fa-solid fa-circle-exclamation"></i> @_errorMessage
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">@Loc["Name"]</label>
+                        <input type="text" class="form-control ios-input" @bind="_fullName" @bind:event="oninput"
+                               placeholder="الاسم الكامل" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">@Loc["Email"]</label>
+                        <input type="email" class="form-control ios-input" @bind="_email" @bind:event="oninput"
+                               placeholder="name@example.com" disabled="@_isEdit" />
+                    </div>
+
+                    @if (!_isEdit)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-semibold">@Loc["Password"]</label>
+                            <input type="password" class="form-control ios-input" @bind="_password" @bind:event="oninput"
+                                   placeholder="كلمة المرور (8 أحرف على الأقل)" />
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">@Loc["Role"]</label>
+                        <select class="form-select ios-input" @bind="_role">
+                            <option value="SuperAdmin">@Loc["Role_SuperAdmin"]</option>
+                            <option value="Admin">@Loc["Role_Admin"]</option>
+                            <option value="Editor">@Loc["Role_Editor"]</option>
+                            <option value="Viewer">@Loc["Role_Viewer"]</option>
+                        </select>
+                    </div>
+
+                    @if (_isEdit)
+                    {
+                        <div class="mb-3 d-flex align-items-center gap-3">
+                            <div class="form-check form-switch ios-switch mb-0">
+                                <input type="checkbox" class="form-check-input" id="isActiveChk" @bind="_isActive" />
+                                <label class="form-check-label text-muted ms-2" for="isActiveChk">@Loc["ActiveAccount"]</label>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer border-top border-secondary border-opacity-25 pt-3 gap-2 d-flex justify-content-end">
+                    <button type="button" class="btn ios-btn-secondary px-4" @onclick="Close" disabled="@_isSaving">
+                        @Loc["Cancel"]
+                    </button>
+                    <button type="button" class="btn ios-btn-primary px-4" @onclick="Save" disabled="@_isSaving">
+                        @if (_isSaving) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                        <i class="fa-solid fa-save me-1"></i> @Loc["Save"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private bool _isVisible;
+    private bool _isEdit;
+    private bool _isSaving;
+    private Guid _editId;
+    private string _errorMessage = "";
+
+    private string _fullName = "";
+    private string _email = "";
+    private string _password = "";
+    private string _role = "Viewer";
+    private bool _isActive = true;
+
+    public void Show(LegalERP.Application.Auth.UserDto? user)
+    {
+        _errorMessage = "";
+        _isEdit = user != null;
+        _password = "";
+
+        if (user != null)
+        {
+            _editId = user.Id;
+            _fullName = user.FullName;
+            _email = user.Email;
+            _role = user.Role;
+            _isActive = user.IsActive;
+        }
+        else
+        {
+            _editId = Guid.Empty;
+            _fullName = "";
+            _email = "";
+            _role = "Viewer";
+            _isActive = true;
+        }
+
+        _isVisible = true;
+        StateHasChanged();
+    }
+
+    public void Close()
+    {
+        _isVisible = false;
+        _errorMessage = "";
+        StateHasChanged();
+    }
+
+    private async Task Save()
+    {
+        _errorMessage = "";
+
+        // Basic validation
+        if (string.IsNullOrWhiteSpace(_fullName))
+        {
+            _errorMessage = "يرجى إدخال الاسم الكامل.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            _errorMessage = "يرجى إدخال البريد الإلكتروني.";
+            return;
+        }
+        if (!_isEdit && string.IsNullOrWhiteSpace(_password))
+        {
+            _errorMessage = "يرجى إدخال كلمة المرور.";
+            return;
+        }
+        if (!_isEdit && _password.Length < 8)
+        {
+            _errorMessage = "يجب أن تكون كلمة المرور 8 أحرف على الأقل.";
+            return;
+        }
+
+        _isSaving = true;
+
+        try
+        {
+            bool success;
+            string msg;
+
+            if (_isEdit)
+            {
+                var updateDto = new LegalERP.Application.Auth.UpdateUserDto(_fullName, _email, _role, _isActive);
+                (success, msg) = await UserApi.UpdateAsync(_editId, updateDto);
+            }
+            else
+            {
+                var createDto = new LegalERP.Application.Auth.CreateUserDto(_fullName, _email.Trim().ToLowerInvariant(), _password, _role);
+                (success, msg) = await UserApi.CreateAsync(createDto);
+            }
+
+            if (success)
+            {
+                Toast.ShowSuccess(Loc["OperationSuccess"].Value);
+                Close();
+                await OnSaved.InvokeAsync();
+            }
+            else
+            {
+                _errorMessage = msg;
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "حدث خطأ أثناء الحفظ. تأكد من اتصال الـ API.";
+            Console.WriteLine($"[USER MODAL ERROR] {ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

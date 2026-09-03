@@ -1,4 +1,4 @@
-﻿@page "/cases/{Id:guid}"
+@page "/cases/{Id:guid}"
 @using LegalERP.Web.Services.Toast
 @inject IToastService ToastService
 @using LegalERP.Application.Cases
@@ -8,12 +8,13 @@
 @inject CaseApiClient CaseApi
 @inject CompanyApiClient CompanyApi
 @inject ClientApiClient ClientApi
-@inject MockAuthService Auth
 @inject NavigationManager NavManager
 @inject LegalERP.Web.Services.Toast.IToastService ToastService
 @inject IJSRuntime JS
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -37,9 +38,15 @@ else
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <a href="/cases" class="ios-btn ios-btn-secondary me-2 text-decoration-none">@Loc["Back"]</a>
-            <a href="/cases/edit/@caseDto.Id" class="ios-btn ios-btn-primary me-2 text-decoration-none">@Loc["Edit"]</a>
+            @if (_canEdit)
+            {
+                <a href="/cases/edit/@caseDto.Id" class="ios-btn ios-btn-primary me-2 text-decoration-none">@Loc["Edit"]</a>
+            }
+            @if (_canDelete)
+            {
+                <button class="ios-btn ios-btn-danger" @onclick="DeleteCase">@Loc["Delete"]</button>
+            }
         </div>
-        <button class="ios-btn ios-btn-danger" @onclick="DeleteCase">@Loc["Delete"]</button>
     </div>
 
     <div class="ios-widget-card mb-4 p-4">
@@ -110,9 +117,12 @@ else
     @* ── Parties Section (Defendants vs Victims / Client vs Opponent) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
         <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["CaseParties"]</h3>
-        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartyForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddPartyForm ? Loc["Cancel"].Value : Loc["AddParty"].Value)
-        </button>
+        @if (_canEdit)
+        {
+            <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartyForm" style="padding: 6px 12px; font-size: 0.9rem;">
+                @(showAddPartyForm ? Loc["Cancel"].Value : Loc["AddParty"].Value)
+            </button>
+        }
     </div>
 
     @if (showAddPartyForm)
@@ -223,9 +233,9 @@ else
                         <th>@Loc["PartyName"]</th>
                         <th>@Loc["LegalRole"]</th>
                         <th>@Loc["Representation"]</th>
-                        <th>@Loc["NationalID"]</th>
-                        <th>@Loc["PhoneNumber"]</th>
-                        <th>@Loc["AttachedDocument"]</th>
+                        <th class="d-none d-lg-table-cell">@Loc["NationalID"]</th>
+                        <th class="d-none d-md-table-cell">@Loc["PhoneNumber"]</th>
+                        <th class="d-none d-sm-table-cell">@Loc["AttachedDocument"]</th>
                         <th>@Loc["Actions"]</th>
                     </tr>
                 </thead>
@@ -243,6 +253,10 @@ else
                                 else
                                 {
                                     <strong>@party.FullName</strong>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(party.PhoneNumber))
+                                {
+                                    <div class="d-md-none text-muted small mt-1">@party.PhoneNumber</div>
                                 }
                             </td>
                             <td>
@@ -267,9 +281,9 @@ else
                                     <span class="ios-status-badge ios-status-red">@Loc["Opponent"]</span>
                                 }
                             </td>
-                            <td>@(party.NationalIdNumber ?? "—")</td>
-                            <td>@(party.PhoneNumber ?? "—")</td>
-                            <td>
+                            <td class="d-none d-lg-table-cell">@(party.NationalIdNumber ?? "—")</td>
+                            <td class="d-none d-md-table-cell">@(party.PhoneNumber ?? "—")</td>
+                            <td class="d-none d-sm-table-cell">
                                 @if (party.Document != null)
                                 {
                                     <FileThumbnail Document="party.Document" OwnerType="caseparty" OwnerId="party.Id" />
@@ -280,7 +294,9 @@ else
                                 }
                             </td>
                             <td>
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteParty(party.Id)">@Loc["Delete"]</button>
+                                @if (_canDelete) { 
+                                    <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteParty(party.Id)">@Loc["Delete"]</button> 
+                                }
                             </td>
                         </tr>
                     }
@@ -292,9 +308,12 @@ else
     @* ── Legal Memos & Briefs Section (المذكرات القانونية) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
         <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["LegalMemos"]</h3>
-        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddMemoForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddMemoForm ? Loc["Cancel"].Value : Loc["AddLegalMemo"].Value)
-        </button>
+        @if (_canEdit)
+        {
+            <button class="ios-btn ios-btn-primary" @onclick="ToggleAddMemoForm" style="padding: 6px 12px; font-size: 0.9rem;">
+                @(showAddMemoForm ? Loc["Cancel"].Value : Loc["AddLegalMemo"].Value)
+            </button>
+        }
     </div>
 
     @if (showAddMemoForm)
@@ -377,7 +396,9 @@ else
                             {
                                 <div></div>
                             }
-                            <button class="ios-btn ios-btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" @onclick="() => DeleteMemo(memo.Id)">@Loc["Delete"]</button>
+                            @if (_canDelete) { 
+                                <button class="ios-btn ios-btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" @onclick="() => DeleteMemo(memo.Id)">@Loc["Delete"]</button> 
+                            }
                         </div>
                     </div>
                 </div>
@@ -388,9 +409,12 @@ else
     @* ── Hearings & Postponements (جلسات المحكمة وتسلسل التأجيلات) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
         <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["HearingsAndPostponements"]</h3>
-        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddHearingForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddHearingForm ? Loc["Cancel"].Value : Loc["AddHearing"].Value)
-        </button>
+        @if (_canEdit)
+        {
+            <button class="ios-btn ios-btn-primary" @onclick="ToggleAddHearingForm" style="padding: 6px 12px; font-size: 0.9rem;">
+                @(showAddHearingForm ? Loc["Cancel"].Value : Loc["AddHearing"].Value)
+            </button>
+        }
     </div>
 
     @if (showAddHearingForm)
@@ -439,8 +463,8 @@ else
                     <tr>
                         <th>@Loc["HearingDate"]</th>
                         <th>@Loc["Purpose"]</th>
-                        <th>@Loc["JudgeDecision"]</th>
-                        <th>@Loc["PostponementReason"]</th>
+                        <th class="d-none d-md-table-cell">@Loc["JudgeDecision"]</th>
+                        <th class="d-none d-lg-table-cell">@Loc["PostponementReason"]</th>
                         <th class="text-end">@Loc["Actions"]</th>
                     </tr>
                 </thead>
@@ -448,12 +472,20 @@ else
                     @foreach (var hearing in caseDto.Hearings)
                     {
                         <tr>
-                            <td><strong>@hearing.HearingDate.ToString("yyyy-MM-dd")</strong></td>
+                            <td>
+                                <strong>@hearing.HearingDate.ToString("yyyy-MM-dd")</strong>
+                                @if (!string.IsNullOrWhiteSpace(hearing.JudgeDecision))
+                                {
+                                    <div class="d-md-none text-muted small mt-1">@hearing.JudgeDecision</div>
+                                }
+                            </td>
                             <td>@hearing.Purpose</td>
-                            <td>@hearing.JudgeDecision</td>
-                            <td>@hearing.PostponementReason</td>
+                            <td class="d-none d-md-table-cell">@hearing.JudgeDecision</td>
+                            <td class="d-none d-lg-table-cell">@hearing.PostponementReason</td>
                             <td class="text-end">
-                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteHearing(hearing.Id)">@Loc["Delete"]</button>
+                                @if (_canDelete) { 
+                                    <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteHearing(hearing.Id)">@Loc["Delete"]</button> 
+                                }
                             </td>
                         </tr>
                     }
@@ -465,9 +497,12 @@ else
     @* ── Case Documents / Files (With Custom Document Titles) ── *@
     <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
         <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["CaseDocuments"]</h3>
-        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddDocForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddDocForm ? Loc["Cancel"].Value : Loc["UploadDocument"].Value)
-        </button>
+        @if (_canEdit)
+        {
+            <button class="ios-btn ios-btn-primary" @onclick="ToggleAddDocForm" style="padding: 6px 12px; font-size: 0.9rem;">
+                @(showAddDocForm ? Loc["Cancel"].Value : Loc["UploadDocument"].Value)
+            </button>
+        }
     </div>
 
     @if (showAddDocForm)
@@ -514,24 +549,27 @@ else
                         <FileThumbnail Document="doc" OwnerType="case" OwnerId="caseDto.Id" />
                         <div class="d-flex justify-content-between align-items-center px-1">
                             <small class="ios-details fw-bold text-muted">@((doc.FileSizeBytes / 1024.0).ToString("0.0")) KB</small>
-                            <button class="ios-btn ios-btn-danger" style="padding: 3px 10px; font-size: 0.78rem;" @onclick="() => DeleteCaseDocument(doc.Id)">@Loc["Delete"]</button>
+                            @if (_canDelete) { 
+                                <button class="ios-btn ios-btn-danger" style="padding: 3px 10px; font-size: 0.78rem;" @onclick="() => DeleteCaseDocument(doc.Id)">@Loc["Delete"]</button> 
+                            }
                         </div>
                     </div>
                 </div>
             }
         </div>
     }
-    @if (Auth.IsAdmin)
-    {
-        <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
-            <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Financials"]</h3>
-        </div>
-        <div class="ios-widget-card d-block w-100 mb-5">
-            <div class="p-4 w-100">
-                <SharedFinancials OwnerId="caseDto.Id" OwnerType="case" />
+    <AuthorizeView Roles="SuperAdmin,Admin">
+        <Authorized>
+            <div class="d-flex justify-content-between align-items-center mb-3 mt-5">
+                <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Financials"]</h3>
             </div>
-        </div>
-    }
+            <div class="ios-widget-card d-block w-100 mb-5">
+                <div class="p-4 w-100">
+                    <SharedFinancials OwnerId="caseDto.Id" OwnerType="case" />
+                </div>
+            </div>
+        </Authorized>
+    </AuthorizeView>
 
 }
 
@@ -542,6 +580,10 @@ else
     private CaseDto? caseDto;
     private List<LegalERP.Application.Companies.DocumentDto>? caseDocuments;
     private bool notFound;
+
+    // Role-based access flags (set on load)
+    private bool _canEdit;   // SuperAdmin, Admin, Editor
+    private bool _canDelete; // SuperAdmin, Admin only
 
     // Party State
     private bool showAddPartyForm;
@@ -583,7 +625,7 @@ else
 
     protected override void OnInitialized()
     {
-        Auth.OnRoleChanged += StateHasChanged;
+        
     }
 
     protected override async Task OnParametersSetAsync()
@@ -591,13 +633,18 @@ else
         if (Id != _lastLoadedId)
         {
             _lastLoadedId = Id;
+            // Resolve role flags
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            _canEdit   = user.IsInRole("SuperAdmin") || user.IsInRole("Admin") || user.IsInRole("Editor");
+            _canDelete = user.IsInRole("SuperAdmin") || user.IsInRole("Admin") || user.IsInRole("Editor");
             await LoadCase();
         }
     }
 
     public void Dispose()
     {
-        Auth.OnRoleChanged -= StateHasChanged;
+        
     }
 
     private async Task LoadCase()
@@ -975,5 +1022,6 @@ else
         }
     }
 }
+
 
 

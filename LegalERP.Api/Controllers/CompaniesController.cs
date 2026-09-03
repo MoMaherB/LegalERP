@@ -2,12 +2,14 @@ using LegalERP.Application.Companies;
 using LegalERP.Application.Financials;
 using LegalERP.Domain.Entities;
 using LegalERP.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LegalERP.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]   // All endpoints require authentication
 public class CompaniesController : ControllerBase
 {
     private readonly ICompanyRepository _repository;
@@ -32,6 +34,7 @@ public class CompaniesController : ControllerBase
     }
 
     // POST /api/companies
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPost]
     public async Task<ActionResult<CompanyDto>> Create(CreateCompanyDto dto, CancellationToken ct)
     {
@@ -100,6 +103,7 @@ public class CompaniesController : ControllerBase
     }
 
     // PUT /api/companies/{id}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{id:guid}")]
     public async Task<ActionResult> Update(Guid id, UpdateCompanyDto dto, CancellationToken ct)
     {
@@ -122,6 +126,7 @@ public class CompaniesController : ControllerBase
     }
 
     // DELETE /api/companies/{id}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpDelete("{id:guid}")]
     public async Task<ActionResult> Delete(Guid id, CancellationToken ct)
     {
@@ -156,6 +161,7 @@ public class CompaniesController : ControllerBase
     }
 
     // POST /api/companies/{companyId}/amendments
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPost("{companyId:guid}/amendments")]
     public async Task<ActionResult<CompanyAmendmentDto>> AddAmendment(
         Guid companyId, CreateCompanyAmendmentDto dto, CancellationToken ct)
@@ -198,6 +204,7 @@ public class CompaniesController : ControllerBase
     }
 
     // PUT /api/companies/{companyId}/amendments/{amendmentId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{companyId:guid}/amendments/{amendmentId:guid}")]
     public async Task<ActionResult> UpdateAmendment(
         Guid companyId, Guid amendmentId, UpdateCompanyAmendmentDto dto, CancellationToken ct)
@@ -216,6 +223,7 @@ public class CompaniesController : ControllerBase
     }
 
     // DELETE /api/companies/{companyId}/amendments/{amendmentId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpDelete("{companyId:guid}/amendments/{amendmentId:guid}")]
     public async Task<ActionResult> DeleteAmendment(
         Guid companyId, Guid amendmentId, CancellationToken ct)
@@ -232,6 +240,7 @@ public class CompaniesController : ControllerBase
     // --- Partners ---
 
     // POST /api/companies/{companyId}/partners
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPost("{companyId:guid}/partners")]
     public async Task<ActionResult<CompanyPartnerDto>> AddPartner(
         Guid companyId, CreateCompanyPartnerDto dto, CancellationToken ct)
@@ -278,6 +287,7 @@ public class CompaniesController : ControllerBase
     }
 
     // PUT /api/companies/{companyId}/partners/{partnerId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{companyId:guid}/partners/{partnerId:guid}")]
     public async Task<ActionResult> UpdatePartner(
         Guid companyId, Guid partnerId, UpdateCompanyPartnerDto dto, CancellationToken ct)
@@ -297,6 +307,7 @@ public class CompaniesController : ControllerBase
     }
 
     // DELETE /api/companies/{companyId}/partners/{partnerId}
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpDelete("{companyId:guid}/partners/{partnerId:guid}")]
     public async Task<ActionResult> DeletePartner(
         Guid companyId, Guid partnerId, CancellationToken ct)
@@ -313,6 +324,7 @@ public class CompaniesController : ControllerBase
     // --- Financials ---
     
     // GET /api/companies/{companyId}/financials
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpGet("{companyId:guid}/financials")]
     public async Task<ActionResult<EntityFinancialsDto>> GetFinancials(Guid companyId, CancellationToken ct)
     {
@@ -343,6 +355,7 @@ public class CompaniesController : ControllerBase
     }
 
     // PUT /api/companies/{companyId}/agreed-fee
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpPut("{companyId:guid}/agreed-fee")]
     public async Task<ActionResult> UpdateAgreedFee(Guid companyId, UpdateAgreedFeeDto dto, CancellationToken ct)
     {
@@ -355,6 +368,7 @@ public class CompaniesController : ControllerBase
     }
 
     // POST /api/companies/{companyId}/fee-transactions
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpPost("{companyId:guid}/fee-transactions")]
     public async Task<ActionResult> AddFeeTransaction(Guid companyId, AddFeeTransactionDto dto, CancellationToken ct)
     {
@@ -377,6 +391,7 @@ public class CompaniesController : ControllerBase
     }
 
     // DELETE /api/companies/{companyId}/fee-transactions/{transactionId}
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpDelete("{companyId:guid}/fee-transactions/{transactionId:guid}")]
     public async Task<ActionResult> DeleteFeeTransaction(Guid companyId, Guid transactionId, CancellationToken ct)
     {

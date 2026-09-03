@@ -1,42 +1,64 @@
 using LegalERP.Web.Components;
 using LegalERP.Web.Services;
 using LegalERP.Web.Services.Toast;
+using Microsoft.AspNetCore.Components.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ── Blazor ────────────────────────────────────────────────────────────────────
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers();
 builder.Services.AddLocalization();
 
+// ── Authorization ─────────────────────────────────────────────────────────────
+builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/login";
+        options.AccessDeniedPath = "/login";
+    });
+builder.Services.AddAuthorizationCore();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddScoped<CustomAuthStateProvider>(sp =>
+    (CustomAuthStateProvider)sp.GetRequiredService<AuthenticationStateProvider>());
+
+// ── HTTP Client ───────────────────────────────────────────────────────────────
 builder.Services.AddHttpClient("LegalErpApi", client =>
 {
-    // Must match whatever port LegalERP.Api runs on — check its
-    // launchSettings.json or the URL Swagger opened at (Step 5e).
     client.BaseAddress = new Uri("https://localhost:7148/");
+})
+.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+{
+    // Allow cookies to be sent with API requests (needed for auth cookie)
+    UseCookies = true,
+    AllowAutoRedirect = false,
+    ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => true
 });
+
+// ── App Services ──────────────────────────────────────────────────────────────
 builder.Services.AddScoped<CompanyApiClient>();
 builder.Services.AddScoped<CaseApiClient>();
 builder.Services.AddScoped<ClientApiClient>();
 builder.Services.AddScoped<NotificationApiClient>();
 builder.Services.AddScoped<FinancialsApiClient>();
-builder.Services.AddScoped<MockAuthService>();
+builder.Services.AddScoped<AuthApiClient>();
+builder.Services.AddScoped<UserApiClient>();
 builder.Services.AddScoped<IToastService, ToastService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseAntiforgery();
 
 var supportedCultures = new[] { "ar-EG", "en-US" };
@@ -45,8 +67,6 @@ var localizationOptions = new RequestLocalizationOptions()
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 
-// Clear providers to ignore the browser's Accept-Language header.
-// It will only use the Cookie provider and the Query string provider.
 localizationOptions.RequestCultureProviders.Remove(
     localizationOptions.RequestCultureProviders
         .FirstOrDefault(p => p is Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider));

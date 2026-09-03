@@ -1134,5 +1134,82 @@
   <data name="OperationSuccess" xml:space="preserve">
     <value>Operation completed successfully.</value>
   </data>
+  <data name="Login" xml:space="preserve">
+    <value>Login</value>
+  </data>
+  <data name="AppName" xml:space="preserve">
+    <value>Rakaez Law</value>
+  </data>
+  <data name="LoginToContinue" xml:space="preserve">
+    <value>Please login to continue</value>
+  </data>
+  <data name="Password" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="LoginSuccess" xml:space="preserve">
+    <value>Logged in successfully</value>
+  </data>
+  <data name="LoginFailed" xml:space="preserve">
+    <value>Login failed</value>
+  </data>
+  <data name="MyProfile" xml:space="preserve">
+    <value>My Profile</value>
+  </data>
+  <data name="Logout" xml:space="preserve">
+    <value>Logout</value>
+  </data>
+  <data name="UserManagement" xml:space="preserve">
+    <value>User Management</value>
+  </data>
+  <data name="AddNewUser" xml:space="preserve">
+    <value>Add New User</value>
+  </data>
+  <data name="EditUser" xml:space="preserve">
+    <value>Edit User</value>
+  </data>
+  <data name="Inactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="ActiveAccount" xml:space="preserve">
+    <value>Active Account</value>
+  </data>
+  <data name="Role_SuperAdmin" xml:space="preserve">
+    <value>Super Admin</value>
+  </data>
+  <data name="Role_Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Role_Editor" xml:space="preserve">
+    <value>Editor</value>
+  </data>
+  <data name="Role_Viewer" xml:space="preserve">
+    <value>Viewer</value>
+  </data>
+  <data name="ConfirmDeactivateUser" xml:space="preserve">
+    <value>Are you sure you want to deactivate this account?</value>
+  </data>
+  <data name="ResetPassword" xml:space="preserve">
+    <value>Reset Password</value>
+  </data>
+  <data name="ResetPasswordWarning" xml:space="preserve">
+    <value>Password will be reset for:</value>
+  </data>
+  <data name="NewPassword" xml:space="preserve">
+    <value>New Password</value>
+  </data>
+  <data name="ConfirmNewPassword" xml:space="preserve">
+    <value>Confirm Password</value>
+  </data>
+  <data name="CurrentPassword" xml:space="preserve">
+    <value>Current Password</value>
+  </data>
+  <data name="ChangePassword" xml:space="preserve">
+    <value>Change Password</value>
+  </data>
+  <data name="AccessDeniedTitle" xml:space="preserve">
+    <value>Access Denied</value>
+  </data>
+  <data name="AccessDeniedMessage" xml:space="preserve">
+    <value>You do not have permission to view this page.</value>
+  </data>
 </root>
-

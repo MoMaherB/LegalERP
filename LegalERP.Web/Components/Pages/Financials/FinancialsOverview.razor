@@ -1,24 +1,17 @@
 @page "/financials"
+@attribute [Authorize(Roles = "SuperAdmin,Admin")]
 @using LegalERP.Application.Financials
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
 @inject FinancialsApiClient FinancialsApi
-@inject MockAuthService Auth
 @inject NavigationManager NavManager
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
-@implements IDisposable
 
 <PageTitle>@Loc["FirmFinancialsOverview"]</PageTitle>
 
-@if (!Auth.IsAdmin)
-{
-    <div class="alert alert-danger">
-        @Loc["AccessDeniedFirmFinancials"]
-    </div>
-}
-else if (summary == null)
+@if (summary == null)
 {
     <p>@Loc["LoadingFinancialData"]</p>
 }
@@ -83,10 +76,10 @@ else
                         <tr>
                             <th>@Loc["Type"]</th>
                             <th>@Loc["Name"]</th>
-                            <th>@Loc["ReferenceNo"]</th>
-                            <th>@Loc["AgreedFee"]</th>
+                            <th class="d-none d-md-table-cell">@Loc["ReferenceNo"]</th>
+                            <th class="d-none d-lg-table-cell">@Loc["AgreedFee"]</th>
                             <th>@Loc["Collected"]</th>
-                            <th>@Loc["Remaining"]</th>
+                            <th class="d-none d-md-table-cell">@Loc["Remaining"]</th>
                             <th>@Loc["Status"]</th>
                             <th class="text-center">@Loc["Actions"]</th>
                         </tr>
@@ -105,11 +98,14 @@ else
                                         <span class="ios-status-badge ios-status-amber">@Loc["Company"]</span>
                                     }
                                 </td>
-                                <td class="fw-bold">@record.OwnerName</td>
-                                <td>@record.ReferenceNumber</td>
-                                <td>@(record.AgreedFee?.ToString("N2") ?? "—")</td>
+                                <td class="fw-bold">
+                                    @record.OwnerName
+                                    <div class="d-md-none text-muted small mt-1">@record.ReferenceNumber</div>
+                                </td>
+                                <td class="d-none d-md-table-cell">@record.ReferenceNumber</td>
+                                <td class="d-none d-lg-table-cell">@(record.AgreedFee?.ToString("N2") ?? "—")</td>
                                 <td class="fw-bold text-success">@record.TotalCollected.ToString("N2")</td>
-                                <td class="@(record.RemainingBalance > 0 ? "text-danger fw-bold" : "text-success fw-bold")">
+                                <td class="d-none d-md-table-cell @(record.RemainingBalance > 0 ? "text-danger fw-bold" : "text-success fw-bold")">
                                     @record.RemainingBalance.ToString("N2")
                                 </td>
                                 <td>
@@ -120,11 +116,11 @@ else
                                 <td class="text-center">
                                     @if (record.OwnerType == "Case")
                                     {
-                                        <a href="/cases/@record.OwnerId" class="ios-btn ios-btn-secondary text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["ViewCase"]</a>
+                                        <a href="/cases/@record.OwnerId" class="ios-btn ios-btn-secondary text-decoration-none" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["ViewCase"]</a>
                                     }
                                     else
                                     {
-                                        <a href="/companies/@record.OwnerId" class="ios-btn ios-btn-secondary text-decoration-none" style="padding: 4px 10px; font-size: 0.85rem;">@Loc["ViewCompany"]</a>
+                                        <a href="/companies/@record.OwnerId" class="ios-btn ios-btn-secondary text-decoration-none" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["ViewCompany"]</a>
                                     }
                                 </td>
                             </tr>
@@ -141,21 +137,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Auth.OnRoleChanged += StateHasChanged;
-        if (Auth.IsAdmin)
-        {
-            await LoadData();
-        }
+        await LoadData();
     }
 
     private async Task LoadData()
     {
         summary = await FinancialsApi.GetSummaryAsync();
-    }
-
-    public void Dispose()
-    {
-        Auth.OnRoleChanged -= StateHasChanged;
     }
 
     private string GetBadgeColor(PaymentStatus status) => status switch

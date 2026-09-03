@@ -1,0 +1,344 @@
+@page "/admin/users"
+@attribute [Authorize(Roles = "SuperAdmin")]
+@inject LegalERP.Web.Services.UserApiClient UserApi
+@inject IStringLocalizer<SharedResources> Loc
+@inject LegalERP.Web.Services.Toast.IToastService Toast
+@inject IJSRuntime JS
+
+<PageTitle>إدارة المستخدمين</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <h3 class="fw-bold mb-0 text-gradient">
+        <i class="fa-solid fa-users-gear me-2"></i>إدارة المستخدمين
+    </h3>
+    <button class="btn ios-btn-primary d-flex align-items-center gap-2" @onclick="OpenAddModal">
+        <i class="fa-solid fa-user-plus"></i> إضافة مستخدم
+    </button>
+</div>
+
+@if (_isLoading)
+{
+    <div class="text-center my-5 py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <div class="text-muted mt-3 small">جارٍ تحميل المستخدمين...</div>
+    </div>
+}
+else if (!_users.Any())
+{
+    <div class="um-card text-center py-5">
+        <i class="fa-solid fa-users fa-3x mb-3" style="color: rgba(255,255,255,0.2);"></i>
+        <p class="text-muted">لا يوجد مستخدمون حتى الآن.</p>
+    </div>
+}
+else
+{
+    <div class="um-card">
+        <div class="table-responsive">
+            <table class="um-table">
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th class="d-none d-md-table-cell">الإيميل</th>
+                        <th>الصفة</th>
+                        <th>الحالة</th>
+                        <th class="d-none d-lg-table-cell">تاريخ الإنشاء</th>
+                        <th class="text-center">إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in _users)
+                    {
+                        <tr class="@(!user.IsActive ? "row-inactive" : "")">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="u-avatar @GetAvatarClass(user.Role)">
+                                        @if (!string.IsNullOrEmpty(user.ProfilePicturePath))
+                                        {
+                                            <img src="/api/documents/download?path=@Uri.EscapeDataString(user.ProfilePicturePath)" class="u-avatar-img" />
+                                        }
+                                        else
+                                        {
+                                            @(user.FullName.FirstOrDefault().ToString())
+                                        }
+                                    </div>
+                                    <span class="fw-semibold">@user.FullName</span>
+                                </div>
+                            </td>
+                            <td class="d-none d-md-table-cell cell-muted">@user.Email</td>
+                            <td>
+                                <span class="role-pill @GetRoleClass(user.Role)">@GetRoleAr(user.Role)</span>
+                            </td>
+                            <td>
+                                @if (user.IsActive)
+                                {
+                                    <span class="status-pill status-active"><i class="fa-solid fa-circle" style="font-size:.45rem; vertical-align:middle; margin-inline-end:.35rem;"></i>نشط</span>
+                                }
+                                else
+                                {
+                                    <span class="status-pill status-inactive"><i class="fa-solid fa-circle" style="font-size:.45rem; vertical-align:middle; margin-inline-end:.35rem;"></i>معطّل</span>
+                                }
+                            </td>
+                            <td class="d-none d-lg-table-cell cell-muted small">
+                                @user.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-center gap-1 flex-nowrap">
+                                    <!-- Edit -->
+                                    <button class="act-btn act-edit" @onclick="() => OpenEditModal(user)" title="تعديل">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                    <!-- Reset password -->
+                                    <button class="act-btn act-key" @onclick="() => OpenResetPassword(user)" title="إعادة تعيين كلمة المرور">
+                                        <i class="fa-solid fa-key"></i>
+                                    </button>
+                                    <!-- Deactivate / Reactivate toggle -->
+                                    @if (user.IsActive)
+                                    {
+                                        <button class="act-btn act-warn" @onclick="() => DeactivateUser(user)" title="تعطيل الحساب">
+                                            <i class="fa-solid fa-ban"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="act-btn act-ok" @onclick="() => ReactivateUser(user)" title="إعادة تفعيل">
+                                            <i class="fa-solid fa-circle-check"></i>
+                                        </button>
+                                    }
+                                    <!-- Permanent delete -->
+                                    <button class="act-btn act-del" @onclick="() => PermanentDelete(user)" title="حذف نهائي">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="um-footer">
+            الإجمالي: <strong>@_users.Count</strong> مستخدم —
+            <span style="color:#4ade80;">@_users.Count(u => u.IsActive) نشط</span> ،
+            <span style="color:#f87171;">@_users.Count(u => !u.IsActive) معطّل</span>
+        </div>
+    </div>
+}
+
+<AddEditUserModal @ref="_userModal" OnSaved="LoadUsers" />
+<ResetPasswordModal @ref="_resetModal" />
+
+<style>
+    /* ─── Card ────────────────────────────────────────────── */
+    .um-card {
+        border-radius: 18px;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.1);
+        /* Light mode */
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    }
+
+    [data-theme="dark"] .um-card {
+        background: rgba(20, 25, 40, 0.7);
+        border-color: rgba(255,255,255,0.06);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+
+    /* ─── Table ───────────────────────────────────────────── */
+    .um-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .um-table thead th {
+        padding: 0.85rem 1.1rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        /* light mode */
+        color: rgba(30,41,59,0.5);
+        background: rgba(255,255,255,0.5);
+        border-bottom: 1px solid rgba(0,0,0,0.07);
+    }
+
+    [data-theme="dark"] .um-table thead th {
+        color: rgba(255,255,255,0.35);
+        background: rgba(0,0,0,0.25);
+        border-bottom-color: rgba(255,255,255,0.06);
+    }
+
+    .um-table tbody tr td {
+        padding: 0.8rem 1.1rem;
+        vertical-align: middle;
+        /* light mode */
+        color: #1e293b;
+        background: transparent;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    [data-theme="dark"] .um-table tbody tr td {
+        color: #e2e8f0;
+        border-bottom-color: rgba(255,255,255,0.04);
+    }
+
+    .um-table tbody tr:last-child td { border-bottom: none; }
+
+    .um-table tbody tr:hover td {
+        background: rgba(0,0,0,0.03);
+    }
+
+    [data-theme="dark"] .um-table tbody tr:hover td {
+        background: rgba(255,255,255,0.03);
+    }
+
+    .row-inactive td { opacity: 0.5; }
+
+    .cell-muted {
+        color: rgba(30,41,59,0.5) !important;
+    }
+    [data-theme="dark"] .cell-muted {
+        color: rgba(255,255,255,0.4) !important;
+    }
+
+    /* ─── Avatar ──────────────────────────────────────────── */
+    .u-avatar {
+        width: 36px; height: 36px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.9rem;
+        flex-shrink: 0;
+        border: 1.5px solid rgba(255,255,255,0.15);
+    }
+    .u-avatar-img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+
+    .av-superadmin { background:rgba(239,68,68,0.18);  color:#ef4444; }
+    .av-admin      { background:rgba(245,158,11,0.18); color:#f59e0b; }
+    .av-editor     { background:rgba(59,130,246,0.18); color:#3b82f6; }
+    .av-viewer     { background:rgba(100,116,139,0.2); color:#64748b; }
+
+    /* ─── Badges ──────────────────────────────────────────── */
+    .role-pill, .status-pill {
+        display: inline-flex; align-items: center;
+        padding: 0.25rem 0.65rem;
+        border-radius: 50px;
+        font-size: 0.73rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .rp-superadmin { background:rgba(239,68,68,0.12);  color:#ef4444; border:1px solid rgba(239,68,68,0.25); }
+    .rp-admin      { background:rgba(245,158,11,0.12); color:#d97706; border:1px solid rgba(245,158,11,0.25); }
+    .rp-editor     { background:rgba(59,130,246,0.12); color:#3b82f6; border:1px solid rgba(59,130,246,0.25); }
+    .rp-viewer     { background:rgba(100,116,139,0.12);color:#64748b; border:1px solid rgba(100,116,139,0.25); }
+
+    [data-theme="dark"] .rp-admin { color:#fbbf24; }
+    [data-theme="dark"] .rp-editor { color:#60a5fa; }
+
+    .status-active   { background:rgba(34,197,94,0.12); color:#22c55e; border:1px solid rgba(34,197,94,0.25); }
+    .status-inactive { background:rgba(239,68,68,0.1);  color:#ef4444; border:1px solid rgba(239,68,68,0.2); }
+
+    /* ─── Action buttons ──────────────────────────────────── */
+    .act-btn {
+        width: 30px; height: 30px; border-radius: 7px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; border: 1px solid transparent;
+        cursor: pointer; transition: all 0.15s; padding: 0;
+    }
+    .act-btn:hover { transform: translateY(-1px); filter: brightness(1.25); }
+    .act-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .act-edit { background:rgba(59,130,246,0.12); color:#60a5fa; border-color:rgba(59,130,246,0.2); }
+    .act-key  { background:rgba(245,158,11,0.12); color:#fbbf24; border-color:rgba(245,158,11,0.2); }
+    .act-warn { background:rgba(251,146,60,0.12); color:#fb923c; border-color:rgba(251,146,60,0.2); }
+    .act-ok   { background:rgba(34,197,94,0.12);  color:#4ade80; border-color:rgba(34,197,94,0.2);  }
+    .act-del  { background:rgba(239,68,68,0.12);  color:#f87171; border-color:rgba(239,68,68,0.2);  }
+
+    /* ─── Footer ──────────────────────────────────────────── */
+    .um-footer {
+        padding: 0.6rem 1.1rem;
+        font-size: 0.78rem;
+        border-top: 1px solid rgba(0,0,0,0.05);
+        color: rgba(30,41,59,0.5);
+    }
+    [data-theme="dark"] .um-footer {
+        border-top-color: rgba(255,255,255,0.05);
+        color: rgba(255,255,255,0.35);
+    }
+</style>
+
+@code {
+    private List<LegalERP.Application.Auth.UserDto> _users = new();
+    private bool _isLoading = true;
+
+    private AddEditUserModal _userModal = null!;
+    private ResetPasswordModal _resetModal = null!;
+
+    protected override async Task OnInitializedAsync() => await LoadUsers();
+
+    private async Task LoadUsers()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try { _users = await UserApi.GetAllAsync(); }
+        catch { Toast.ShowError("فشل تحميل المستخدمين."); }
+        finally { _isLoading = false; StateHasChanged(); }
+    }
+
+    private void OpenAddModal() => _userModal.Show(null);
+    private void OpenEditModal(LegalERP.Application.Auth.UserDto u) => _userModal.Show(u);
+    private void OpenResetPassword(LegalERP.Application.Auth.UserDto u) => _resetModal.Show(u);
+
+    private async Task DeactivateUser(LegalERP.Application.Auth.UserDto user)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"تعطيل حساب \"{user.FullName}\"؟ يمكنك إعادة تفعيله لاحقاً."))
+            return;
+        var (ok, msg) = await UserApi.DeactivateAsync(user.Id);
+        if (ok) { Toast.ShowSuccess("تم تعطيل الحساب."); await LoadUsers(); }
+        else Toast.ShowError(msg);
+    }
+
+    private async Task ReactivateUser(LegalERP.Application.Auth.UserDto user)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"إعادة تفعيل حساب \"{user.FullName}\"؟"))
+            return;
+        var (ok, msg) = await UserApi.ReactivateAsync(user.Id);
+        if (ok) { Toast.ShowSuccess("تم إعادة تفعيل الحساب."); await LoadUsers(); }
+        else Toast.ShowError(msg);
+    }
+
+    private async Task PermanentDelete(LegalERP.Application.Auth.UserDto user)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm",
+            $"⚠️ حذف نهائي لحساب \"{user.FullName}\"!\n\nهذا الإجراء لا يمكن التراجع عنه وسيُحذف الحساب نهائياً من قاعدة البيانات.\n\nهل أنت متأكد تماماً؟"))
+            return;
+        var (ok, msg) = await UserApi.DeletePermanentAsync(user.Id);
+        if (ok) { Toast.ShowSuccess("تم حذف الحساب نهائياً."); await LoadUsers(); }
+        else Toast.ShowError(msg);
+    }
+
+    private string GetRoleAr(string role) => role switch
+    {
+        "SuperAdmin" => "مدير عام",
+        "Admin"      => "مشرف",
+        "Editor"     => "محرر",
+        _            => "مشاهد"
+    };
+
+    private string GetRoleClass(string role) => role switch
+    {
+        "SuperAdmin" => "rp-superadmin",
+        "Admin"      => "rp-admin",
+        "Editor"     => "rp-editor",
+        _            => "rp-viewer"
+    };
+
+    private string GetAvatarClass(string role) => role switch
+    {
+        "SuperAdmin" => "av-superadmin",
+        "Admin"      => "av-admin",
+        "Editor"     => "av-editor",
+        _            => "av-viewer"
+    };
+}

@@ -1,9 +1,10 @@
 @inherits LayoutComponentBase
 @inject NavigationManager NavManager
-@inject LegalERP.Web.Services.MockAuthService Auth
+@inject LegalERP.Web.Services.CustomAuthStateProvider AuthState
+@inject LegalERP.Web.Services.AuthApiClient AuthApi
 @using Microsoft.Extensions.Localization
+@using System.Security.Claims
 @inject IStringLocalizer<SharedResources> Loc
-@implements IDisposable
 
 <div class="page" style="flex-direction: column;">
     <main style="flex: 1;">
@@ -19,37 +20,70 @@
 
                 <div class="collapse navbar-collapse mt-3 mt-lg-0" id="topNavbar">
                     <div class="navbar-nav me-auto mb-2 mb-lg-0 gap-2 align-items-lg-center">
-                        @if (!IsHomePage)
-                        {
-                            <NavLink class="nav-link ios-nav-link ios-nav-companies" href="companies" Match="NavLinkMatch.Prefix">
-                                <i class="bi bi-building"></i> @Loc["Companies"]
-                            </NavLink>
-                            <NavLink class="nav-link ios-nav-link ios-nav-clients" href="clients" Match="NavLinkMatch.Prefix">
-                                <i class="bi bi-people"></i> @Loc["Clients"]
-                            </NavLink>
-                            <NavLink class="nav-link ios-nav-link ios-nav-cases" href="cases" Match="NavLinkMatch.Prefix">
-                                <i class="bi bi-briefcase"></i> @Loc["Cases"]
-                            </NavLink>
-                            @if (Auth.IsAdmin)
-                            {
-                                <NavLink class="nav-link ios-nav-link ios-nav-financials" href="financials" Match="NavLinkMatch.Prefix">
-                                    <i class="bi bi-cash-stack"></i> @Loc["Financials"]
+                        <AuthorizeView>
+                            <Authorized>
+                                <NavLink class="nav-link ios-nav-link ios-nav-companies" href="companies" Match="NavLinkMatch.Prefix">
+                                    <i class="bi bi-building"></i> @Loc["Companies"]
                                 </NavLink>
-                            }
-                        }
+                                <NavLink class="nav-link ios-nav-link ios-nav-clients" href="clients" Match="NavLinkMatch.Prefix">
+                                    <i class="bi bi-people"></i> @Loc["Clients"]
+                                </NavLink>
+                                <NavLink class="nav-link ios-nav-link ios-nav-cases" href="cases" Match="NavLinkMatch.Prefix">
+                                    <i class="bi bi-briefcase"></i> @Loc["Cases"]
+                                </NavLink>
+                                <AuthorizeView Roles="SuperAdmin,Admin" Context="FinContext">
+                                    <Authorized>
+                                        <NavLink class="nav-link ios-nav-link ios-nav-financials" href="financials" Match="NavLinkMatch.Prefix">
+                                            <i class="bi bi-cash-stack"></i> @Loc["Financials"]
+                                        </NavLink>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="SuperAdmin" Context="UserContext">
+                                    <Authorized>
+                                        <NavLink class="nav-link ios-nav-link" href="admin/users" Match="NavLinkMatch.Prefix" style="background: rgba(255, 255, 255, 0.05); color: #dee2e6;">
+                                            <i class="fa-solid fa-users-gear"></i> @Loc["UserManagement"]
+                                        </NavLink>
+                                    </Authorized>
+                                </AuthorizeView>
+                            </Authorized>
+                        </AuthorizeView>
                     </div>
 
                     <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0 pb-2 pb-lg-0 pt-2 pt-lg-0">
-                        <LegalERP.Web.Components.Shared.RoleSwitcher />
                         <LegalERP.Web.Components.Shared.NotificationBell />
                         <LegalERP.Web.Components.Shared.LanguageSwitcher />
                         <LegalERP.Web.Components.Shared.ThemeSwitcher />
+                        
+                        <AuthorizeView>
+                            <Authorized>
+                                <div class="dropdown ms-2">
+                                    <button class="btn btn-link text-decoration-none d-flex align-items-center gap-2 p-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: var(--text-color);">
+                                        <div class="rounded-circle overflow-hidden shadow-sm d-flex justify-content-center align-items-center" style="width: 35px; height: 35px; background: rgba(255,255,255,0.1);">
+                                            @if (!string.IsNullOrEmpty(AuthState.GetCachedUser()?.ProfilePicturePath))
+                                            {
+                                                <img src="/api/documents/download?path=@Uri.EscapeDataString(AuthState.GetCachedUser()!.ProfilePicturePath!)" style="width: 100%; height: 100%; object-fit: cover;" />
+                                            }
+                                            else
+                                            {
+                                                <i class="fa-solid fa-user small"></i>
+                                            }
+                                        </div>
+                                        <span class="d-none d-lg-inline fw-bold">@context.User.FindFirst(ClaimTypes.Name)?.Value</span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="background: var(--glass-bg); backdrop-filter: blur(10px);">
+                                        <li><a class="dropdown-item" href="profile"><i class="fa-solid fa-id-card me-2 text-primary"></i> @Loc["MyProfile"]</a></li>
+                                        <li><hr class="dropdown-divider border-secondary border-opacity-25"></li>
+                                        <li><button class="dropdown-item text-danger" @onclick="HandleLogout"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> @Loc["Logout"]</button></li>
+                                    </ul>
+                                </div>
+                            </Authorized>
+                        </AuthorizeView>
                     </div>
                 </div>
             </div>
         </nav>
 
-        <article class="content px-4">
+        <article class="content px-2 px-sm-3 px-md-4">
             @Body
         </article>
         <LegalERP.Web.Components.Shared.ToastContainer />
@@ -61,8 +95,8 @@
 
     protected override void OnInitialized()
     {
-        Auth.OnRoleChanged += StateHasChanged;
         NavManager.LocationChanged += OnLocationChanged;
+        AuthState.AuthenticationStateChanged += (t) => InvokeAsync(StateHasChanged);
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -70,10 +104,11 @@
         StateHasChanged();
     }
 
-    public void Dispose()
+    private async Task HandleLogout()
     {
-        Auth.OnRoleChanged -= StateHasChanged;
-        NavManager.LocationChanged -= OnLocationChanged;
+        await AuthApi.LogoutAsync();
+        AuthState.NotifyUserLoggedOut();
+        NavManager.NavigateTo("/login");
     }
 }
 

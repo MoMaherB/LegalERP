@@ -3,7 +3,7 @@
 @using LegalERP.Domain.Enums
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
-@inject MockAuthService Auth
+@inject LegalERP.Web.Services.CustomAuthStateProvider AuthState
 @inject CaseApiClient CaseApi
 @inject CompanyApiClient CompanyApi
 @inject ClientApiClient ClientApi
@@ -58,18 +58,19 @@
         </a>
 
         <!-- Financials Card (Admin Only) -->
-        @if (Auth.IsAdmin)
-        {
-            <a href="financials" class="ios-widget-card ios-card-amber text-decoration-none">
-                <div class="ios-content">
-                    <div class="ios-title">@Loc["Financials"]</div>
-                    <div class="ios-badge" style="visibility: hidden;">0</div>
-                </div>
-                <div class="ios-icon-box" style="--glow-color: rgba(251,191,36,0.4); --icon-color: #fbbf24; --bg-color: rgba(251,191,36,0.15);">
-                    <i class="bi bi-wallet2"></i>
-                </div>
-            </a>
-        }
+        <AuthorizeView Roles="SuperAdmin,Admin">
+            <Authorized>
+                <a href="financials" class="ios-widget-card ios-card-amber text-decoration-none">
+                    <div class="ios-content">
+                        <div class="ios-title">@Loc["Financials"]</div>
+                        <div class="ios-badge" style="visibility: hidden;">0</div>
+                    </div>
+                    <div class="ios-icon-box" style="--glow-color: rgba(251,191,36,0.4); --icon-color: #fbbf24; --bg-color: rgba(251,191,36,0.15);">
+                        <i class="bi bi-wallet2"></i>
+                    </div>
+                </a>
+            </Authorized>
+        </AuthorizeView>
     }
 </div>
 
@@ -112,7 +113,10 @@
         var clients = await ClientApi.GetAllAsync();
         clientsCount = clients.Count;
 
-        if (Auth.IsAdmin)
+        var authState = await AuthState.GetAuthenticationStateAsync();
+        var isFinAdmin = authState.User.IsInRole("SuperAdmin") || authState.User.IsInRole("Admin");
+        
+        if (isFinAdmin)
         {
             var summary = await FinancialsApi.GetSummaryAsync();
             if (summary != null)

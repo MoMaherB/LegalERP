@@ -1,4 +1,4 @@
-﻿@page "/cases"
+@page "/cases"
 @using LegalERP.Application.Cases
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
@@ -12,20 +12,26 @@
 
 <PageTitle>@Loc["CasesManagement"]</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="ios-title">@Loc["CasesManagement"]</h1>
-    <a href="/cases/new" class="ios-btn ios-btn-primary text-decoration-none">@Loc["AddNewCase"]</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="ios-title mb-0">@Loc["CasesManagement"]</h1>
+    <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+        <Authorized>
+            <a href="/cases/new" class="ios-btn ios-btn-primary text-decoration-none">
+                <i class="fa-solid fa-plus me-1"></i> @Loc["AddNewCase"]
+            </a>
+        </Authorized>
+    </AuthorizeView>
 </div>
 
 <!-- Search & Filter Controls -->
-<div class="ios-widget-card mb-4">
+<div class="ios-widget-card mb-4 p-3 p-md-4">
     <div class="row g-3 align-items-end w-100 m-0">
-        <div class="col-md-4">
+        <div class="col-12 col-md-4 px-1">
             <label class="form-label font-weight-bold ios-details">@Loc["Search"]</label>
             <input type="text" class="ios-input" placeholder="@Loc["SearchPlaceholder"]" 
                    @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3 px-1">
             <label class="form-label font-weight-bold ios-details">@Loc["CaseType"]</label>
             <select class="ios-select" @bind="selectedType">
                 <option value="">@Loc["AllTypes"]</option>
@@ -35,7 +41,7 @@
                 }
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3 px-1">
             <label class="form-label font-weight-bold ios-details">@Loc["Status"]</label>
             <select class="ios-select" @bind="selectedStatus">
                 <option value="">@Loc["AllStatuses"]</option>
@@ -45,7 +51,7 @@
                 }
             </select>
         </div>
-        <div class="col-md-2 d-flex gap-2">
+        <div class="col-12 col-md-2 px-1 d-flex gap-2">
             <button class="ios-btn ios-btn-primary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
             <button class="ios-btn ios-btn-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
         </div>
@@ -70,10 +76,10 @@ else
                 <tr>
                     <th>@Loc["CaseNumber"]</th>
                     <th>@Loc["TitleSubject"]</th>
-                    <th>@Loc["Type"]</th>
-                    <th>@Loc["Court"]</th>
+                    <th class="d-none d-md-table-cell">@Loc["Type"]</th>
+                    <th class="d-none d-lg-table-cell">@Loc["Court"]</th>
                     <th>@Loc["Status"]</th>
-                    <th>@Loc["FilingDate"]</th>
+                    <th class="d-none d-md-table-cell">@Loc["FilingDate"]</th>
                     <th class="text-center">@Loc["Actions"]</th>
                 </tr>
             </thead>
@@ -81,10 +87,15 @@ else
                 @foreach (var c in cases)
                 {
                     <tr>
-                        <td><strong>@c.CaseNumber</strong></td>
+                        <td>
+                            <strong>@c.CaseNumber</strong>
+                            <div class="d-md-none mt-1">
+                                <span class="ios-status-badge ios-status-gray" style="font-size: 0.7rem; padding: 2px 6px;">@Loc[c.CaseType.ToString()]</span>
+                            </div>
+                        </td>
                         <td>@c.Title</td>
-                        <td><span class="ios-status-badge ios-status-gray">@Loc[c.CaseType.ToString()]</span></td>
-                        <td>@(string.IsNullOrWhiteSpace(c.CourtName) ? "—" : c.CourtName)</td>
+                        <td class="d-none d-md-table-cell"><span class="ios-status-badge ios-status-gray">@Loc[c.CaseType.ToString()]</span></td>
+                        <td class="d-none d-lg-table-cell">@(string.IsNullOrWhiteSpace(c.CourtName) ? "—" : c.CourtName)</td>
                         <td>
                             @if (c.Status == CaseStatus.Active)
                             {
@@ -110,12 +121,20 @@ else
                                 }
                             }
                         </td>
-                        <td>@(c.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</td>
+                        <td class="d-none d-md-table-cell">@(c.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</td>
                         <td>
-                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                <a href="/cases/@c.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 12px; font-size: 0.85rem;">@Loc["View"]</a>
-                                <a href="/cases/edit/@c.Id" class="ios-btn ios-btn-secondary text-decoration-none m-0" style="padding: 4px 12px; font-size: 0.85rem;">@Loc["Edit"]</a>
-                                <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 12px; font-size: 0.85rem;" @onclick="() => DeleteCase(c.Id)">@Loc["Delete"]</button>
+                            <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                <a href="/cases/@c.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["View"]</a>
+                                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                    <Authorized>
+                                        <a href="/cases/edit/@c.Id" class="ios-btn ios-btn-secondary text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["Edit"]</a>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                    <Authorized>
+                                        <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 8px; font-size: 0.8rem;" @onclick="() => DeleteCase(c.Id)">@Loc["Delete"]</button>
+                                    </Authorized>
+                                </AuthorizeView>
                             </div>
                         </td>
                     </tr>
@@ -175,5 +194,6 @@ else
         }
     }
 }
+
 
 

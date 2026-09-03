@@ -1,0 +1,276 @@
+@page "/profile"
+@attribute [Authorize]
+@inject LegalERP.Web.Services.CustomAuthStateProvider AuthState
+@inject LegalERP.Web.Services.AuthApiClient AuthApi
+@inject IStringLocalizer<SharedResources> Loc
+@inject LegalERP.Web.Services.Toast.IToastService Toast
+@using System.Security.Claims
+
+<PageTitle>@Loc["MyProfile"]</PageTitle>
+
+<div class="profile-container mx-auto">
+    <!-- User Profile Header Card -->
+    <div class="ios-widget-card p-4 mb-4">
+        <div class="d-flex flex-column flex-sm-row align-items-center gap-4">
+            <!-- Profile Avatar with Camera Button -->
+            <div class="position-relative flex-shrink-0">
+                <div class="rounded-circle overflow-hidden shadow-sm d-flex justify-content-center align-items-center profile-avatar-box" 
+                     style="width: 130px; height: 130px; background: rgba(255,255,255,0.08); border: 3px solid rgba(255,255,255,0.25);">
+                    @if (!string.IsNullOrEmpty(_profilePicPath))
+                    {
+                        <img src="/api/documents/download?path=@Uri.EscapeDataString(_profilePicPath)" style="width: 100%; height: 100%; object-fit: cover;" />
+                    }
+                    else
+                    {
+                        <i class="fa-solid fa-user profile-default-avatar" style="font-size: 3.5rem;"></i>
+                    }
+                </div>
+                
+                <label for="profileUpload" class="position-absolute bottom-0 end-0 btn btn-primary rounded-circle shadow profile-camera-btn" 
+                       style="width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; cursor: pointer;" 
+                       title="@Loc["ChangePicture"]">
+                    <i class="fa-solid fa-camera"></i>
+                </label>
+                <InputFile id="profileUpload" OnChange="HandlePictureUpload" class="d-none" accept=".jpg,.jpeg,.png" />
+            </div>
+
+            <!-- User Information -->
+            <div class="flex-grow-1 text-center text-sm-start">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2 mb-2">
+                    <h3 class="fw-bold mb-0 text-body">@_fullName</h3>
+                    <span class="badge bg-primary px-3 py-2" style="border-radius: 8px; font-size: 0.85rem;">@Loc[$"Role_{_role}"]</span>
+                </div>
+                <p class="profile-email mb-0 fs-6">
+                    <i class="fa-regular fa-envelope me-1 opacity-75"></i> @_email
+                </p>
+                
+                @if (_isUploading)
+                {
+                    <div class="mt-3 d-flex align-items-center justify-content-center justify-content-sm-start gap-2 text-primary small">
+                        <span class="spinner-border spinner-border-sm"></span>
+                        <span>@Loc["Uploading"]...</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <!-- Change Password Card -->
+    <div class="ios-widget-card p-4 p-md-5">
+        <h4 class="fw-bold mb-4 border-bottom border-secondary border-opacity-25 pb-3 d-flex align-items-center gap-2">
+            <i class="fa-solid fa-shield-halved text-primary"></i>
+            <span>@Loc["ChangePassword"]</span>
+        </h4>
+        
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert py-2 mb-4 d-flex align-items-center gap-2 small"
+                 style="background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; border-radius: 10px;">
+                <i class="fa-solid fa-circle-exclamation"></i> @_errorMessage
+            </div>
+        }
+        
+        <div class="mb-4">
+            <label class="form-label profile-form-label fw-semibold">@Loc["CurrentPassword"]</label>
+            <input type="password" class="form-control ios-input" @bind="_currentPassword" @bind:event="oninput" placeholder="••••••••" />
+        </div>
+        
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <label class="form-label profile-form-label fw-semibold">@Loc["NewPassword"]</label>
+                <input type="password" class="form-control ios-input" @bind="_newPassword" @bind:event="oninput" placeholder="••••••••" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label profile-form-label fw-semibold">@Loc["ConfirmNewPassword"]</label>
+                <input type="password" class="form-control ios-input" @bind="_confirmNewPassword" @bind:event="oninput" placeholder="••••••••" />
+            </div>
+        </div>
+        
+        <div class="text-end border-top border-secondary border-opacity-25 pt-4">
+            <button type="button" class="btn ios-btn-primary px-4 py-2" @onclick="ChangePassword" disabled="@_isSavingPassword">
+                @if (_isSavingPassword) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                <i class="fa-solid fa-save me-1"></i> @Loc["Save"]
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .profile-container {
+        max-width: 840px;
+        width: 100%;
+        margin: 0 auto;
+        padding-bottom: 2rem;
+    }
+    .profile-form-label {
+        color: #475569;
+        margin-bottom: 6px;
+        display: block;
+    }
+    .profile-email {
+        color: #64748b;
+    }
+    .profile-default-avatar {
+        color: #94a3b8;
+    }
+    .profile-camera-btn {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .profile-camera-btn:hover {
+        transform: scale(1.1);
+    }
+    [data-theme="dark"] .profile-form-label,
+    [data-bs-theme="dark"] .profile-form-label {
+        color: #e2e8f0 !important;
+    }
+    [data-theme="dark"] .profile-email,
+    [data-bs-theme="dark"] .profile-email {
+        color: #94a3b8 !important;
+    }
+    [data-theme="dark"] .profile-default-avatar,
+    [data-bs-theme="dark"] .profile-default-avatar {
+        color: #cbd5e1 !important;
+    }
+    [data-theme="dark"] .ios-input,
+    [data-bs-theme="dark"] .ios-input {
+        background: rgba(15, 23, 42, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+        color: #f8fafc !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    }
+    [data-theme="dark"] .ios-input:focus,
+    [data-bs-theme="dark"] .ios-input:focus {
+        background: rgba(30, 41, 59, 0.9) !important;
+        border-color: rgba(56, 189, 248, 0.7) !important;
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25) !important;
+    }
+</style>
+
+@code {
+    private string _fullName = "";
+    private string _email = "";
+    private string _role = "";
+    private string? _profilePicPath;
+    
+    private string _currentPassword = "";
+    private string _newPassword = "";
+    private string _confirmNewPassword = "";
+    
+    private string _errorMessage = "";
+    private bool _isSavingPassword;
+    private bool _isUploading;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthState.GetAuthenticationStateAsync();
+        var user = authState.User;
+        
+        _fullName = user.FindFirst(ClaimTypes.Name)?.Value ?? "";
+        _email = user.FindFirst(ClaimTypes.Email)?.Value ?? "";
+        _role = user.FindFirst(ClaimTypes.Role)?.Value ?? "";
+        
+        var cachedUser = AuthState.GetCachedUser();
+        if (cachedUser != null)
+        {
+            _profilePicPath = cachedUser.ProfilePicturePath;
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        _errorMessage = "";
+
+        if (string.IsNullOrWhiteSpace(_currentPassword))
+        {
+            _errorMessage = "يرجى إدخال كلمة المرور الحالية.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_newPassword))
+        {
+            _errorMessage = "يرجى إدخال كلمة المرور الجديدة.";
+            return;
+        }
+        if (_newPassword.Length < 8)
+        {
+            _errorMessage = "يجب أن تكون كلمة المرور الجديدة 8 أحرف على الأقل.";
+            return;
+        }
+        if (_newPassword != _confirmNewPassword)
+        {
+            _errorMessage = "كلمة المرور الجديدة غير متطابقة مع تأكيد كلمة المرور.";
+            return;
+        }
+
+        _isSavingPassword = true;
+        
+        try
+        {
+            var dto = new LegalERP.Application.Auth.ChangePasswordDto(_currentPassword, _newPassword, _confirmNewPassword);
+            var success = await AuthApi.ChangePasswordAsync(dto);
+            
+            if (success)
+            {
+                Toast.ShowSuccess(Loc["OperationSuccess"].Value);
+                _currentPassword = "";
+                _newPassword = "";
+                _confirmNewPassword = "";
+            }
+            else
+            {
+                _errorMessage = "فشل تغيير كلمة المرور. تأكد من صحة كلمة المرور الحالية وتطابق كلمة المرور الجديدة.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = "حدث خطأ أثناء الاتصال بالخادم.";
+            Console.WriteLine($"[PROFILE ERROR] {ex.Message}");
+        }
+        finally
+        {
+            _isSavingPassword = false;
+        }
+    }
+
+    private async Task HandlePictureUpload(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file == null) return;
+
+        _isUploading = true;
+        StateHasChanged();
+        
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024); // 5MB max
+            var newPath = await AuthApi.UploadProfilePictureAsync(stream, file.Name, file.ContentType);
+            
+            if (newPath != null)
+            {
+                _profilePicPath = newPath;
+                
+                // Refresh cached user data so navbar updates
+                var updatedUser = await AuthApi.GetCurrentUserAsync();
+                if (updatedUser != null)
+                {
+                    await AuthState.NotifyUserLoggedIn(updatedUser);
+                }
+                
+                Toast.ShowSuccess(Loc["OperationSuccess"].Value);
+            }
+            else
+            {
+                Toast.ShowError("حدث خطأ أثناء رفع الصورة.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Toast.ShowError("تعذر رفع الصورة. يرجى المحاولة لاحقاً.");
+            Console.WriteLine($"[PROFILE PICTURE ERROR] {ex.Message}");
+        }
+        finally
+        {
+            _isUploading = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,4 +1,4 @@
-﻿@page "/clients"
+@page "/clients"
 @using LegalERP.Application.Clients
 @using LegalERP.Web.Services
 @inject ClientApiClient ClientApi
@@ -12,20 +12,26 @@
 
 <PageTitle>@Loc["ClientsManagement"]</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="ios-title">@Loc["Clients"]</h1>
-    <a href="/clients/new" class="ios-btn ios-btn-primary text-decoration-none">@Loc["AddClient"]</a>
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="ios-title mb-0">@Loc["Clients"]</h1>
+    <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+        <Authorized>
+            <a href="/clients/new" class="ios-btn ios-btn-primary text-decoration-none">
+                <i class="fa-solid fa-plus me-1"></i> @Loc["AddClient"]
+            </a>
+        </Authorized>
+    </AuthorizeView>
 </div>
 
 <!-- Search Controls -->
-<div class="ios-widget-card mb-4">
+<div class="ios-widget-card mb-4 p-3 p-md-4">
     <div class="row g-3 align-items-end w-100 m-0">
-        <div class="col-md-8">
+        <div class="col-12 col-md-8 px-1">
             <label class="form-label font-weight-bold ios-details">@Loc["SearchByName"]</label>
             <input type="text" class="ios-input" placeholder="@Loc["SearchClientsPlaceholder"]" 
                    @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
         </div>
-        <div class="col-md-4 d-flex gap-2">
+        <div class="col-12 col-md-4 px-1 d-flex gap-2">
             <button class="ios-btn ios-btn-primary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
             <button class="ios-btn ios-btn-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
         </div>
@@ -39,7 +45,12 @@
 else if (clients.Count == 0)
 {
     <div class="alert alert-info">
-        @Loc["NoClientsFound"] <a href="/clients/new">@Loc["AddFirstClient"]</a>.
+        @Loc["NoClientsFound"] 
+        <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+            <Authorized>
+                <a href="/clients/new">@Loc["AddFirstClient"]</a>.
+            </Authorized>
+        </AuthorizeView>
     </div>
 }
 else
@@ -49,7 +60,7 @@ else
             <thead>
                 <tr>
                     <th>@Loc["FullName"]</th>
-                    <th>@Loc["NationalID"]</th>
+                    <th class="d-none d-md-table-cell">@Loc["NationalID"]</th>
                     <th>@Loc["Phone"]</th>
                     <th class="text-center">@Loc["Actions"]</th>
                 </tr>
@@ -58,14 +69,28 @@ else
                 @foreach (var c in clients)
                 {
                     <tr>
-                        <td><strong>@c.FullName</strong></td>
-                        <td>@(c.NationalIdNumber ?? "—")</td>
+                        <td>
+                            <strong>@c.FullName</strong>
+                            @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
+                            {
+                                <div class="d-md-none text-muted small mt-1">@c.NationalIdNumber</div>
+                            }
+                        </td>
+                        <td class="d-none d-md-table-cell">@(c.NationalIdNumber ?? "—")</td>
                         <td>@(c.PhoneNumber ?? "—")</td>
                         <td>
-                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                <a href="/clients/@c.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 12px; font-size: 0.85rem;">@Loc["View"]</a>
-                                <a href="/clients/edit/@c.Id" class="ios-btn ios-btn-secondary text-decoration-none m-0" style="padding: 4px 12px; font-size: 0.85rem;">@Loc["Edit"]</a>
-                                <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 12px; font-size: 0.85rem;" @onclick="() => DeleteClient(c.Id)">@Loc["Delete"]</button>
+                            <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                <a href="/clients/@c.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["View"]</a>
+                                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                    <Authorized>
+                                        <a href="/clients/edit/@c.Id" class="ios-btn ios-btn-secondary text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["Edit"]</a>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                    <Authorized>
+                                        <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 8px; font-size: 0.8rem;" @onclick="() => DeleteClient(c.Id)">@Loc["Delete"]</button>
+                                    </Authorized>
+                                </AuthorizeView>
                             </div>
                         </td>
                     </tr>
@@ -121,5 +146,6 @@ else
         }
     }
 }
+
 
 
