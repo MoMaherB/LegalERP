@@ -808,4 +808,18 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 
 ---
 
+
+**Feature 25: File Number (رقم الملف) for Clients and Companies — ✅ COMPLETED (2026-09-03)**
+- **Domain & Database:** Added `FileNumber` (`string?`) to `Client` and `Company` entities. Configured maximum length 100 in `ClientConfiguration` and `CompanyConfiguration`. Created and applied EF Core migration `20260903153150_AddFileNumberToClientsAndCompanies` to PostgreSQL.
+- **Clean Architecture DTOs:** Updated `ClientDto`, `ClientSummaryDto`, `CreateClientDto`, `UpdateClientDto`, `CompanyDto`, `CreateCompanyDto`, and `UpdateCompanyDto`.
+- **Search Capabilities:** Updated `ClientRepository.SearchAsync` and `CompanyRepository.SearchAsync` to allow instant searching by file number across clients and companies.
+- **API Controllers:** Mapped `FileNumber` across CRUD endpoints in `ClientsController` and `CompaniesController`.
+- **Blazor UI & Localization:**
+  - Added File Number column to `ClientList.razor` and `CompanyList.razor` with responsive mobile badge formatting.
+  - Displayed File Number in detail header cards on `ClientDetail.razor` and `CompanyDetail.razor`.
+  - Added input field to Add/Edit forms (`ClientForm.razor` and `CompanyForm.razor`).
+  - Added English and Arabic localization keys (`FileNumber`, `FileNumberPlaceholder`) in `SharedResources.resx` and `SharedResources.ar.resx`.
+
+---
+
 *End of reference document.*

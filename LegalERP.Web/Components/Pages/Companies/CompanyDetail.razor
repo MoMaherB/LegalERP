@@ -43,6 +43,12 @@ else
                 <div class="p-4">
                     <h5 class="ios-title" style="font-size: 1.25rem;">@Loc["CompanyInfo"]</h5>
                     <dl class="row mt-3">
+                        @if (!string.IsNullOrWhiteSpace(company.FileNumber))
+                        {
+                            <dt class="col-sm-4 ios-details fw-bold">@Loc["FileNumber"]</dt>
+                            <dd class="col-sm-8 mb-3"><span class="ios-status-badge ios-status-gray">@company.FileNumber</span></dd>
+                        }
+
                         <dt class="col-sm-4 ios-details fw-bold">@Loc["Category"]</dt>
                         <dd class="col-sm-8 mb-3"><span class="ios-status-badge ios-status-gray">@Loc[company.Category.ToString()]</span></dd>
 
@@ -419,6 +425,7 @@ else
             var docId = await CompanyApi.UploadDocumentAsync("company", company.Id, incorporationContractFile);
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             var updateDto = new UpdateCompanyDto(
+                company.FileNumber,
                 company.Category,
                 company.CompanyName,
                 company.CompanyNameEn,

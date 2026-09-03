@@ -6,6 +6,7 @@ namespace LegalERP.Domain.Entities;
 
 public class Client : BaseEntity
 {
+    public string? FileNumber { get; set; }                       // رقم الملف
     public string FullName { get; set; } = string.Empty;          // الاسم الكامل
     public string? FullNameEn { get; set; }                       // English name (optional)
     public string? NationalIdNumber { get; set; }                 // رقم الهوية

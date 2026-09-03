@@ -1,4 +1,4 @@
-﻿@page "/clients/new"
+@page "/clients/new"
 @using LegalERP.Web.Services.Toast
 @inject IToastService ToastService
 @page "/clients/edit/{Id:guid}"
@@ -45,6 +45,10 @@ else
                         <InputText class="ios-input" @bind-Value="model.FullNameEn" placeholder="@Loc["FullNameEnglishPlaceholder"]" />
                     </div>
 
+                    <div class="col-md-4">
+                        <label class="form-label ios-details fw-bold">@Loc["FileNumber"]</label>
+                        <InputText class="ios-input" @bind-Value="model.FileNumber" placeholder="@Loc["FileNumberPlaceholder"]" />
+                    </div>
                     <div class="col-md-4">
                         <label class="form-label ios-details fw-bold">@Loc["NationalIdNumber"] *</label>
                         <InputText class="ios-input" @bind-Value="model.NationalIdNumber" placeholder="@Loc["NationalIdNumberPlaceholder"]" />
@@ -136,6 +140,7 @@ else
             {
                 model = new ClientFormModel
                 {
+                    FileNumber = existing.FileNumber,
                     FullName = existing.FullName,
                     FullNameEn = existing.FullNameEn,
                     NationalIdNumber = existing.NationalIdNumber,
@@ -202,6 +207,7 @@ else
             if (IsEditMode)
             {
                 var updateDto = new UpdateClientDto(
+                    model.FileNumber,
                     model.FullName,
                     model.FullNameEn,
                     model.NationalIdNumber,
@@ -217,6 +223,7 @@ else
             else
             {
                 var createDto = new CreateClientDto(
+                    model.FileNumber,
                     model.FullName,
                     model.FullNameEn,
                     model.NationalIdNumber,
@@ -247,6 +254,7 @@ else
 
     private class ClientFormModel
     {
+        public string? FileNumber { get; set; }
         public string FullName { get; set; } = string.Empty;
         public string? FullNameEn { get; set; }
         public string? NationalIdNumber { get; set; }

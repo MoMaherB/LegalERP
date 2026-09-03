@@ -64,6 +64,7 @@ else
         <table class="ios-table">
             <thead>
                 <tr>
+                    <th class="d-none d-md-table-cell">@Loc["FileNumber"]</th>
                     <th>@Loc["Name"]</th>
                     <th class="d-none d-md-table-cell">@Loc["TradeName"]</th>
                     <th>@Loc["Category"]</th>
@@ -74,8 +75,22 @@ else
                 @foreach (var c in companies)
                 {
                     <tr>
+                        <td class="d-none d-md-table-cell">
+                            @if (!string.IsNullOrWhiteSpace(c.FileNumber))
+                            {
+                                <span class="ios-status-badge ios-status-gray">@c.FileNumber</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
                         <td>
                             <strong>@c.CompanyName</strong>
+                            @if (!string.IsNullOrWhiteSpace(c.FileNumber))
+                            {
+                                <div class="d-md-none text-muted small mt-1">@Loc["FileNumber"]: @c.FileNumber</div>
+                            }
                             @if (!string.IsNullOrWhiteSpace(c.CompanyNameEn))
                             {
                                 <br /><small class="text-muted">@c.CompanyNameEn</small>

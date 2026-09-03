@@ -18,6 +18,7 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
 
         builder.HasKey(c => c.Id);
 
+        builder.Property(c => c.FileNumber).HasMaxLength(100);
         builder.Property(c => c.CompanyName).IsRequired().HasMaxLength(500);
         builder.Property(c => c.CompanyNameEn).HasMaxLength(500);
         builder.Property(c => c.TradeName).HasMaxLength(500);

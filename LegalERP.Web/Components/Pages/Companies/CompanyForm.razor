@@ -1,4 +1,4 @@
-﻿@page "/companies/new"
+@page "/companies/new"
 @using LegalERP.Web.Services.Toast
 @inject IToastService ToastService
 @page "/companies/edit/{Id:guid}"
@@ -72,6 +72,13 @@ else
                     </div>
                 </div>
 
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label ios-details fw-bold">@Loc["FileNumber"]</label>
+                        <InputText class="ios-input" @bind-Value="model.FileNumber" placeholder="@Loc["FileNumberPlaceholder"]" />
+                    </div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label ios-details fw-bold">@Loc["Address"]</label>
                     <InputTextArea class="ios-input" @bind-Value="model.Address" rows="2" />
@@ -120,6 +127,7 @@ else
 
     private class CompanyFormModel
     {
+        public string? FileNumber { get; set; }
         public CompanyCategory Category { get; set; } = CompanyCategory.SoleProprietorship;
         public string CompanyName { get; set; } = string.Empty;
         public string? CompanyNameEn { get; set; }
@@ -140,6 +148,7 @@ else
             var company = await CompanyApi.GetByIdAsync(Id!.Value);
             if (company != null)
             {
+                model.FileNumber = company.FileNumber;
                 model.Category = company.Category;
                 model.CompanyName = company.CompanyName;
                 model.CompanyNameEn = company.CompanyNameEn;
@@ -195,6 +204,7 @@ else
                 }
 
                 var dto = new UpdateCompanyDto(
+                    model.FileNumber,
                     model.Category,
                     model.CompanyName,
                     model.CompanyNameEn,
@@ -211,6 +221,7 @@ else
             {
                 // Create basic company first
                 var createDto = new CreateCompanyDto(
+                    model.FileNumber,
                     model.Category,
                     model.CompanyName,
                     model.CompanyNameEn,
@@ -233,6 +244,7 @@ else
                     ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                     
                     var updateDto = new UpdateCompanyDto(
+                        model.FileNumber,
                         model.Category,
                         model.CompanyName,
                         model.CompanyNameEn,

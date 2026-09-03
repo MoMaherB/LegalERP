@@ -7,6 +7,7 @@ namespace LegalERP.Application.Clients;
 
 public record ClientDto(
     Guid Id,
+    string? FileNumber,
     string FullName,
     string? FullNameEn,
     string? NationalIdNumber,
@@ -22,12 +23,14 @@ public record ClientDto(
 
 public record ClientSummaryDto(
     Guid Id,
+    string? FileNumber,
     string FullName,
     string? NationalIdNumber,
     string? PhoneNumber
 );
 
 public record CreateClientDto(
+    string? FileNumber,
     string FullName,
     string? FullNameEn,
     string? NationalIdNumber,
@@ -40,6 +43,7 @@ public record CreateClientDto(
 );
 
 public record UpdateClientDto(
+    string? FileNumber,
     string FullName,
     string? FullNameEn,
     string? NationalIdNumber,

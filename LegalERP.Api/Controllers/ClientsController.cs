@@ -52,6 +52,7 @@ public class ClientsController : ControllerBase
     {
         var client = new Client
         {
+            FileNumber = dto.FileNumber,
             FullName = dto.FullName,
             FullNameEn = dto.FullNameEn,
             NationalIdNumber = dto.NationalIdNumber,
@@ -76,6 +77,7 @@ public class ClientsController : ControllerBase
         var client = await _clientRepository.GetByIdAsync(id);
         if (client == null) return NotFound();
 
+        client.FileNumber = dto.FileNumber;
         client.FullName = dto.FullName;
         client.FullNameEn = dto.FullNameEn;
         client.NationalIdNumber = dto.NationalIdNumber;
@@ -109,6 +111,7 @@ public class ClientsController : ControllerBase
     {
         return new ClientSummaryDto(
             client.Id,
+            client.FileNumber,
             client.FullName,
             client.NationalIdNumber,
             client.PhoneNumber
@@ -160,6 +163,7 @@ public class ClientsController : ControllerBase
 
         return new ClientDto(
             client.Id,
+            client.FileNumber,
             client.FullName,
             client.FullNameEn,
             client.NationalIdNumber,

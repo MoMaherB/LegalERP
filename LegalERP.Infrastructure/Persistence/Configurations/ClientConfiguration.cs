@@ -12,6 +12,7 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
 
         builder.HasKey(c => c.Id);
 
+        builder.Property(c => c.FileNumber).HasMaxLength(100);
         builder.Property(c => c.FullName).IsRequired().HasMaxLength(300);
         builder.Property(c => c.FullNameEn).HasMaxLength(300);
         builder.Property(c => c.NationalIdNumber).HasMaxLength(100);

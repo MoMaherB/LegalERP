@@ -73,7 +73,8 @@ public class ClientRepository : IClientRepository
             var pattern = $"%{word}%";
             query = query.Where(c => EF.Functions.ILike(c.FullName, pattern) ||
                                      (c.FullNameEn != null && EF.Functions.ILike(c.FullNameEn, pattern)) ||
-                                     (c.NationalIdNumber != null && EF.Functions.ILike(c.NationalIdNumber, pattern)));
+                                     (c.NationalIdNumber != null && EF.Functions.ILike(c.NationalIdNumber, pattern)) ||
+                                     (c.FileNumber != null && EF.Functions.ILike(c.FileNumber, pattern)));
         }
 
         return await query

@@ -18,6 +18,7 @@ public record DocumentDto(
 
 public record CompanyDto(
     Guid Id,
+    string? FileNumber,
     CompanyCategory Category,
     string CompanyName,
     string? CompanyNameEn,
@@ -51,6 +52,7 @@ public record CompanyPartnerDto(
 );
 
 public record CreateCompanyDto(
+    string? FileNumber,
     CompanyCategory Category,
     string CompanyName,
     string? CompanyNameEn,
@@ -68,6 +70,7 @@ public record CreateCompanyAmendmentDto(
 );
 
 public record UpdateCompanyDto(
+    string? FileNumber,
     CompanyCategory Category,
     string CompanyName,
     string? CompanyNameEn,

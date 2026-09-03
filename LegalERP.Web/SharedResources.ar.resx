@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1407,4 +1407,9 @@
   <data name="AccessDeniedMessage" xml:space="preserve">
     <value>ليس لديك الصلاحية للوصول إلى هذه الصفحة.</value>
   </data>
-</root>
+  <data name="FileNumber" xml:space="preserve">
+    <value>رقم الملف</value>
+  </data>
+  <data name="FileNumberPlaceholder" xml:space="preserve">
+    <value>مثال: F-2024-001</value>
+  </data></root>

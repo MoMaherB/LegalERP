@@ -1212,4 +1212,9 @@
   <data name="AccessDeniedMessage" xml:space="preserve">
     <value>You do not have permission to view this page.</value>
   </data>
-</root>
+  <data name="FileNumber" xml:space="preserve">
+    <value>File Number</value>
+  </data>
+  <data name="FileNumberPlaceholder" xml:space="preserve">
+    <value>e.g. F-2024-001</value>
+  </data></root>

@@ -40,6 +40,7 @@ public class CompaniesController : ControllerBase
     {
         var company = new Company
         {
+            FileNumber = dto.FileNumber,
             Category = dto.Category,
             CompanyName = dto.CompanyName,
             CompanyNameEn = dto.CompanyNameEn,
@@ -58,6 +59,7 @@ public class CompaniesController : ControllerBase
 
     private static CompanyDto ToDto(Company c) => new(
         c.Id,
+        c.FileNumber,
         c.Category,
         c.CompanyName,
         c.CompanyNameEn,
@@ -110,6 +112,7 @@ public class CompaniesController : ControllerBase
         var company = await _repository.GetByIdAsync(id, ct);
         if (company is null) return NotFound();
 
+        company.FileNumber = dto.FileNumber;
         company.Category = dto.Category;
         company.CompanyName = dto.CompanyName;
         company.CompanyNameEn = dto.CompanyNameEn;

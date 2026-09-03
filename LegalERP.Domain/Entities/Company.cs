@@ -10,6 +10,7 @@ namespace LegalERP.Domain.Entities;
 
 public class Company : BaseEntity
 {
+    public string? FileNumber { get; set; }                      // رقم الملف
     public CompanyCategory Category { get; set; }
     public string CompanyName { get; set; } = string.Empty;
     public string? CompanyNameEn { get; set; }   // optional English equivalent, for fuzzy search (TR-2.2)

@@ -1,4 +1,4 @@
-﻿@page "/clients/{Id:guid}"
+@page "/clients/{Id:guid}"
 @using LegalERP.Application.Clients
 @using LegalERP.Application.Companies
 @using LegalERP.Domain.Enums
@@ -53,6 +53,19 @@ else
                 <small class="text-muted">@client.FullNameEn</small>
             }
             <div class="row g-3 mt-3">
+                <div class="col-md-4">
+                    <strong class="ios-details fw-bold">@Loc["FileNumber"]:</strong>
+                    <p class="mb-0">
+                        @if (!string.IsNullOrWhiteSpace(client.FileNumber))
+                        {
+                            <span class="ios-status-badge ios-status-gray">@client.FileNumber</span>
+                        }
+                        else
+                        {
+                            <span>—</span>
+                        }
+                    </p>
+                </div>
                 <div class="col-md-4">
                     <strong class="ios-details fw-bold">@Loc["NationalID"]:</strong>
                     <p class="mb-0">@(string.IsNullOrWhiteSpace(client.NationalIdNumber) ? "—" : client.NationalIdNumber)</p>

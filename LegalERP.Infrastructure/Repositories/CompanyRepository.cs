@@ -44,6 +44,7 @@ public class CompanyRepository : ICompanyRepository
                 EF.Functions.ILike(c.CompanyName, pattern) ||
                 (c.CompanyNameEn != null && EF.Functions.ILike(c.CompanyNameEn, pattern)) ||
                 (c.TradeName != null && EF.Functions.ILike(c.TradeName, pattern)) ||
+                (c.FileNumber != null && EF.Functions.ILike(c.FileNumber, pattern)) ||
                 EF.Functions.TrigramsAreSimilar(c.CompanyName, searchTerm) ||
                 (c.CompanyNameEn != null && EF.Functions.TrigramsAreSimilar(c.CompanyNameEn, searchTerm)));
         }
