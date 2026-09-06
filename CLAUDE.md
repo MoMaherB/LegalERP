@@ -822,4 +822,14 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 
 ---
 
+
+**Feature 26: Partners Table Enhancements in Company Details — ✅ COMPLETED (2026-09-06)**
+- **Removed ID Document Column:** Removed the `IDDocument` (`صورة الهوية`) column from the Partners table in `CompanyDetail.razor` to streamline layout and prevent large thumbnail previews from overcrowding the table.
+- **Clickable Partner Name:** Linked partner names directly to their Client Profile (`/clients/{clientId}`) when linked to a central client record, matching the design pattern in `CaseDetail.razor`.
+- **Edit Partner Action:** Added an Edit button side by side with the Delete button in the Actions column. Clicking Edit opens the partner drawer pre-filled with the current client and ownership percentage, allowing users to seamlessly change the client or ownership percentage.
+- **Backend Persistence:** Updated `CompaniesController.UpdatePartner` to properly persist `partner.ClientId = dto.ClientId;`.
+- **Localization:** Added `EditPartner` translations ("Edit Partner" / "تعديل الشريك") to `SharedResources.resx` and `SharedResources.ar.resx`.
+
+---
+
 *End of reference document.*
