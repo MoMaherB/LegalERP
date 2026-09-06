@@ -126,7 +126,9 @@ else
     {
         <div class="ios-widget-card mb-4" style="border: 1px solid rgba(52, 211, 153, 0.3);">
             <div class="p-4">
-                <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">@Loc["AddCompanyPartner"]</h5>
+                <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">
+                    @(editingPartnerId.HasValue ? Loc["EditPartner"] : Loc["AddCompanyPartner"])
+                </h5>
                 <div class="row g-3">
                     <div class="col-md-8">
                         <label class="form-label ios-details fw-bold">@Loc["SearchClientByName"] *</label>
@@ -173,10 +175,10 @@ else
                     </div>
 
                     <div class="col-12 mt-4">
-                        <button class="ios-btn ios-btn-primary me-2" @onclick="AddPartner" disabled="@isSavingPartner">
-                            @(isSavingPartner ? Loc["Saving"] : Loc["SavePartner"])
+                        <button class="ios-btn ios-btn-primary me-2" @onclick="SavePartner" disabled="@isSavingPartner">
+                            @(isSavingPartner ? Loc["Saving"] : (editingPartnerId.HasValue ? Loc["SaveChanges"] : Loc["SavePartner"]))
                         </button>
-                        <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddPartnerForm">@Loc["Cancel"]</button>
+                        <button class="ios-btn ios-btn-secondary" @onclick="CancelPartnerForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
 
@@ -197,8 +199,7 @@ else
                         <th>@Loc["Name"]</th>
                         <th class="d-none d-md-table-cell">@Loc["NationalID"]</th>
                         <th>@Loc["OwnershipPercentage"]</th>
-                        <th class="d-none d-lg-table-cell">@Loc["IDDocument"]</th>
-                        <th>@Loc["Actions"]</th>
+                        <th class="text-center">@Loc["Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -206,7 +207,16 @@ else
                     {
                         <tr>
                             <td>
-                                <strong>@partner.FullName</strong>
+                                @if (partner.ClientId.HasValue)
+                                {
+                                    <a href="/clients/@partner.ClientId.Value" class="fw-bold text-decoration-none" style="color: var(--ios-primary, #007aff);">
+                                        @partner.FullName
+                                    </a>
+                                }
+                                else
+                                {
+                                    <strong>@partner.FullName</strong>
+                                }
                                 @if (!string.IsNullOrWhiteSpace(partner.NationalIdNumber))
                                 {
                                     <div class="d-md-none text-muted small mt-1">@partner.NationalIdNumber</div>
@@ -223,20 +233,15 @@ else
                                     <span class="text-muted">—</span>
                                 }
                             </td>
-                            <td class="d-none d-lg-table-cell">
-                                @if (partner.NationalIdDocument != null)
-                                {
-                                    <FileThumbnail Document="partner.NationalIdDocument" OwnerType="partner" OwnerId="partner.Id" />
-                                }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
-                                }
-                            </td>
                             <td>
-                                @if (_canDelete) { 
-                                    <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button> 
-                                }
+                                <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                    @if (_canEdit) { 
+                                        <button class="ios-btn ios-btn-secondary m-0" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => StartEditPartner(partner)">@Loc["Edit"]</button> 
+                                    }
+                                    @if (_canDelete) { 
+                                        <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button> 
+                                    }
+                                </div>
                             </td>
                         </tr>
                     }
@@ -697,17 +702,43 @@ else
         clientSearchResults = null;
     }
 
+    private Guid? editingPartnerId;
+
     private void ToggleAddPartnerForm()
     {
-        showAddPartnerForm = !showAddPartnerForm;
+        if (showAddPartnerForm)
+        {
+            CancelPartnerForm();
+        }
+        else
+        {
+            editingPartnerId = null;
+            newPartnerOwnership = null;
+            ClearClientSelection();
+            showAddPartnerForm = true;
+        }
+    }
 
+    private void StartEditPartner(CompanyPartnerDto partner)
+    {
+        editingPartnerId = partner.Id;
+        selectedClientId = partner.ClientId;
+        selectedClientName = partner.FullName + (!string.IsNullOrWhiteSpace(partner.NationalIdNumber) ? $" (ID: {partner.NationalIdNumber})" : "");
+        clientSearchTerm = partner.FullName;
+        newPartnerOwnership = partner.OwnershipPercentage;
+        showAddPartnerForm = true;
+    }
+
+    private void CancelPartnerForm()
+    {
+        showAddPartnerForm = false;
+        editingPartnerId = null;
         newPartnerOwnership = null;
         ClearClientSelection();
     }
 
-    private async Task AddPartner()
+    private async Task SavePartner()
     {
-
         if (!selectedClientId.HasValue)
         {
             ToastService.ShowWarning(Loc["MustSelectClient"].Value);
@@ -718,13 +749,20 @@ else
 
         try
         {
-            var dto = new CreateCompanyPartnerDto(selectedClientId.Value, newPartnerOwnership);
-            await CompanyApi.AddPartnerAsync(Id, dto);
-            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            if (editingPartnerId.HasValue)
+            {
+                var dto = new UpdateCompanyPartnerDto(selectedClientId.Value, newPartnerOwnership);
+                await CompanyApi.UpdatePartnerAsync(Id, editingPartnerId.Value, dto);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            }
+            else
+            {
+                var dto = new CreateCompanyPartnerDto(selectedClientId.Value, newPartnerOwnership);
+                await CompanyApi.AddPartnerAsync(Id, dto);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            }
 
-            showAddPartnerForm = false;
-            newPartnerOwnership = null;
-            ClearClientSelection();
+            CancelPartnerForm();
             await LoadCompany();
         }
         catch (Exception ex)

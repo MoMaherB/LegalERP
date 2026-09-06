@@ -298,10 +298,14 @@ public class CompaniesController : ControllerBase
         var partner = await _repository.GetPartnerByIdAsync(partnerId, ct);
         if (partner is null || partner.CompanyId != companyId) return NotFound();
 
-        partner.FullName = dto.FullName;
-        partner.NationalIdNumber = dto.NationalIdNumber;
+        partner.ClientId = dto.ClientId;
+        if (!string.IsNullOrWhiteSpace(dto.FullName))
+            partner.FullName = dto.FullName;
+        if (!string.IsNullOrWhiteSpace(dto.NationalIdNumber))
+            partner.NationalIdNumber = dto.NationalIdNumber;
         partner.OwnershipPercentage = dto.OwnershipPercentage;
-        partner.NationalIdDocumentId = dto.NationalIdDocumentId;
+        if (dto.NationalIdDocumentId.HasValue)
+            partner.NationalIdDocumentId = dto.NationalIdDocumentId;
 
         _repository.UpdatePartner(partner);
         await _repository.SaveChangesAsync(ct);

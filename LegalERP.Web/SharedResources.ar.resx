@@ -1412,4 +1412,6 @@
   </data>
   <data name="FileNumberPlaceholder" xml:space="preserve">
     <value>مثال: F-2024-001</value>
+  </data>  <data name="EditPartner" xml:space="preserve">
+    <value>تعديل الشريك</value>
   </data></root>

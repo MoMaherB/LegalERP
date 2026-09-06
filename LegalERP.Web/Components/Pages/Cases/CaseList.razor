@@ -79,7 +79,6 @@ else
                     <th class="d-none d-md-table-cell">@Loc["Type"]</th>
                     <th class="d-none d-lg-table-cell">@Loc["Court"]</th>
                     <th>@Loc["Status"]</th>
-                    <th class="d-none d-md-table-cell">@Loc["FilingDate"]</th>
                     <th class="text-center">@Loc["Actions"]</th>
                 </tr>
             </thead>
@@ -121,7 +120,6 @@ else
                                 }
                             }
                         </td>
-                        <td class="d-none d-md-table-cell">@(c.FilingDate?.ToString("yyyy-MM-dd") ?? "—")</td>
                         <td>
                             <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
                                 <a href="/cases/@c.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["View"]</a>

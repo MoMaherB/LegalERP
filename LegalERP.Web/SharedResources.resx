@@ -1217,4 +1217,6 @@
   </data>
   <data name="FileNumberPlaceholder" xml:space="preserve">
     <value>e.g. F-2024-001</value>
+  </data>  <data name="EditPartner" xml:space="preserve">
+    <value>Edit Partner</value>
   </data></root>
