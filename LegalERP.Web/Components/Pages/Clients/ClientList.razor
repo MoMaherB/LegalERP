@@ -14,13 +14,18 @@
 
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <h1 class="ios-title mb-0">@Loc["Clients"]</h1>
-    <AuthorizeView Roles="SuperAdmin,Admin,Editor">
-        <Authorized>
-            <a href="/clients/new" class="ios-btn ios-btn-primary text-decoration-none">
-                <i class="fa-solid fa-plus me-1"></i> @Loc["AddClient"]
-            </a>
-        </Authorized>
-    </AuthorizeView>
+    <div class="d-flex gap-2">
+        <a href="/attorneys" class="ios-btn ios-btn-secondary text-decoration-none">
+            <i class="fa-solid fa-file-contract me-1"></i> @Loc["Attorneys"]
+        </a>
+        <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+            <Authorized>
+                <a href="/clients/new" class="ios-btn ios-btn-primary text-decoration-none">
+                    <i class="fa-solid fa-plus me-1"></i> @Loc["AddClient"]
+                </a>
+            </Authorized>
+        </AuthorizeView>
+    </div>
 </div>
 
 <!-- Search Controls -->
