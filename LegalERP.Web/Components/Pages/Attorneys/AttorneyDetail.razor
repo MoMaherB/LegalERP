@@ -71,7 +71,8 @@ else
             {
                 <div class="row">
                     <div class="col-md-4">
-                        <FileThumbnail Document="attorney.Document" OwnerType="Attorney" OwnerId="attorney.Id" />
+                        <FileThumbnail Document="attorney.Document" OwnerType="Attorney" OwnerId="attorney.Id"
+                                       AllowReplace="true" OnReplace="HandleReplaceDocument" />
                     </div>
                 </div>
             }
@@ -281,6 +282,21 @@ else
             await AttorneyApi.RemoveClientAsync(Id, linkId);
             ToastService.ShowSuccess(Loc["ClientUnlinked"].Value);
             await LoadAttorney();
+        }
+    }
+
+    private async Task HandleReplaceDocument(Microsoft.AspNetCore.Components.Forms.IBrowserFile file)
+    {
+        try
+        {
+            var newDocId = await AttorneyApi.UploadDocumentAsync(Id, file);
+            await AttorneyApi.UpdateAsync(Id, new UpdateAttorneyDto(attorney!.AttorneyNumber, attorney.Notes, newDocId));
+            ToastService.ShowSuccess(Loc["AttorneyUpdated"].Value);
+            await LoadAttorney();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
         }
     }
 }

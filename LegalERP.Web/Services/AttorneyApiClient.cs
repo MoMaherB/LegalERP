@@ -78,17 +78,19 @@ public class AttorneyApiClient
         response.EnsureSuccessStatusCode();
     }
 
-    public async Task<DocumentDto?> UploadDocumentAsync(Guid attorneyId, Stream fileStream, string fileName, string contentType)
+    public async Task<Guid> UploadDocumentAsync(Guid attorneyId, Microsoft.AspNetCore.Components.Forms.IBrowserFile file)
     {
         using var content = new MultipartFormDataContent();
+        using var fileStream = file.OpenReadStream(100 * 1024 * 1024); // max 100MB
         var streamContent = new StreamContent(fileStream);
-        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
-        content.Add(streamContent, "file", fileName);
-        content.Add(new StringContent("Attorney"), "ownerType");
-        content.Add(new StringContent(attorneyId.ToString()), "ownerId");
+        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType);
+        content.Add(streamContent, "file", file.Name);
 
-        var response = await _http.PostAsync("api/documents/upload", content);
+        var url = $"api/documents/upload?ownerType=Attorney&ownerId={attorneyId}";
+        var response = await _http.PostAsync(url, content);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<DocumentDto>(JsonOptions);
+
+        var idStr = await response.Content.ReadAsStringAsync();
+        return Guid.Parse(idStr.Trim('"'));
     }
 }

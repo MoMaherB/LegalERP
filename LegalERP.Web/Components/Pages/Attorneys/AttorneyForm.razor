@@ -130,12 +130,7 @@ else
             {
                 if (documentFile != null)
                 {
-                    var uploadedDoc = await AttorneyApi.UploadDocumentAsync(
-                        Id!.Value,
-                        documentFile.OpenReadStream(10 * 1024 * 1024),
-                        documentFile.Name,
-                        documentFile.ContentType);
-                    docId = uploadedDoc?.Id;
+                    docId = await AttorneyApi.UploadDocumentAsync(Id!.Value, documentFile);
                 }
 
                 var updateDto = new UpdateAttorneyDto(
@@ -156,23 +151,25 @@ else
                     null // document uploaded after creation
                 );
                 var created = await AttorneyApi.CreateAsync(createDto);
-                if (created != null && documentFile != null)
+                if (created != null)
                 {
-                    var uploadedDoc = await AttorneyApi.UploadDocumentAsync(
-                        created.Id,
-                        documentFile.OpenReadStream(10 * 1024 * 1024),
-                        documentFile.Name,
-                        documentFile.ContentType);
-                    if (uploadedDoc != null)
+                    if (documentFile != null)
                     {
+                        var uploadedDocId = await AttorneyApi.UploadDocumentAsync(created.Id, documentFile);
                         // Update attorney with the uploaded document ID
                         await AttorneyApi.UpdateAsync(created.Id, new UpdateAttorneyDto(
-                            model.AttorneyNumber, model.Notes, uploadedDoc.Id));
+                            model.AttorneyNumber, model.Notes, uploadedDocId));
                     }
+                    ToastService.ShowSuccess(Loc["AttorneyCreated"].Value);
+                    await Task.Delay(500);
+                    NavManager.NavigateTo($"/attorneys/{created.Id}");
                 }
-                ToastService.ShowSuccess(Loc["AttorneyCreated"].Value);
-                await Task.Delay(500);
-                NavManager.NavigateTo(created != null ? $"/attorneys/{created.Id}" : "/attorneys");
+                else
+                {
+                    ToastService.ShowSuccess(Loc["AttorneyCreated"].Value);
+                    await Task.Delay(500);
+                    NavManager.NavigateTo("/attorneys");
+                }
             }
         }
         catch (Exception ex)
