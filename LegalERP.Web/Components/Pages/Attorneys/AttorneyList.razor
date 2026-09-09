@@ -1,0 +1,142 @@
+@page "/attorneys"
+@using LegalERP.Application.Attorneys
+@using LegalERP.Web.Services
+@inject AttorneyApiClient AttorneyApi
+@inject NavigationManager NavManager
+@inject LegalERP.Web.Services.Toast.IToastService ToastService
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
+
+<PageTitle>@Loc["AttorneysManagement"]</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <h1 class="ios-title mb-0">@Loc["Attorneys"]</h1>
+    <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+        <Authorized>
+            <a href="/attorneys/new" class="ios-btn ios-btn-primary text-decoration-none">
+                <i class="fa-solid fa-plus me-1"></i> @Loc["AddAttorney"]
+            </a>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+<!-- Search Controls -->
+<div class="ios-widget-card mb-4 p-3 p-md-4">
+    <div class="row g-3 align-items-end w-100 m-0">
+        <div class="col-12 col-md-8 px-1">
+            <label class="form-label font-weight-bold ios-details">@Loc["SearchByAttorneyNumber"]</label>
+            <input type="text" class="ios-input" placeholder="@Loc["SearchAttorneysPlaceholder"]"
+                   @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
+        </div>
+        <div class="col-12 col-md-4 px-1 d-flex gap-2">
+            <button class="ios-btn ios-btn-primary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
+            <button class="ios-btn ios-btn-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
+        </div>
+    </div>
+</div>
+
+@if (attorneys is null)
+{
+    <p>@Loc["Loading"]</p>
+}
+else if (attorneys.Count == 0)
+{
+    <div class="alert alert-info">
+        @Loc["NoAttorneysFound"]
+        <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+            <Authorized>
+                <a href="/attorneys/new">@Loc["AddFirstAttorney"]</a>.
+            </Authorized>
+        </AuthorizeView>
+    </div>
+}
+else
+{
+    <div class="ios-table-container">
+        <table class="ios-table">
+            <thead>
+                <tr>
+                    <th>@Loc["AttorneyNumber"]</th>
+                    <th>@Loc["ClientCount"]</th>
+                    <th class="text-center">@Loc["Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in attorneys)
+                {
+                    <tr>
+                        <td>
+                            <strong>@a.AttorneyNumber</strong>
+                        </td>
+                        <td>@a.ClientCount</td>
+                        <td>
+                            <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                <a href="/attorneys/@a.Id" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["View"]</a>
+                                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                    <Authorized>
+                                        <a href="/attorneys/edit/@a.Id" class="ios-btn ios-btn-secondary text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["Edit"]</a>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                    <Authorized>
+                                        <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 8px; font-size: 0.8rem;" @onclick="() => DeleteAttorney(a.Id)">@Loc["Delete"]</button>
+                                    </Authorized>
+                                </AuthorizeView>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<AttorneySummaryDto>? attorneys;
+    private string? searchTerm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await PerformSearch();
+    }
+
+    private async Task PerformSearch()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            attorneys = await AttorneyApi.GetAllAsync();
+        }
+        else
+        {
+            attorneys = await AttorneyApi.SearchAsync(searchTerm);
+        }
+    }
+
+    private async Task ResetSearch()
+    {
+        searchTerm = null;
+        await PerformSearch();
+    }
+
+    private async Task HandleKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+        }
+    }
+
+    private async Task DeleteAttorney(Guid id)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteAttorney"]);
+        if (confirmed)
+        {
+            await AttorneyApi.DeleteAsync(id);
+            ToastService.ShowSuccess(Loc["AttorneyDeleted"].Value);
+            await PerformSearch();
+        }
+    }
+}

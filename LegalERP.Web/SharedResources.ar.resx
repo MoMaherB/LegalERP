@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1414,4 +1414,113 @@
     <value>مثال: F-2024-001</value>
   </data>  <data name="EditPartner" xml:space="preserve">
     <value>تعديل الشريك</value>
-  </data></root>
+  </data>
+  <data name="Attorneys" xml:space="preserve">
+    <value>التوكيلات</value>
+  </data>
+  <data name="AttorneysManagement" xml:space="preserve">
+    <value>إدارة التوكيلات</value>
+  </data>
+  <data name="AddAttorney" xml:space="preserve">
+    <value>إضافة توكيل</value>
+  </data>
+  <data name="EditAttorney" xml:space="preserve">
+    <value>تعديل التوكيل</value>
+  </data>
+  <data name="Attorney" xml:space="preserve">
+    <value>توكيل</value>
+  </data>
+  <data name="AttorneyDetails" xml:space="preserve">
+    <value>تفاصيل التوكيل</value>
+  </data>
+  <data name="AttorneyInformation" xml:space="preserve">
+    <value>بيانات التوكيل</value>
+  </data>
+  <data name="AttorneyNumber" xml:space="preserve">
+    <value>رقم التوكيل</value>
+  </data>
+  <data name="AttorneyNumberPlaceholder" xml:space="preserve">
+    <value>مثال: 1234/2024</value>
+  </data>
+  <data name="SearchByAttorneyNumber" xml:space="preserve">
+    <value>البحث برقم التوكيل</value>
+  </data>
+  <data name="SearchAttorneysPlaceholder" xml:space="preserve">
+    <value>أدخل رقم التوكيل...</value>
+  </data>
+  <data name="ClientCount" xml:space="preserve">
+    <value>عدد الموكلين</value>
+  </data>
+  <data name="NoAttorneysFound" xml:space="preserve">
+    <value>لم يتم العثور على أي توكيلات.</value>
+  </data>
+  <data name="AddFirstAttorney" xml:space="preserve">
+    <value>إضافة أول توكيل</value>
+  </data>
+  <data name="ConfirmDeleteAttorney" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذا التوكيل؟</value>
+  </data>
+  <data name="AttorneyDeleted" xml:space="preserve">
+    <value>تم حذف التوكيل بنجاح.</value>
+  </data>
+  <data name="AttorneyNotFound" xml:space="preserve">
+    <value>التوكيل غير موجود.</value>
+  </data>
+  <data name="BackToAttorneys" xml:space="preserve">
+    <value>العودة للتوكيلات</value>
+  </data>
+  <data name="AttorneyDocument" xml:space="preserve">
+    <value>مستند التوكيل</value>
+  </data>
+  <data name="AttorneyPhoto" xml:space="preserve">
+    <value>صورة التوكيل</value>
+  </data>
+  <data name="NoDocumentAttached" xml:space="preserve">
+    <value>لا يوجد مستند مرفق بهذا التوكيل.</value>
+  </data>
+  <data name="AttorneyClients" xml:space="preserve">
+    <value>الموكلون المشمولون بالتوكيل</value>
+  </data>
+  <data name="AddClientToAttorney" xml:space="preserve">
+    <value>إضافة موكل إلى التوكيل</value>
+  </data>
+  <data name="SearchClient" xml:space="preserve">
+    <value>البحث عن موكل</value>
+  </data>
+  <data name="AlreadyLinked" xml:space="preserve">
+    <value>مضاف بالفعل</value>
+  </data>
+  <data name="Link" xml:space="preserve">
+    <value>ربط</value>
+  </data>
+  <data name="NoClientsLinked" xml:space="preserve">
+    <value>لا يوجد موكلون مرتبطون بهذا التوكيل حتى الآن.</value>
+  </data>
+  <data name="ConfirmUnlinkClient" xml:space="preserve">
+    <value>هل أنت متأكد من إزالة هذا الموكل من التوكيل؟</value>
+  </data>
+  <data name="ClientLinked" xml:space="preserve">
+    <value>تم ربط الموكل بالتوكيل بنجاح.</value>
+  </data>
+  <data name="ClientUnlinked" xml:space="preserve">
+    <value>تمت إزالة الموكل من التوكيل بنجاح.</value>
+  </data>
+  <data name="AttorneyCreated" xml:space="preserve">
+    <value>تم إنشاء التوكيل بنجاح.</value>
+  </data>
+  <data name="AttorneyUpdated" xml:space="preserve">
+    <value>تم تحديث التوكيل بنجاح.</value>
+  </data>
+  <data name="CreateAttorney" xml:space="preserve">
+    <value>إنشاء توكيل</value>
+  </data>
+  <data name="AttorneyNumberRequired" xml:space="preserve">
+    <value>رقم التوكيل مطلوب.</value>
+  </data>
+  <data name="NoAttorneysLinked" xml:space="preserve">
+    <value>لا توجد توكيلات مرتبطة بهذا الموكل.</value>
+  </data>
+  <data name="GoToAttorney" xml:space="preserve">
+    <value>الذهاب لصفحة التوكيل</value>
+  </data>
+</root>

@@ -1,10 +1,12 @@
 @page "/clients/{Id:guid}"
 @using LegalERP.Application.Clients
+@using LegalERP.Application.Attorneys
 @using LegalERP.Application.Companies
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
 @using LegalERP.Web.Components.Shared
 @inject ClientApiClient ClientApi
+@inject AttorneyApiClient AttorneyApi
 @inject NavigationManager NavManager
 @inject LegalERP.Web.Services.Toast.IToastService ToastService
 @inject IJSRuntime JS
@@ -110,20 +112,50 @@ else
                         <div class="alert alert-light border mt-3" style="border-radius: 12px;">@Loc["NoNationalIdUploaded"] <a href="/clients/edit/@client.Id">@Loc["UploadNow"]</a>.</div>
                     }
                 </div>
-                <div class="col-md-6">
-                    <h5 class="ios-title" style="font-size: 1.1rem;">@Loc["PowerOfAttorney"]</h5>
-                    @if (client.AttorneyDocument != null)
+            </div>
+        </div>
+    </div>
+
+    @* ── Attorneys (التوكيلات) — read-only reflection ── *@
+    <div class="ios-widget-card mb-4">
+        <div class="p-4">
+            <h4 class="ios-title mb-4" style="font-size: 1.3rem;">@Loc["Attorneys"]</h4>
+            @if (clientAttorneys == null || clientAttorneys.Count == 0)
+            {
+                <div class="alert alert-light border mb-0" style="border-radius: 12px;">@Loc["NoAttorneysLinked"]</div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var att in clientAttorneys)
                     {
-                        <div class="my-3 p-3 rounded w-100" style="background: rgba(0,0,0,0.02);">
-                            <FileThumbnail Document="client.AttorneyDocument" OwnerType="client" OwnerId="client.Id" />
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <div class="ios-widget-card h-100" style="border: 1px solid rgba(59,130,246,0.15);">
+                                @if (att.Document != null)
+                                {
+                                    <div class="p-2">
+                                        <FileThumbnail Document="att.Document" OwnerType="Attorney" OwnerId="att.AttorneyId"
+                                                       ExternalLinkUrl="@($"/attorneys/{att.AttorneyId}")"
+                                                       ExternalLinkText="@Loc["GoToAttorney"]" />
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="d-flex align-items-center justify-content-center" style="height: 120px; background: rgba(59,130,246,0.05);">
+                                        <i class="fa-solid fa-file-contract" style="font-size: 2.5rem; color: rgba(59,130,246,0.4);"></i>
+                                    </div>
+                                }
+                                <div class="p-3">
+                                    <p class="ios-details mb-2"><strong>@Loc["AttorneyNumber"]:</strong> @att.AttorneyNumber</p>
+                                    <a href="/attorneys/@att.AttorneyId" class="ios-btn ios-btn-info text-decoration-none w-100 text-center" style="padding: 4px 8px; font-size: 0.8rem;">
+                                        @Loc["GoToAttorney"]
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     }
-                    else
-                    {
-                        <div class="alert alert-light border mt-3" style="border-radius: 12px;">@Loc["NoAttorneyDocumentUploaded"] <a href="/clients/edit/@client.Id">@Loc["UploadNow"]</a>.</div>
-                    }
                 </div>
-            </div>
+            }
         </div>
     </div>
 
@@ -255,6 +287,7 @@ else
     private bool notFound;
     private bool _canEdit;
     private bool _canDelete;
+    private List<ClientAttorneyDto>? clientAttorneys;
 
     private Guid _lastLoadedId;
 
@@ -271,6 +304,10 @@ else
             if (client is null)
             {
                 notFound = true;
+            }
+            else
+            {
+                clientAttorneys = await AttorneyApi.GetByClientIdAsync(Id);
             }
         }
     }

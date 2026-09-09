@@ -65,6 +65,18 @@
                                 @Loc["Replace"]
                             </label>
                         }
+
+                        @if (!string.IsNullOrEmpty(ExternalLinkUrl))
+                        {
+                            <a href="@ExternalLinkUrl" class="doc-modal-btn" style="background: rgba(59, 130, 246, 0.15); color: #2563eb; text-decoration: none;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                    <polyline points="15 3 21 3 21 9"></polyline>
+                                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                                </svg>
+                                @(ExternalLinkText ?? Loc["View"])
+                            </a>
+                        }
                         
                         <button class="doc-modal-btn" @onclick="PrintDocument">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -126,6 +138,8 @@
     [Parameter] public Guid OwnerId { get; set; }
     [Parameter] public bool AllowReplace { get; set; } = false;
     [Parameter] public EventCallback<IBrowserFile> OnReplace { get; set; }
+    [Parameter] public string? ExternalLinkUrl { get; set; }
+    [Parameter] public string? ExternalLinkText { get; set; }
 
     private bool showViewer = false;
     private string _canvasId = "pdf_" + Guid.NewGuid().ToString("N");

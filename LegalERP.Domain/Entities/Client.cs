@@ -18,10 +18,9 @@ public class Client : BaseEntity
     // Document FKs
     public Guid? NationalIdDocumentId { get; set; }               // صورة الهوية
     public Document? NationalIdDocument { get; set; }
-    public Guid? AttorneyDocumentId { get; set; }                 // صورة التوكيل / الوكالة
-    public Document? AttorneyDocument { get; set; }
 
     // Navigation — all cases and companies linked to this client
     public List<CaseParty> CaseParties { get; set; } = new();
     public List<CompanyPartner> CompanyPartnerships { get; set; } = new();
+    public List<AttorneyClient> AttorneyClients { get; set; } = new();
 }

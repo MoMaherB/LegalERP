@@ -28,11 +28,6 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
             .HasForeignKey(c => c.NationalIdDocumentId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.HasOne(c => c.AttorneyDocument)
-            .WithMany()
-            .HasForeignKey(c => c.AttorneyDocumentId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasIndex(c => c.FullName)
             .HasMethod("gin")
             .HasOperators("gin_trgm_ops");

@@ -60,8 +60,7 @@ public class ClientsController : ControllerBase
             Email = dto.Email,
             Address = dto.Address,
             Notes = dto.Notes,
-            NationalIdDocumentId = dto.NationalIdDocumentId,
-            AttorneyDocumentId = dto.AttorneyDocumentId
+            NationalIdDocumentId = dto.NationalIdDocumentId
         };
 
         await _clientRepository.AddAsync(client);
@@ -86,7 +85,6 @@ public class ClientsController : ControllerBase
         client.Address = dto.Address;
         client.Notes = dto.Notes;
         client.NationalIdDocumentId = dto.NationalIdDocumentId;
-        client.AttorneyDocumentId = dto.AttorneyDocumentId;
 
         _clientRepository.Update(client);
         await _clientRepository.SaveChangesAsync();
@@ -132,18 +130,6 @@ public class ClientsController : ControllerBase
             );
         }
 
-        DocumentDto? attorneyDoc = null;
-        if (client.AttorneyDocument != null)
-        {
-            attorneyDoc = new DocumentDto(
-                client.AttorneyDocument.Id,
-                client.AttorneyDocument.FileName,
-                client.AttorneyDocument.StoredFileName,
-                client.AttorneyDocument.ContentType,
-                client.AttorneyDocument.FileSizeBytes
-            );
-        }
-
         var relatedCases = client.CaseParties.Select(party => new ClientCaseDto(
             party.CaseId,
             party.Case?.CaseNumber ?? "",
@@ -172,7 +158,6 @@ public class ClientsController : ControllerBase
             client.Address,
             client.Notes,
             nationalIdDoc,
-            attorneyDoc,
             relatedCases,
             relatedCompanies
         );

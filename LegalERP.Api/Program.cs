@@ -83,6 +83,7 @@ builder.Services.AddScoped<ICompanyRepository, CompanyRepository>();
 builder.Services.AddScoped<LegalERP.Application.Cases.ICaseRepository, CaseRepository>();
 builder.Services.AddScoped<LegalERP.Application.Clients.IClientRepository, ClientRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<LegalERP.Application.Attorneys.IAttorneyRepository, AttorneyRepository>();
 builder.Services.AddScoped<LegalERP.Application.Storage.IFileStorageService, LegalERP.Infrastructure.Storage.LocalFileStorageService>();
 
 // ── Services ──────────────────────────────────────────────────────────────────

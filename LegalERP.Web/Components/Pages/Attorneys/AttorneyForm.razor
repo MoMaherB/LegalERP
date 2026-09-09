@@ -1,0 +1,194 @@
+@page "/attorneys/new"
+@page "/attorneys/edit/{Id:guid}"
+@using LegalERP.Application.Attorneys
+@using LegalERP.Application.Companies
+@using LegalERP.Web.Services
+@inject AttorneyApiClient AttorneyApi
+@inject NavigationManager NavManager
+@inject LegalERP.Web.Services.Toast.IToastService ToastService
+@rendermode InteractiveServer
+
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
+
+<PageTitle>@(IsEditMode ? Loc["EditAttorney"] : Loc["AddAttorney"])</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="ios-title mb-0">@(IsEditMode ? Loc["EditAttorney"] : Loc["AddAttorney"])</h1>
+    <a href="/attorneys" class="ios-btn ios-btn-secondary text-decoration-none">@Loc["Cancel"]</a>
+</div>
+
+@if (isLoading)
+{
+    <p>@Loc["Loading"]</p>
+}
+else
+{
+    <EditForm Model="model" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="ios-widget-card mb-4">
+            <div class="p-4">
+                <h5 class="ios-title mb-3" style="font-size: 1.25rem;">@Loc["AttorneyInformation"]</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label ios-details fw-bold">@Loc["AttorneyNumber"] *</label>
+                        <InputText class="ios-input" @bind-Value="model.AttorneyNumber" placeholder="@Loc["AttorneyNumberPlaceholder"]" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label ios-details fw-bold">@Loc["Notes"]</label>
+                        <InputTextArea class="ios-input" @bind-Value="model.Notes" rows="3" placeholder="@Loc["NotesPlaceholder"]" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ios-widget-card mb-4">
+            <div class="p-4">
+                <h5 class="ios-title mb-3" style="font-size: 1.25rem;">@Loc["AttorneyDocument"]</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label ios-details fw-bold">@Loc["AttorneyPhoto"]</label>
+                        <InputFile class="ios-input" OnChange="LoadDocumentFile" accept=".pdf,.jpg,.jpeg,.png" />
+                        @if (existingDoc != null)
+                        {
+                            <small class="text-success mt-1 d-block fw-bold">@Loc["Current"]: @existingDoc.FileName</small>
+                        }
+                        @if (documentFile != null)
+                        {
+                            <small class="text-primary mt-1 d-block fw-bold">@Loc["NewFile"]: @documentFile.Name</small>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="ios-btn ios-btn-primary" disabled="@isSubmitting">
+                @(isSubmitting ? Loc["Saving"] : (IsEditMode ? Loc["SaveChanges"] : Loc["CreateAttorney"]))
+            </button>
+        </div>
+    </EditForm>
+}
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private bool IsEditMode => Id.HasValue;
+    private AttorneyFormModel model = new();
+    private bool isLoading = true;
+    private bool isSubmitting;
+
+    private IBrowserFile? documentFile;
+    private DocumentDto? existingDoc;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsEditMode)
+        {
+            var existing = await AttorneyApi.GetByIdAsync(Id!.Value);
+            if (existing != null)
+            {
+                model = new AttorneyFormModel
+                {
+                    AttorneyNumber = existing.AttorneyNumber,
+                    Notes = existing.Notes,
+                    DocumentId = existing.Document?.Id
+                };
+                existingDoc = existing.Document;
+            }
+            else
+            {
+                ToastService.ShowError(Loc["AttorneyNotFound"].Value);
+            }
+        }
+        isLoading = false;
+    }
+
+    private void LoadDocumentFile(InputFileChangeEventArgs e)
+    {
+        documentFile = e.File;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (string.IsNullOrWhiteSpace(model.AttorneyNumber))
+        {
+            ToastService.ShowWarning(Loc["AttorneyNumberRequired"].Value);
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            Guid? docId = model.DocumentId;
+
+            // If creating, we first create the attorney, then upload the doc
+            if (IsEditMode)
+            {
+                if (documentFile != null)
+                {
+                    var uploadedDoc = await AttorneyApi.UploadDocumentAsync(
+                        Id!.Value,
+                        documentFile.OpenReadStream(10 * 1024 * 1024),
+                        documentFile.Name,
+                        documentFile.ContentType);
+                    docId = uploadedDoc?.Id;
+                }
+
+                var updateDto = new UpdateAttorneyDto(
+                    model.AttorneyNumber,
+                    model.Notes,
+                    docId
+                );
+                await AttorneyApi.UpdateAsync(Id!.Value, updateDto);
+                ToastService.ShowSuccess(Loc["AttorneyUpdated"].Value);
+                await Task.Delay(500);
+                NavManager.NavigateTo($"/attorneys/{Id.Value}");
+            }
+            else
+            {
+                var createDto = new CreateAttorneyDto(
+                    model.AttorneyNumber,
+                    model.Notes,
+                    null // document uploaded after creation
+                );
+                var created = await AttorneyApi.CreateAsync(createDto);
+                if (created != null && documentFile != null)
+                {
+                    var uploadedDoc = await AttorneyApi.UploadDocumentAsync(
+                        created.Id,
+                        documentFile.OpenReadStream(10 * 1024 * 1024),
+                        documentFile.Name,
+                        documentFile.ContentType);
+                    if (uploadedDoc != null)
+                    {
+                        // Update attorney with the uploaded document ID
+                        await AttorneyApi.UpdateAsync(created.Id, new UpdateAttorneyDto(
+                            model.AttorneyNumber, model.Notes, uploadedDoc.Id));
+                    }
+                }
+                ToastService.ShowSuccess(Loc["AttorneyCreated"].Value);
+                await Task.Delay(500);
+                NavManager.NavigateTo(created != null ? $"/attorneys/{created.Id}" : "/attorneys");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(Loc["FailedToSave"].Value + ": " + ex.Message);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private class AttorneyFormModel
+    {
+        public string AttorneyNumber { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+        public Guid? DocumentId { get; set; }
+    }
+}

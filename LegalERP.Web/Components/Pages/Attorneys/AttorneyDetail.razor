@@ -1,0 +1,286 @@
+@page "/attorneys/{Id:guid}"
+@using LegalERP.Application.Attorneys
+@using LegalERP.Application.Clients
+@using LegalERP.Application.Companies
+@using LegalERP.Web.Services
+@using LegalERP.Web.Components.Shared
+@inject AttorneyApiClient AttorneyApi
+@inject ClientApiClient ClientApi
+@inject NavigationManager NavManager
+@inject LegalERP.Web.Services.Toast.IToastService ToastService
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
+@inject AuthenticationStateProvider AuthStateProvider
+@using Microsoft.AspNetCore.Components.Authorization
+
+<PageTitle>@Loc["AttorneyDetails"] - @(attorney?.AttorneyNumber ?? Loc["Loading"])</PageTitle>
+
+@if (attorney is null)
+{
+    @if (notFound)
+    {
+        <div class="alert alert-warning">
+            @Loc["AttorneyNotFound"] <a href="/attorneys">@Loc["BackToAttorneys"]</a>
+        </div>
+    }
+    else
+    {
+        <p>@Loc["Loading"]</p>
+    }
+}
+else
+{
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h1 class="ios-title mb-0">@Loc["Attorney"]: @attorney.AttorneyNumber</h1>
+        <div class="d-flex gap-2">
+            <a href="/attorneys" class="ios-btn ios-btn-secondary text-decoration-none">@Loc["BackToAttorneys"]</a>
+            <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                <Authorized>
+                    <a href="/attorneys/edit/@attorney.Id" class="ios-btn ios-btn-primary text-decoration-none">@Loc["Edit"]</a>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+    </div>
+
+    @* ── Attorney Info Card ── *@
+    <div class="ios-widget-card mb-4">
+        <div class="p-4">
+            <h4 class="ios-title mb-4" style="font-size: 1.3rem;">@Loc["AttorneyInformation"]</h4>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <p class="ios-details mb-2"><strong>@Loc["AttorneyNumber"]:</strong> @attorney.AttorneyNumber</p>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(attorney.Notes))
+                {
+                    <div class="col-12">
+                        <p class="ios-details mb-2"><strong>@Loc["Notes"]:</strong> @attorney.Notes</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ── Attorney Document ── *@
+    <div class="ios-widget-card mb-4">
+        <div class="p-4">
+            <h4 class="ios-title mb-4" style="font-size: 1.3rem;">@Loc["AttorneyDocument"]</h4>
+            @if (attorney.Document != null)
+            {
+                <div class="row">
+                    <div class="col-md-4">
+                        <FileThumbnail Document="attorney.Document" OwnerType="Attorney" OwnerId="attorney.Id" />
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-light border mb-0" style="border-radius: 12px;">
+                    @Loc["NoDocumentAttached"]
+                    <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                        <Authorized>
+                            <a href="/attorneys/edit/@attorney.Id">@Loc["UploadNow"]</a>.
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── Linked Clients ── *@
+    <div class="ios-widget-card mb-4">
+        <div class="p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="ios-title mb-0" style="font-size: 1.3rem;">@Loc["AttorneyClients"]</h4>
+                <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                    <Authorized>
+                        @if (!showAddClientForm)
+                        {
+                            <button class="ios-btn ios-btn-primary" style="padding: 4px 12px; font-size: 0.85rem;" @onclick="() => showAddClientForm = true">
+                                <i class="fa-solid fa-plus me-1"></i> @Loc["AddClient"]
+                            </button>
+                        }
+                    </Authorized>
+                </AuthorizeView>
+            </div>
+
+            @if (showAddClientForm)
+            {
+                <div class="ios-widget-card mb-3" style="background: rgba(59,130,246,0.04); border: 1px solid rgba(59,130,246,0.15);">
+                    <div class="p-3">
+                        <h6 class="ios-title mb-3" style="font-size: 1rem;">@Loc["AddClientToAttorney"]</h6>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-12 col-md-8">
+                                <label class="form-label ios-details fw-bold">@Loc["SearchClient"]</label>
+                                <input type="text" class="ios-input" placeholder="@Loc["SearchClientsPlaceholder"]"
+                                       @bind="clientSearchTerm" @bind:event="oninput" @onkeyup="HandleClientSearchKeyUp" />
+                            </div>
+                            <div class="col-12 col-md-4 d-flex gap-2">
+                                <button class="ios-btn ios-btn-primary w-100" @onclick="SearchClients">@Loc["Search"]</button>
+                                <button class="ios-btn ios-btn-secondary" @onclick="CancelAddClient">@Loc["Cancel"]</button>
+                            </div>
+                        </div>
+
+                        @if (searchResults != null && searchResults.Count > 0)
+                        {
+                            <div class="mt-3">
+                                <div class="ios-table-container">
+                                    <table class="ios-table">
+                                        <thead>
+                                            <tr>
+                                                <th>@Loc["FullName"]</th>
+                                                <th class="d-none d-md-table-cell">@Loc["FileNumber"]</th>
+                                                <th class="text-center">@Loc["Actions"]</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var c in searchResults)
+                                            {
+                                                <tr>
+                                                    <td><strong>@c.FullName</strong></td>
+                                                    <td class="d-none d-md-table-cell">@(c.FileNumber ?? "—")</td>
+                                                    <td class="text-center">
+                                                        @if (attorney.Clients.Any(ac => ac.ClientId == c.Id))
+                                                        {
+                                                            <span class="ios-status-badge ios-status-green">@Loc["AlreadyLinked"]</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button class="ios-btn ios-btn-primary m-0" style="padding: 4px 8px; font-size: 0.8rem;"
+                                                                    @onclick="() => LinkClient(c.Id)">@Loc["Link"]</button>
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+                        else if (searchResults != null && searchResults.Count == 0)
+                        {
+                            <div class="alert alert-info mt-3 mb-0">@Loc["NoClientsFound"]</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            @if (attorney.Clients.Count == 0)
+            {
+                <div class="alert alert-light border mb-0" style="border-radius: 12px;">@Loc["NoClientsLinked"]</div>
+            }
+            else
+            {
+                <div class="ios-table-container">
+                    <table class="ios-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>@Loc["FullName"]</th>
+                                <th class="d-none d-md-table-cell">@Loc["FileNumber"]</th>
+                                <th class="d-none d-md-table-cell">@Loc["NationalID"]</th>
+                                <th class="text-center">@Loc["Actions"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var ac in attorney.Clients)
+                            {
+                                <tr>
+                                    <td>
+                                        <a href="/clients/@ac.ClientId" class="fw-bold text-decoration-none">@ac.ClientFullName</a>
+                                    </td>
+                                    <td class="d-none d-md-table-cell">@(ac.ClientFileNumber ?? "—")</td>
+                                    <td class="d-none d-md-table-cell">@(ac.ClientNationalId ?? "—")</td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-1">
+                                            <a href="/clients/@ac.ClientId" class="ios-btn ios-btn-info text-decoration-none m-0" style="padding: 4px 8px; font-size: 0.8rem;">@Loc["View"]</a>
+                                            <AuthorizeView Roles="SuperAdmin,Admin,Editor">
+                                                <Authorized>
+                                                    <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 8px; font-size: 0.8rem;"
+                                                            @onclick="() => UnlinkClient(ac.Id)">@Loc["Remove"]</button>
+                                                </Authorized>
+                                            </AuthorizeView>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private AttorneyDto? attorney;
+    private bool notFound;
+
+    // Add client form
+    private bool showAddClientForm;
+    private string? clientSearchTerm;
+    private List<ClientSummaryDto>? searchResults;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAttorney();
+    }
+
+    private async Task LoadAttorney()
+    {
+        attorney = await AttorneyApi.GetByIdAsync(Id);
+        if (attorney == null) notFound = true;
+    }
+
+    private async Task SearchClients()
+    {
+        if (!string.IsNullOrWhiteSpace(clientSearchTerm))
+        {
+            searchResults = await ClientApi.SearchAsync(clientSearchTerm);
+        }
+    }
+
+    private async Task HandleClientSearchKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SearchClients();
+    }
+
+    private void CancelAddClient()
+    {
+        showAddClientForm = false;
+        clientSearchTerm = null;
+        searchResults = null;
+    }
+
+    private async Task LinkClient(Guid clientId)
+    {
+        try
+        {
+            await AttorneyApi.AddClientAsync(Id, new AddAttorneyClientDto(clientId));
+            ToastService.ShowSuccess(Loc["ClientLinked"].Value);
+            await LoadAttorney();
+            searchResults = null;
+            clientSearchTerm = null;
+            showAddClientForm = false;
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private async Task UnlinkClient(Guid linkId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmUnlinkClient"]);
+        if (confirmed)
+        {
+            await AttorneyApi.RemoveClientAsync(Id, linkId);
+            ToastService.ShowSuccess(Loc["ClientUnlinked"].Value);
+            await LoadAttorney();
+        }
+    }
+}

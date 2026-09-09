@@ -22,6 +22,8 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<Client> Clients => Set<Client>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
+    public DbSet<Attorney> Attorneys => Set<Attorney>();
+    public DbSet<AttorneyClient> AttorneyClients => Set<AttorneyClient>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

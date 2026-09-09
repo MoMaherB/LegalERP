@@ -16,7 +16,6 @@ public record ClientDto(
     string? Address,
     string? Notes,
     DocumentDto? NationalIdDocument,
-    DocumentDto? AttorneyDocument,
     List<ClientCaseDto> RelatedCases,
     List<ClientCompanyDto> RelatedCompanies
 );
@@ -38,8 +37,7 @@ public record CreateClientDto(
     string? Email,
     string? Address,
     string? Notes,
-    Guid? NationalIdDocumentId,
-    Guid? AttorneyDocumentId
+    Guid? NationalIdDocumentId
 );
 
 public record UpdateClientDto(
@@ -51,8 +49,7 @@ public record UpdateClientDto(
     string? Email,
     string? Address,
     string? Notes,
-    Guid? NationalIdDocumentId,
-    Guid? AttorneyDocumentId
+    Guid? NationalIdDocumentId
 );
 
 public record ClientCaseDto(

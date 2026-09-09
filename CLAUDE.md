@@ -1,4 +1,4 @@
-﻿# Legal Management System (ERP/CRM) — Requirements Reference Document
+# Legal Management System (ERP/CRM) — Requirements Reference Document
 
 **Project:** Self-Hosted Legal Management System for Investment Lawyer
 **Document Type:** Business Requirements Document (BRD) + Technical Requirements Document (TRD)
@@ -829,6 +829,30 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 - **Edit Partner Action:** Added an Edit button side by side with the Delete button in the Actions column. Clicking Edit opens the partner drawer pre-filled with the current client and ownership percentage, allowing users to seamlessly change the client or ownership percentage.
 - **Backend Persistence:** Updated `CompaniesController.UpdatePartner` to properly persist `partner.ClientId = dto.ClientId;`.
 - **Localization:** Added `EditPartner` translations ("Edit Partner" / "تعديل الشريك") to `SharedResources.resx` and `SharedResources.ar.resx`.
+
+**Feature 27: Power of Attorney (التوكيلات) Module with Many-to-Many Client Relationship — ✅ COMPLETED (2026-09-09)**
+- **Domain & Clean Architecture:**
+  - Created `Attorney` entity (`AttorneyNumber`, `Notes`, `DocumentId`, `Document`, `AttorneyClients`).
+  - Created explicit `AttorneyClient` join entity inheriting `BaseEntity` with `AttorneyId` and `ClientId` foreign keys.
+  - Updated `Client` entity to add `AttorneyClients` navigation and removed legacy single-document fields (`AttorneyDocumentId`, `AttorneyDocument`).
+- **Infrastructure & EF Core Migration:**
+  - Configured `AttorneyConfiguration` with GIN trigram index on `AttorneyNumber` and `AttorneyClientConfiguration` with composite unique index.
+  - Created and applied EF Core migration `20260909111147_AddAttorneysModule` to PostgreSQL database `legalerp_dev`.
+  - Cleaned up obsolete attorney document rows from `documents` table and deleted corresponding physical files from `LegalERP.Api/wwwroot/uploads/client`.
+  - Implemented `AttorneyRepository` for full CRUD, search by attorney number, and client linking/unlinking.
+  - Enhanced `ClientRepository.SearchAsync` to allow searching clients directly by linked attorney number.
+- **Application & API Layer:**
+  - Created `AttorneyDto`, `AttorneySummaryDto`, `CreateAttorneyDto`, `UpdateAttorneyDto`, `AttorneyClientDto`, `AddAttorneyClientDto`, and `ClientAttorneyDto`.
+  - Created `AttorneysController` with endpoints for GetAll, Search, GetById, GetByClientId, Create, Update, Delete, AddClient, and RemoveClient, with role-based authorization (`SuperAdmin,Admin,Editor`).
+- **Web UI & Blazor Pages:**
+  - Created `AttorneyApiClient` registered in DI container.
+  - Created `AttorneyList.razor` (`/attorneys`) with instant search by attorney number, client counts, and action buttons.
+  - Created `AttorneyDetail.razor` (`/attorneys/{id}`) with document preview using `FileThumbnail`, client search and linking modal, and client list with remove buttons.
+  - Created `AttorneyForm.razor` (`/attorneys/new` and `/attorneys/edit/{id}`) with attorney number input, notes, and file upload for scanned document / photo.
+  - Updated `ClientDetail.razor` to remove the legacy attorney upload box and replace it with a dedicated **Attorneys (التوكيلات)** section displaying linked attorneys as responsive thumbnail cards with "Go to Attorney" navigation buttons.
+  - Enhanced `FileThumbnail.razor` with `ExternalLinkUrl` / `ExternalLinkText` parameters to display a direct navigation button in the document preview modal header, allowing one-click navigation to the attorney page while viewing the document.
+  - Updated `NavMenu.razor` adding the **Attorneys (التوكيلات)** subsection directly under Clients.
+  - Added complete bilingual English and Arabic localization keys to `SharedResources.resx` and `SharedResources.ar.resx`.
 
 ---
 

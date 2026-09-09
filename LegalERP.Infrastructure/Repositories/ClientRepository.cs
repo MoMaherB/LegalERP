@@ -19,7 +19,6 @@ public class ClientRepository : IClientRepository
     {
         return await _db.Clients
             .Include(c => c.NationalIdDocument)
-            .Include(c => c.AttorneyDocument)
             .OrderBy(c => c.FullName)
             .ToListAsync(ct);
     }
@@ -28,7 +27,6 @@ public class ClientRepository : IClientRepository
     {
         return await _db.Clients
             .Include(c => c.NationalIdDocument)
-            .Include(c => c.AttorneyDocument)
             .Include(c => c.CaseParties)
                 .ThenInclude(p => p.Case)
             .Include(c => c.CompanyPartnerships)
@@ -65,7 +63,6 @@ public class ClientRepository : IClientRepository
         var words = searchTerm.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var query = _db.Clients
             .Include(c => c.NationalIdDocument)
-            .Include(c => c.AttorneyDocument)
             .AsQueryable();
 
         foreach (var word in words)
@@ -74,7 +71,8 @@ public class ClientRepository : IClientRepository
             query = query.Where(c => EF.Functions.ILike(c.FullName, pattern) ||
                                      (c.FullNameEn != null && EF.Functions.ILike(c.FullNameEn, pattern)) ||
                                      (c.NationalIdNumber != null && EF.Functions.ILike(c.NationalIdNumber, pattern)) ||
-                                     (c.FileNumber != null && EF.Functions.ILike(c.FileNumber, pattern)));
+                                     (c.FileNumber != null && EF.Functions.ILike(c.FileNumber, pattern)) ||
+                                     c.AttorneyClients.Any(ac => !ac.IsDeleted && ac.Attorney != null && !ac.Attorney.IsDeleted && EF.Functions.ILike(ac.Attorney.AttorneyNumber, pattern)));
         }
 
         return await query

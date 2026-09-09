@@ -45,6 +45,7 @@ builder.Services.AddScoped<NotificationApiClient>();
 builder.Services.AddScoped<FinancialsApiClient>();
 builder.Services.AddScoped<AuthApiClient>();
 builder.Services.AddScoped<UserApiClient>();
+builder.Services.AddScoped<AttorneyApiClient>();
 builder.Services.AddScoped<IToastService, ToastService>();
 
 var app = builder.Build();

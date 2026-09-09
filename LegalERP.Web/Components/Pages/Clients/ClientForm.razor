@@ -91,18 +91,6 @@ else
                             <small class="text-primary mt-1 d-block fw-bold">@Loc["NewFile"]: @nationalIdFile.Name</small>
                         }
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label ios-details fw-bold">@Loc["PowerOfAttorney"]</label>
-                        <InputFile class="ios-input" OnChange="LoadAttorneyFile" accept=".pdf,.jpg,.jpeg,.png" />
-                        @if (existingAttorneyDoc != null)
-                        {
-                            <small class="text-success mt-1 d-block fw-bold">@Loc["Current"]: @existingAttorneyDoc.FileName</small>
-                        }
-                        @if (attorneyFile != null)
-                        {
-                            <small class="text-primary mt-1 d-block fw-bold">@Loc["NewFile"]: @attorneyFile.Name</small>
-                        }
-                    </div>
                 </div>
             </div>
         </div>
@@ -127,9 +115,7 @@ else
     private bool isSubmitting;
 
     private IBrowserFile? nationalIdFile;
-    private IBrowserFile? attorneyFile;
     private DocumentDto? existingNationalIdDoc;
-    private DocumentDto? existingAttorneyDoc;
 
     protected override async Task OnInitializedAsync()
     {
@@ -148,11 +134,9 @@ else
                     Email = existing.Email,
                     Address = existing.Address,
                     Notes = existing.Notes,
-                    NationalIdDocumentId = existing.NationalIdDocument?.Id,
-                    AttorneyDocumentId = existing.AttorneyDocument?.Id
+                    NationalIdDocumentId = existing.NationalIdDocument?.Id
                 };
                 existingNationalIdDoc = existing.NationalIdDocument;
-                existingAttorneyDoc = existing.AttorneyDocument;
             }
             else
             {
@@ -165,11 +149,6 @@ else
     private void LoadNationalIdFile(InputFileChangeEventArgs e)
     {
         nationalIdFile = e.File;
-    }
-
-    private void LoadAttorneyFile(InputFileChangeEventArgs e)
-    {
-        attorneyFile = e.File;
     }
 
     private async Task HandleSubmit()
@@ -192,16 +171,10 @@ else
         {
             // Upload new documents if provided
             Guid? natIdDocId = model.NationalIdDocumentId;
-            Guid? attDocId = model.AttorneyDocumentId;
 
             if (nationalIdFile != null)
             {
                 natIdDocId = await CompanyApi.UploadDocumentAsync("client", IsEditMode ? Id!.Value : Guid.NewGuid(), nationalIdFile);
-            }
-
-            if (attorneyFile != null)
-            {
-                attDocId = await CompanyApi.UploadDocumentAsync("client", IsEditMode ? Id!.Value : Guid.NewGuid(), attorneyFile);
             }
 
             if (IsEditMode)
@@ -215,8 +188,7 @@ else
                     model.Email,
                     model.Address,
                     model.Notes,
-                    natIdDocId,
-                    attDocId
+                    natIdDocId
                 );
                 await ClientApi.UpdateAsync(Id!.Value, updateDto); ToastService.ShowSuccess(Loc["ClientUpdated"].Value); await Task.Delay(500); NavManager.NavigateTo($"/clients/{Id.Value}");
             }
@@ -231,8 +203,7 @@ else
                     model.Email,
                     model.Address,
                     model.Notes,
-                    natIdDocId,
-                    attDocId
+                    natIdDocId
                 );
                 var created = await ClientApi.CreateAsync(createDto);
                 if (created != null) { ToastService.ShowSuccess(Loc["ClientCreated"].Value); await Task.Delay(500); NavManager.NavigateTo($"/clients/{created.Id}"); }
@@ -263,7 +234,6 @@ else
         public string? Address { get; set; }
         public string? Notes { get; set; }
         public Guid? NationalIdDocumentId { get; set; }
-        public Guid? AttorneyDocumentId { get; set; }
     }
 }
 
