@@ -1328,4 +1328,76 @@
   <data name="GoToAttorney" xml:space="preserve">
     <value>Go to Power of Attorney</value>
   </data>
+  <data name="BackupManagement" xml:space="preserve">
+    <value>System Backups &amp; Archive</value>
+  </data>
+  <data name="BackupManagementSubtitle" xml:space="preserve">
+    <value>Manage legal document archives and database disaster recovery snapshots</value>
+  </data>
+  <data name="Backups" xml:space="preserve">
+    <value>Backups</value>
+  </data>
+  <data name="ArchiveFilesCount" xml:space="preserve">
+    <value>Archive Files Count</value>
+  </data>
+  <data name="ArchiveSize" xml:space="preserve">
+    <value>Archive Total Size</value>
+  </data>
+  <data name="LastDatabaseSnapshot" xml:space="preserve">
+    <value>Last DB Snapshot</value>
+  </data>
+  <data name="TotalBackupsRun" xml:space="preserve">
+    <value>Total Backup Runs</value>
+  </data>
+  <data name="GoogleDriveArchiveTitle" xml:space="preserve">
+    <value>Google Drive Legal Archive</value>
+  </data>
+  <data name="GoogleDriveArchiveDesc" xml:space="preserve">
+    <value>Maps and structures all contracts, IDs, lawsuits, and powers of attorney into organized, human-readable folders ready to be synced to the lawyer's Google Drive.</value>
+  </data>
+  <data name="LastGenerated" xml:space="preserve">
+    <value>Last Generated</value>
+  </data>
+  <data name="GeneratingArchive" xml:space="preserve">
+    <value>Generating Archive...</value>
+  </data>
+  <data name="GenerateArchiveNow" xml:space="preserve">
+    <value>Generate / Refresh Archive Now</value>
+  </data>
+  <data name="DatabaseSnapshotTitle" xml:space="preserve">
+    <value>Database Disaster Recovery Snapshot</value>
+  </data>
+  <data name="DatabaseSnapshotDesc" xml:space="preserve">
+    <value>Creates an instant full PostgreSQL backup dump containing all database tables, users, cases, and financial transactions.</value>
+  </data>
+  <data name="SnapshotFormat" xml:space="preserve">
+    <value>Snapshot Format</value>
+  </data>
+  <data name="DownloadDBSnapshot" xml:space="preserve">
+    <value>Download Database Snapshot (.dump)</value>
+  </data>
+  <data name="BackupHistoryTitle" xml:space="preserve">
+    <value>Recent Backup History</value>
+  </data>
+  <data name="NoBackupHistory" xml:space="preserve">
+    <value>No backup operations recorded yet.</value>
+  </data>
+  <data name="GoogleDriveArchive" xml:space="preserve">
+    <value>Google Drive Archive</value>
+  </data>
+  <data name="DatabaseSnapshot" xml:space="preserve">
+    <value>Database Snapshot</value>
+  </data>
+  <data name="FilesCount" xml:space="preserve">
+    <value>Files</value>
+  </data>
+  <data name="ArchiveGeneratedSuccess" xml:space="preserve">
+    <value>Legal archive generated successfully!</value>
+  </data>
+  <data name="FailedToGenerateArchive" xml:space="preserve">
+    <value>Failed to generate archive</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Never</value>
+  </data>
 </root>

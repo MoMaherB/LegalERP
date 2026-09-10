@@ -24,6 +24,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser, IdentityR
     public DbSet<PushSubscription> PushSubscriptions => Set<PushSubscription>();
     public DbSet<Attorney> Attorneys => Set<Attorney>();
     public DbSet<AttorneyClient> AttorneyClients => Set<AttorneyClient>();
+    public DbSet<BackupRecord> BackupRecords => Set<BackupRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

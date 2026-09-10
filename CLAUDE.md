@@ -854,6 +854,22 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Updated `NavMenu.razor` adding the **Attorneys (التوكيلات)** subsection directly under Clients.
   - Added complete bilingual English and Arabic localization keys to `SharedResources.resx` and `SharedResources.ar.resx`.
 
+**Feature 28: System Backup & Google Drive Human-Readable Legal Archive — ✅ COMPLETED (2026-09-10)**
+- **Architecture Overview:** Dual-stream backup strategy:
+  1. *Developer / Sysadmin Disaster Recovery Stream:* Compressed PostgreSQL database dumps and raw file backups for full bare-metal server recovery.
+  2. *Lawyer's Google Drive Business Archive Stream:* An automated C# mapping engine that formats live company founding contracts, amendments, client IDs, court briefs/evidence, and powers of attorney into a human-readable physical filing cabinet folder tree (`companies/`, `clients/`, `cases/`, `attornies/`).
+- **Domain & Application:**
+  - `BackupRecord` entity tracking backup history, file counts, sizes, status, and error logs.
+  - `IBackupArchiveService` defining human-readable archive generation and database snapshot triggers.
+  - `BackupDto` records for API payloads and frontend reporting.
+- **Infrastructure & Storage:**
+  - `BackupArchiveService` featuring filename sanitization (converting forbidden OS characters `/` $\rightarrow$ `-`), duplicate resolution, and zero-byte hardlinking (`File.CreateHardLink`).
+  - Production deployment and restore shell scripts (`deploy/scripts/backup-daily.sh`, `restore.sh`, `deploy/scripts/rclone.conf.template`).
+- **Web & API:**
+  - `BackupsController` (`/api/backups`) protected by `SuperAdmin` authorization.
+  - `BackupManagement.razor` (`/admin/backups`) providing live archive generation and on-demand database backup download.
+  - Bilingual localization in English and Arabic.
+
 ---
 
 *End of reference document.*

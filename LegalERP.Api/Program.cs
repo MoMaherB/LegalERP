@@ -89,6 +89,7 @@ builder.Services.AddScoped<LegalERP.Application.Storage.IFileStorageService, Leg
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<WebPushNotificationService>();
 builder.Services.AddScoped<HearingReminderJob>();
+builder.Services.AddScoped<LegalERP.Application.Backups.IBackupArchiveService, LegalERP.Infrastructure.Services.BackupArchiveService>();
 
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers()

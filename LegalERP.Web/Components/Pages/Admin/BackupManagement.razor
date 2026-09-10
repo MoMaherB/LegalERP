@@ -1,0 +1,294 @@
+@page "/admin/backups"
+@using LegalERP.Application.Backups
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Services
+@using LegalERP.Web.Services.Toast
+@inject BackupApiClient BackupApi
+@inject IToastService ToastService
+@inject NavigationManager NavManager
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<SharedResources> Loc
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [Authorize(Roles = "SuperAdmin")]
+
+<PageTitle>@Loc["BackupManagement"]</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div>
+        <h1 class="ios-title mb-1">@Loc["BackupManagement"]</h1>
+        <p class="text-muted mb-0" style="font-size: 0.95rem;">@Loc["BackupManagementSubtitle"]</p>
+    </div>
+</div>
+
+@if (summary == null)
+{
+    <p>@Loc["Loading"]</p>
+}
+else
+{
+    <!-- Overview Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="ios-widget-card h-100 p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 rounded-3" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; font-size: 1.5rem;">
+                        <i class="fa-brands fa-google-drive"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">@Loc["ArchiveFilesCount"]</small>
+                        <strong class="fs-4">@summary.LastArchiveFileCount</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="ios-widget-card h-100 p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 rounded-3" style="background: rgba(16, 185, 129, 0.1); color: #10b981; font-size: 1.5rem;">
+                        <i class="fa-solid fa-folder-tree"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">@Loc["ArchiveSize"]</small>
+                        <strong class="fs-4">@FormatBytes(summary.LastArchiveSizeBytes)</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="ios-widget-card h-100 p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 rounded-3" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; font-size: 1.5rem;">
+                        <i class="fa-solid fa-database"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">@Loc["LastDatabaseSnapshot"]</small>
+                        <strong class="fs-6">@(summary.LastDatabaseSnapshotDate?.ToLocalTime().ToString("g") ?? "—")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="ios-widget-card h-100 p-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-3 rounded-3" style="background: rgba(168, 85, 247, 0.1); color: #a855f7; font-size: 1.5rem;">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <div>
+                        <small class="text-muted d-block">@Loc["TotalBackupsRun"]</small>
+                        <strong class="fs-4">@summary.TotalBackupsRun</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Card 1: Google Drive Human-Readable Legal Archive -->
+        <div class="col-12 col-lg-6">
+            <div class="ios-widget-card h-100 p-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="fa-brands fa-google-drive fs-4" style="color: #3b82f6;"></i>
+                    <h4 class="ios-title mb-0" style="font-size: 1.25rem;">@Loc["GoogleDriveArchiveTitle"]</h4>
+                </div>
+                <p class="ios-details mb-4 text-muted">
+                    @Loc["GoogleDriveArchiveDesc"]
+                </p>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-3 border-top">
+                    <div>
+                        <small class="text-muted d-block">@Loc["LastGenerated"]:</small>
+                        <strong>@(summary.LastArchiveDate?.ToLocalTime().ToString("f") ?? Loc["Never"])</strong>
+                    </div>
+                    <button class="ios-btn ios-btn-primary" @onclick="GenerateArchive" disabled="@isGeneratingArchive">
+                        @if (isGeneratingArchive)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            @Loc["GeneratingArchive"]
+                        }
+                        else
+                        {
+                            <i class="fa-solid fa-rotate me-2"></i>
+                            @Loc["GenerateArchiveNow"]
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Developer Database Snapshot -->
+        <div class="col-12 col-lg-6">
+            <div class="ios-widget-card h-100 p-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="fa-solid fa-database fs-4" style="color: #10b981;"></i>
+                    <h4 class="ios-title mb-0" style="font-size: 1.25rem;">@Loc["DatabaseSnapshotTitle"]</h4>
+                </div>
+                <p class="ios-details mb-4 text-muted">
+                    @Loc["DatabaseSnapshotDesc"]
+                </p>
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 pt-3 border-top">
+                    <div>
+                        <small class="text-muted d-block">@Loc["SnapshotFormat"]:</small>
+                        <strong>PostgreSQL Dump (.dump)</strong>
+                    </div>
+                    <a href="@BackupApi.GetDownloadSnapshotUrl()" class="ios-btn ios-btn-secondary text-decoration-none" target="_blank">
+                        <i class="fa-solid fa-download me-2"></i>
+                        @Loc["DownloadDBSnapshot"]
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup History Table -->
+    <div class="ios-widget-card p-4">
+        <h4 class="ios-title mb-4" style="font-size: 1.25rem;">@Loc["BackupHistoryTitle"]</h4>
+        @if (history == null || history.Count == 0)
+        {
+            <div class="alert alert-light border mb-0" style="border-radius: 12px;">@Loc["NoBackupHistory"]</div>
+        }
+        else
+        {
+            <div class="ios-table-container">
+                <table class="ios-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>@Loc["Type"]</th>
+                            <th>@Loc["Date"]</th>
+                            <th>@Loc["FilesCount"]</th>
+                            <th>@Loc["Size"]</th>
+                            <th>@Loc["Status"]</th>
+                            <th>@Loc["Details"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in history)
+                        {
+                            <tr>
+                                <td>
+                                    @if (r.BackupType == BackupType.GoogleDriveArchive)
+                                    {
+                                        <span><i class="fa-brands fa-google-drive me-1 text-primary"></i> @Loc["GoogleDriveArchive"]</span>
+                                    }
+                                    else
+                                    {
+                                        <span><i class="fa-solid fa-database me-1 text-success"></i> @Loc["DatabaseSnapshot"]</span>
+                                    }
+                                </td>
+                                <td>@r.CreatedAt.ToLocalTime().ToString("g")</td>
+                                <td>@r.FileCount</td>
+                                <td>@FormatBytes(r.TotalSizeBytes)</td>
+                                <td>
+                                    @if (r.Status == BackupStatus.Completed)
+                                    {
+                                        <span class="ios-status-badge ios-status-green">@Loc["Completed"]</span>
+                                    }
+                                    else if (r.Status == BackupStatus.Running)
+                                    {
+                                        <span class="ios-status-badge ios-status-amber">@Loc["Running"]</span>
+                                    }
+                                    else if (r.Status == BackupStatus.Failed)
+                                    {
+                                        <span class="ios-status-badge ios-status-red">@Loc["Failed"]</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="ios-status-badge ios-status-gray">@r.Status</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(r.ErrorMessage))
+                                    {
+                                        <span class="text-danger small" title="@r.ErrorMessage">@Truncate(r.ErrorMessage, 40)</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(r.DestinationPath))
+                                    {
+                                        <span class="text-muted small" title="@r.DestinationPath">@Truncate(r.DestinationPath, 35)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private BackupStatusSummaryDto? summary;
+    private List<BackupRecordDto>? history;
+    private bool isGeneratingArchive = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            summary = await BackupApi.GetSummaryAsync();
+            history = await BackupApi.GetHistoryAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(Loc["FailedToLoadData"]?.Value + ": " + ex.Message);
+        }
+    }
+
+    private async Task GenerateArchive()
+    {
+        isGeneratingArchive = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await BackupApi.ExportArchiveAsync();
+            if (result != null && result.Success)
+            {
+                ToastService.ShowSuccess(Loc["ArchiveGeneratedSuccess"]?.Value ?? "Archive generated successfully!");
+            }
+            else
+            {
+                ToastService.ShowError(result?.Message ?? Loc["FailedToGenerateArchive"]?.Value ?? "Failed");
+            }
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            isGeneratingArchive = false;
+        }
+    }
+
+    private static string FormatBytes(long bytes)
+    {
+        if (bytes <= 0) return "0 B";
+        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len /= 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+
+    private static string Truncate(string value, int maxChars)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value.Length <= maxChars ? value : value.Substring(0, maxChars) + "...";
+    }
+}

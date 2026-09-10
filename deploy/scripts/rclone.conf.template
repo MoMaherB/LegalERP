@@ -1,0 +1,17 @@
+# ==============================================================================
+# LegalERP rclone Google Drive Configuration Guide
+#
+# To connect the server to the lawyer's Google Drive:
+# 1. Run: rclone config
+# 2. Choose: 'n' for new remote
+# 3. Name it: 'gdrive'
+# 4. Type: 'drive' (Google Drive)
+# 5. Leave client_id and client_secret blank (or provide custom Google Cloud credentials)
+# 6. Scope: '1' (Full access all files)
+# 7. Follow the web authorization prompt to sign in to the lawyer's Google Account.
+# ==============================================================================
+
+[gdrive]
+type = drive
+scope = drive
+token = {"access_token":"...","token_type":"Bearer","refresh_token":"...","expiry":"..."}

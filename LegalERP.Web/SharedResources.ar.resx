@@ -1523,4 +1523,76 @@
   <data name="GoToAttorney" xml:space="preserve">
     <value>الذهاب لصفحة التوكيل</value>
   </data>
+  <data name="BackupManagement" xml:space="preserve">
+    <value>النسخ الاحتياطي والأرشيف</value>
+  </data>
+  <data name="BackupManagementSubtitle" xml:space="preserve">
+    <value>إدارة أرشيف المستندات القانونية والنسخ الاحتياطية لقاعدة البيانات</value>
+  </data>
+  <data name="Backups" xml:space="preserve">
+    <value>النسخ الاحتياطي</value>
+  </data>
+  <data name="ArchiveFilesCount" xml:space="preserve">
+    <value>عدد ملفات الأرشيف</value>
+  </data>
+  <data name="ArchiveSize" xml:space="preserve">
+    <value>حجم الأرشيف</value>
+  </data>
+  <data name="LastDatabaseSnapshot" xml:space="preserve">
+    <value>آخر نسخة لقاعدة البيانات</value>
+  </data>
+  <data name="TotalBackupsRun" xml:space="preserve">
+    <value>إجمالي عمليات النسخ</value>
+  </data>
+  <data name="GoogleDriveArchiveTitle" xml:space="preserve">
+    <value>أرشيف جوجل درايف القانوني</value>
+  </data>
+  <data name="GoogleDriveArchiveDesc" xml:space="preserve">
+    <value>يقوم بتنظيم كافة العقود والبطاقات والقضايا والتوكيلات في مجلدات مرتبة بأسماء واضحة، جاهزة للمزامنة مع جوجل درايف الخاص بالمحامي.</value>
+  </data>
+  <data name="LastGenerated" xml:space="preserve">
+    <value>آخر إنشاء</value>
+  </data>
+  <data name="GeneratingArchive" xml:space="preserve">
+    <value>جاري إنشاء الأرشيف...</value>
+  </data>
+  <data name="GenerateArchiveNow" xml:space="preserve">
+    <value>إنشاء / تحديث الأرشيف الآن</value>
+  </data>
+  <data name="DatabaseSnapshotTitle" xml:space="preserve">
+    <value>النسخة الاحتياطية لقاعدة البيانات</value>
+  </data>
+  <data name="DatabaseSnapshotDesc" xml:space="preserve">
+    <value>إنشاء نسخة احتياطية كاملة ومضغوطة من قاعدة بيانات PostgreSQL تحتوي على كافة الجداول والمستخدمين والقضايا والبيانات المالية.</value>
+  </data>
+  <data name="SnapshotFormat" xml:space="preserve">
+    <value>صيغة النسخة</value>
+  </data>
+  <data name="DownloadDBSnapshot" xml:space="preserve">
+    <value>تحميل نسخة قاعدة البيانات (.dump)</value>
+  </data>
+  <data name="BackupHistoryTitle" xml:space="preserve">
+    <value>سجل عمليات النسخ الاحتياطي</value>
+  </data>
+  <data name="NoBackupHistory" xml:space="preserve">
+    <value>لا توجد أي عمليات نسخ احتياطي مسجلة حتى الآن.</value>
+  </data>
+  <data name="GoogleDriveArchive" xml:space="preserve">
+    <value>أرشيف جوجل درايف</value>
+  </data>
+  <data name="DatabaseSnapshot" xml:space="preserve">
+    <value>نسخة قاعدة البيانات</value>
+  </data>
+  <data name="FilesCount" xml:space="preserve">
+    <value>الملفات</value>
+  </data>
+  <data name="ArchiveGeneratedSuccess" xml:space="preserve">
+    <value>تم إنشاء الأرشيف القانوني بنجاح!</value>
+  </data>
+  <data name="FailedToGenerateArchive" xml:space="preserve">
+    <value>فشل إنشاء الأرشيف</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>أبداً</value>
+  </data>
 </root>
