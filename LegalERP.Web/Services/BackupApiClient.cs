@@ -17,9 +17,9 @@ public class BackupApiClient
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public BackupApiClient(HttpClient http)
+    public BackupApiClient(IHttpClientFactory factory)
     {
-        _http = http;
+        _http = factory.CreateClient("LegalErpApi");
     }
 
     public async Task<List<BackupRecordDto>> GetHistoryAsync()
@@ -42,6 +42,6 @@ public class BackupApiClient
 
     public string GetDownloadSnapshotUrl()
     {
-        return $"{_http.BaseAddress}api/backups/download-snapshot";
+        return "/api/admin/backups/download-snapshot";
     }
 }
