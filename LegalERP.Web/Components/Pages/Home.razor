@@ -99,32 +99,39 @@
 
     private async Task LoadData()
     {
-        var cases = await CaseApi.GetAllAsync();
-        casesCount = cases.Count;
-        activeCasesCount = cases.Count(c => c.Status == CaseStatus.Active);
-        closedCasesCount = cases.Count(c => c.Status == CaseStatus.Closed);
-
-        var companies = await CompanyApi.GetAllAsync();
-        companiesCount = companies.Count;
-        capitalCount = companies.Count(c => c.Category == CompanyCategory.CapitalCompany);
-        partnershipCount = companies.Count(c => c.Category == CompanyCategory.Partnership);
-        soleCount = companies.Count(c => c.Category == CompanyCategory.SoleProprietorship);
-
-        var clients = await ClientApi.GetAllAsync();
-        clientsCount = clients.Count;
-
-        var authState = await AuthState.GetAuthenticationStateAsync();
-        var isFinAdmin = authState.User.IsInRole("SuperAdmin") || authState.User.IsInRole("Admin");
-        
-        if (isFinAdmin)
+        try
         {
-            var summary = await FinancialsApi.GetSummaryAsync();
-            if (summary != null)
+            var cases = await CaseApi.GetAllAsync();
+            casesCount = cases.Count;
+            activeCasesCount = cases.Count(c => c.Status == CaseStatus.Active);
+            closedCasesCount = cases.Count(c => c.Status == CaseStatus.Closed);
+
+            var companies = await CompanyApi.GetAllAsync();
+            companiesCount = companies.Count;
+            capitalCount = companies.Count(c => c.Category == CompanyCategory.CapitalCompany);
+            partnershipCount = companies.Count(c => c.Category == CompanyCategory.Partnership);
+            soleCount = companies.Count(c => c.Category == CompanyCategory.SoleProprietorship);
+
+            var clients = await ClientApi.GetAllAsync();
+            clientsCount = clients.Count;
+
+            var authState = await AuthState.GetAuthenticationStateAsync();
+            var isFinAdmin = authState.User.IsInRole("SuperAdmin") || authState.User.IsInRole("Admin");
+            
+            if (isFinAdmin)
             {
-                totalAgreed = summary.FirmTotalAgreedFees;
-                totalCollected = summary.FirmTotalCollected;
-                totalRemaining = totalAgreed - totalCollected;
+                var summary = await FinancialsApi.GetSummaryAsync();
+                if (summary != null)
+                {
+                    totalAgreed = summary.FirmTotalAgreedFees;
+                    totalCollected = summary.FirmTotalCollected;
+                    totalRemaining = totalAgreed - totalCollected;
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[HOME LOAD ERROR] {ex.Message}");
         }
     }
 

@@ -30,6 +30,27 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
 
+// ── Combined Authentication (InternalBearer + Identity Cookie) ────────────────
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "Combined";
+    options.DefaultAuthenticateScheme = "Combined";
+    options.DefaultChallengeScheme = "Combined";
+})
+.AddPolicyScheme("Combined", "Bearer or Cookie", options =>
+{
+    options.ForwardDefaultSelector = context =>
+    {
+        var authHeader = context.Request.Headers["Authorization"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return "InternalBearer";
+        }
+        return IdentityConstants.ApplicationScheme;
+    };
+})
+.AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, LegalERP.Api.Auth.InternalBearerHandler>("InternalBearer", null);
+
 // ── Cookie Authentication ─────────────────────────────────────────────────────
 builder.Services.ConfigureApplicationCookie(options =>
 {

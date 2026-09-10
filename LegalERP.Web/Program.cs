@@ -26,10 +26,12 @@ builder.Services.AddScoped<CustomAuthStateProvider>(sp =>
     (CustomAuthStateProvider)sp.GetRequiredService<AuthenticationStateProvider>());
 
 // ── HTTP Client ───────────────────────────────────────────────────────────────
+builder.Services.AddTransient<AuthHeaderHandler>();
 builder.Services.AddHttpClient("LegalErpApi", client =>
 {
     client.BaseAddress = new Uri("https://localhost:7148/");
 })
+.AddHttpMessageHandler<AuthHeaderHandler>()
 .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 {
     // Allow cookies to be sent with API requests (needed for auth cookie)
