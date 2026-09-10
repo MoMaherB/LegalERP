@@ -1,21 +1,23 @@
+using System;
 using System.Security.Claims;
 using LegalERP.Application.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LegalERP.Web.Services;
 
 public class CustomAuthStateProvider : AuthenticationStateProvider
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly AuthApiClient _authApi;
+    private readonly IServiceProvider _serviceProvider;
     private CurrentUserDto? _cachedUser;
     private bool _initialized = false;
 
-    public CustomAuthStateProvider(IHttpContextAccessor httpContextAccessor, AuthApiClient authApi)
+    public CustomAuthStateProvider(IHttpContextAccessor httpContextAccessor, IServiceProvider serviceProvider)
     {
         _httpContextAccessor = httpContextAccessor;
-        _authApi = authApi;
+        _serviceProvider = serviceProvider;
     }
 
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
@@ -39,7 +41,11 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
             {
                 try
                 {
-                    _cachedUser = await _authApi.GetCurrentUserAsync();
+                    var authApi = _serviceProvider.GetService<AuthApiClient>();
+                    if (authApi != null)
+                    {
+                        _cachedUser = await authApi.GetCurrentUserAsync();
+                    }
                 }
                 catch
                 {

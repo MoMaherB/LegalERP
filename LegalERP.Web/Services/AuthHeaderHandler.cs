@@ -6,23 +6,35 @@ using System.Threading;
 using System.Threading.Tasks;
 using LegalERP.Application.Auth;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LegalERP.Web.Services;
 
 public class AuthHeaderHandler : DelegatingHandler
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly CustomAuthStateProvider _authState;
+    private readonly IServiceProvider _serviceProvider;
 
-    public AuthHeaderHandler(IHttpContextAccessor httpContextAccessor, CustomAuthStateProvider authState)
+    public AuthHeaderHandler(IHttpContextAccessor httpContextAccessor, IServiceProvider serviceProvider)
     {
         _httpContextAccessor = httpContextAccessor;
-        _authState = authState;
+        _serviceProvider = serviceProvider;
     }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        var user = _authState.GetCachedUser();
+        CurrentUserDto? user = null;
+
+        try
+        {
+            var authState = _serviceProvider.GetService<CustomAuthStateProvider>();
+            user = authState?.GetCachedUser();
+        }
+        catch
+        {
+            // Ignore if provider cannot be resolved yet
+        }
+
         if (user != null)
         {
             var token = InternalTokenHelper.GenerateToken(user);
