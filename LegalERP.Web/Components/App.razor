@@ -36,6 +36,32 @@
     <script src="_framework/blazor.web.js"></script>
     <script src="js/push-notifications.js"></script>
     <script>
+        window.authHelper = {
+            login: async function (jsonBody) {
+                try {
+                    const res = await fetch('/api/account/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: jsonBody
+                    });
+                    if (res.ok) {
+                        const user = await res.json();
+                        return { success: true, user: user };
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        return { success: false, message: err.message || 'بيانات الدخول غير صحيحة.' };
+                    }
+                } catch (e) {
+                    return { success: false, message: 'تعذر الاتصال بالخادم.' };
+                }
+            },
+            logout: async function () {
+                try {
+                    await fetch('/api/account/logout', { method: 'POST' });
+                } catch (e) {}
+            }
+        };
+
         // PDF thumbnail renderer using PDF.js
         window.renderPdfThumbnail = async function (url, canvasId) {
             try {

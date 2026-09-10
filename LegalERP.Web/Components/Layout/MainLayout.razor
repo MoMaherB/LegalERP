@@ -2,6 +2,7 @@
 @inject NavigationManager NavManager
 @inject LegalERP.Web.Services.CustomAuthStateProvider AuthState
 @inject LegalERP.Web.Services.AuthApiClient AuthApi
+@inject IJSRuntime JS
 @using Microsoft.Extensions.Localization
 @using System.Security.Claims
 @inject IStringLocalizer<SharedResources> Loc
@@ -28,6 +29,9 @@
                                 <NavLink class="nav-link ios-nav-link ios-nav-clients" href="clients" Match="NavLinkMatch.Prefix">
                                     <i class="bi bi-people"></i> @Loc["Clients"]
                                 </NavLink>
+                                <NavLink class="nav-link ios-nav-link ios-nav-attorneys" href="attorneys" Match="NavLinkMatch.Prefix">
+                                    <i class="fa-solid fa-file-contract"></i> @Loc["Attorneys"]
+                                </NavLink>
                                 <NavLink class="nav-link ios-nav-link ios-nav-cases" href="cases" Match="NavLinkMatch.Prefix">
                                     <i class="bi bi-briefcase"></i> @Loc["Cases"]
                                 </NavLink>
@@ -42,6 +46,13 @@
                                     <Authorized>
                                         <NavLink class="nav-link ios-nav-link" href="admin/users" Match="NavLinkMatch.Prefix" style="background: rgba(255, 255, 255, 0.05); color: #dee2e6;">
                                             <i class="fa-solid fa-users-gear"></i> @Loc["UserManagement"]
+                                        </NavLink>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="SuperAdmin" Context="BackupContext">
+                                    <Authorized>
+                                        <NavLink class="nav-link ios-nav-link ios-nav-backups" href="admin/backups" Match="NavLinkMatch.Prefix" style="background: rgba(255, 255, 255, 0.05); color: #dee2e6;">
+                                            <i class="fa-solid fa-shield-halved"></i> @Loc["Backups"]
                                         </NavLink>
                                     </Authorized>
                                 </AuthorizeView>
@@ -72,6 +83,12 @@
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0" style="background: var(--glass-bg); backdrop-filter: blur(10px);">
                                         <li><a class="dropdown-item" href="profile"><i class="fa-solid fa-id-card me-2 text-primary"></i> @Loc["MyProfile"]</a></li>
+                                        <AuthorizeView Roles="SuperAdmin" Context="AdminDropContext">
+                                            <Authorized>
+                                                <li><a class="dropdown-item" href="admin/backups"><i class="fa-solid fa-shield-halved me-2 text-primary"></i> @Loc["Backups"]</a></li>
+                                                <li><a class="dropdown-item" href="admin/users"><i class="fa-solid fa-users-gear me-2 text-secondary"></i> @Loc["UserManagement"]</a></li>
+                                            </Authorized>
+                                        </AuthorizeView>
                                         <li><hr class="dropdown-divider border-secondary border-opacity-25"></li>
                                         <li><button class="dropdown-item text-danger" @onclick="HandleLogout"><i class="fa-solid fa-arrow-right-from-bracket me-2"></i> @Loc["Logout"]</button></li>
                                     </ul>
@@ -106,9 +123,14 @@
 
     private async Task HandleLogout()
     {
+        try
+        {
+            await JS.InvokeVoidAsync("authHelper.logout");
+        }
+        catch {}
         await AuthApi.LogoutAsync();
         AuthState.NotifyUserLoggedOut();
-        NavManager.NavigateTo("/login");
+        NavManager.NavigateTo("/login", forceLoad: true);
     }
 }
 

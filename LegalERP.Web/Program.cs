@@ -12,6 +12,7 @@ builder.Services.AddControllers();
 builder.Services.AddLocalization();
 
 // ── Authorization ─────────────────────────────────────────────────────────────
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {

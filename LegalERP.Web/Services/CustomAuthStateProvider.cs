@@ -1,17 +1,20 @@
 using System.Security.Claims;
 using LegalERP.Application.Auth;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace LegalERP.Web.Services;
 
 public class CustomAuthStateProvider : AuthenticationStateProvider
 {
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly AuthApiClient _authApi;
     private CurrentUserDto? _cachedUser;
     private bool _initialized = false;
 
-    public CustomAuthStateProvider(AuthApiClient authApi)
+    public CustomAuthStateProvider(IHttpContextAccessor httpContextAccessor, AuthApiClient authApi)
     {
+        _httpContextAccessor = httpContextAccessor;
         _authApi = authApi;
     }
 
@@ -19,13 +22,29 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     {
         if (!_initialized)
         {
-            try
+            var user = _httpContextAccessor.HttpContext?.User;
+            if (user?.Identity?.IsAuthenticated == true)
             {
-                _cachedUser = await _authApi.GetCurrentUserAsync();
+                var idStr = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                Guid.TryParse(idStr, out var id);
+                _cachedUser = new CurrentUserDto(
+                    id,
+                    user.FindFirst(ClaimTypes.Name)?.Value ?? "",
+                    user.FindFirst(ClaimTypes.Email)?.Value ?? "",
+                    user.FindFirst(ClaimTypes.Role)?.Value ?? "Viewer",
+                    user.FindFirst("ProfilePicturePath")?.Value
+                );
             }
-            catch
+            else
             {
-                _cachedUser = null;
+                try
+                {
+                    _cachedUser = await _authApi.GetCurrentUserAsync();
+                }
+                catch
+                {
+                    _cachedUser = null;
+                }
             }
             _initialized = true;
         }

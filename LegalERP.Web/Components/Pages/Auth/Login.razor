@@ -6,6 +6,7 @@
 @inject NavigationManager NavManager
 @inject IStringLocalizer<SharedResources> Loc
 @inject LegalERP.Web.Services.Toast.IToastService Toast
+@inject IJSRuntime JS
 
 <PageTitle>تسجيل الدخول - ركائز للمحاماة</PageTitle>
 
@@ -477,16 +478,17 @@
         try
         {
             var dto = new LegalERP.Application.Auth.LoginDto(_email.Trim().ToLowerInvariant(), _password);
-            var user = await AuthApi.LoginAsync(dto);
+            var json = System.Text.Json.JsonSerializer.Serialize(dto);
+            var result = await JS.InvokeAsync<LoginJsResult>("authHelper.login", json);
 
-            if (user != null)
+            if (result != null && result.Success && result.User != null)
             {
-                await AuthStateProvider.NotifyUserLoggedIn(user);
-                NavManager.NavigateTo("/", forceLoad: false);
+                await AuthStateProvider.NotifyUserLoggedIn(result.User);
+                NavManager.NavigateTo("/", forceLoad: true);
             }
             else
             {
-                _errorMessage = "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
+                _errorMessage = result?.Message ?? "البريد الإلكتروني أو كلمة المرور غير صحيحة.";
             }
         }
         catch (Exception ex)
@@ -498,5 +500,12 @@
         {
             _isLoading = false;
         }
+    }
+
+    public class LoginJsResult
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public LegalERP.Application.Auth.CurrentUserDto? User { get; set; }
     }
 }
