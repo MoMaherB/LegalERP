@@ -1595,4 +1595,28 @@
   <data name="Never" xml:space="preserve">
     <value>أبداً</value>
   </data>
+  <data name="HasManyPartners" xml:space="preserve">
+    <value>أكثر من 10 شركاء؟</value>
+  </data>
+  <data name="HasManyPartnersHint" xml:space="preserve">
+    <value>عند التفعيل: يتم إدخال أسماء الشركاء كنص حر ورفع بطاقاتهم وتوكيلاتهم كملفات مجمعة</value>
+  </data>
+  <data name="ManyPartnersMode" xml:space="preserve">
+    <value>وضع الشركاء المتعددين</value>
+  </data>
+  <data name="PartnersNames" xml:space="preserve">
+    <value>أسماء الشركاء</value>
+  </data>
+  <data name="PartnersNamesPlaceholder" xml:space="preserve">
+    <value>أدخل أسماء الشركاء (كل اسم في سطر جديد)</value>
+  </data>
+  <data name="PartnersIds" xml:space="preserve">
+    <value>بطاقات الشركاء</value>
+  </data>
+  <data name="PartnersAttorneys" xml:space="preserve">
+    <value>توكيلات الشركاء</value>
+  </data>
+  <data name="NoDocumentUploaded" xml:space="preserve">
+    <value>لم يتم رفع مستند بعد</value>
+  </data>
 </root>

@@ -28,6 +28,12 @@ public record CompanyDto(
     string? Address,
     Guid? IncorporationDocumentId,
     DocumentDto? IncorporationDocument,
+    bool HasManyPartners,
+    string? PartnersText,
+    Guid? PartnersIdsDocumentId,
+    DocumentDto? PartnersIdsDocument,
+    Guid? PartnersAttorneysDocumentId,
+    DocumentDto? PartnersAttorneysDocument,
     List<CompanyAmendmentDto> Amendments,
     List<CompanyPartnerDto> Partners
 );
@@ -60,7 +66,9 @@ public record CreateCompanyDto(
     DateOnly? EstablishmentDate,
     string? RegistrationNumber,
     string? Address,
-    Guid? IncorporationDocumentId
+    Guid? IncorporationDocumentId,
+    bool HasManyPartners = false,
+    string? PartnersText = null
 );
 
 public record CreateCompanyAmendmentDto(
@@ -78,7 +86,11 @@ public record UpdateCompanyDto(
     DateOnly? EstablishmentDate,
     string? RegistrationNumber,
     string? Address,
-    Guid? IncorporationDocumentId
+    Guid? IncorporationDocumentId,
+    bool HasManyPartners = false,
+    string? PartnersText = null,
+    Guid? PartnersIdsDocumentId = null,
+    Guid? PartnersAttorneysDocumentId = null
 );
 
 public record UpdateCompanyAmendmentDto(

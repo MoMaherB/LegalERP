@@ -1400,4 +1400,28 @@
   <data name="Never" xml:space="preserve">
     <value>Never</value>
   </data>
+  <data name="HasManyPartners" xml:space="preserve">
+    <value>More than 10 partners?</value>
+  </data>
+  <data name="HasManyPartnersHint" xml:space="preserve">
+    <value>When enabled: partner names are entered as plain text and their IDs/attorneys are uploaded as combined files</value>
+  </data>
+  <data name="ManyPartnersMode" xml:space="preserve">
+    <value>Many Partners Mode</value>
+  </data>
+  <data name="PartnersNames" xml:space="preserve">
+    <value>Partners Names</value>
+  </data>
+  <data name="PartnersNamesPlaceholder" xml:space="preserve">
+    <value>Enter partner names (one per line)</value>
+  </data>
+  <data name="PartnersIds" xml:space="preserve">
+    <value>Partners IDs</value>
+  </data>
+  <data name="PartnersAttorneys" xml:space="preserve">
+    <value>Partners Attorneys</value>
+  </data>
+  <data name="NoDocumentUploaded" xml:space="preserve">
+    <value>No document uploaded yet</value>
+  </data>
 </root>

@@ -85,6 +85,17 @@ else
                 </div>
 
                 <div class="mb-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <label class="form-label ios-details fw-bold mb-0">@Loc["HasManyPartners"]</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="hasManyPartnersSwitch"
+                                   checked="@model.HasManyPartners" @onchange="e => model.HasManyPartners = (bool)(e.Value ?? false)" />
+                        </div>
+                    </div>
+                    <div class="form-text mt-1 ios-details">@Loc["HasManyPartnersHint"]</div>
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label ios-details fw-bold">@Loc["IncorporationContract"]</label>
                     @if (IsEdit && model.ExistingIncorporationDocument != null)
                     {
@@ -137,6 +148,7 @@ else
         public string? Address { get; set; }
         public Guid? IncorporationDocumentId { get; set; }
         public DocumentDto? ExistingIncorporationDocument { get; set; }
+        public bool HasManyPartners { get; set; }
     }
 
     private CompanyFormModel model = new();
@@ -157,6 +169,7 @@ else
                 model.RegistrationNumber = company.RegistrationNumber;
                 model.Address = company.Address;
                 model.IncorporationDocumentId = company.IncorporationDocumentId;
+                model.HasManyPartners = company.HasManyPartners;
                 
                 // If the backend returned a DocumentDto, we could map it if it was in CompanyDto. 
                 // Currently CompanyDto only holds IncorporationDocumentId, not the full DocumentDto.
@@ -212,7 +225,8 @@ else
                     model.EstablishmentDate,
                     model.RegistrationNumber,
                     model.Address,
-                    model.IncorporationDocumentId);
+                    model.IncorporationDocumentId,
+                    model.HasManyPartners);
 
                 await CompanyApi.UpdateAsync(companyId, dto);
                 ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
@@ -229,7 +243,8 @@ else
                     model.EstablishmentDate,
                     model.RegistrationNumber,
                     model.Address,
-                    null); // No document ID yet
+                    null,
+                    model.HasManyPartners); // No document ID yet
 
                 var newCompany = await CompanyApi.CreateAsync(createDto);
                 ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
@@ -252,7 +267,8 @@ else
                         model.EstablishmentDate,
                         model.RegistrationNumber,
                         model.Address,
-                        docId);
+                        docId,
+                        model.HasManyPartners);
                         
                     await CompanyApi.UpdateAsync(companyId, updateDto);
                     ToastService.ShowSuccess(Loc["OperationSuccess"].Value);

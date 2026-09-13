@@ -25,6 +25,14 @@ public class Company : BaseEntity
     
     public decimal? AgreedFee { get; set; } // المتفق عليه (e.g., annual retainer)
 
+    // Many-Partners mode (> 10 partners → plain text + combined PDFs)
+    public bool HasManyPartners { get; set; } = false;
+    public string? PartnersText { get; set; }                         // أسماء الشركاء (plain text)
+    public Guid? PartnersIdsDocumentId { get; set; }                  // بطاقات الشركاء (combined PDF)
+    public Document? PartnersIdsDocument { get; set; }
+    public Guid? PartnersAttorneysDocumentId { get; set; }            // توكيلات الشركاء (combined PDF)
+    public Document? PartnersAttorneysDocument { get; set; }
+
     // FK to a Document (Documents module comes later — stored as a plain
     // nullable Guid for now, no navigation property yet, to keep this
     // module self-contained until Documents is built).

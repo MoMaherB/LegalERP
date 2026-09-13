@@ -21,6 +21,8 @@ public class CompanyRepository : ICompanyRepository
     public async Task<Company?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _db.Companies
             .Include(c => c.IncorporationDocument)
+            .Include(c => c.PartnersIdsDocument)
+            .Include(c => c.PartnersAttorneysDocument)
             .Include(c => c.Amendments).ThenInclude(a => a.Document)
             .Include(c => c.Partners).ThenInclude(p => p.NationalIdDocument)
             .Include(c => c.Partners).ThenInclude(p => p.Client).ThenInclude(cl => cl.NationalIdDocument)

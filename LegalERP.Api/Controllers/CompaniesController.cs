@@ -48,7 +48,9 @@ public class CompaniesController : ControllerBase
             EstablishmentDate = dto.EstablishmentDate,
             RegistrationNumber = dto.RegistrationNumber,
             Address = dto.Address,
-            IncorporationDocumentId = dto.IncorporationDocumentId
+            IncorporationDocumentId = dto.IncorporationDocumentId,
+            HasManyPartners = dto.HasManyPartners,
+            PartnersText = dto.PartnersText
         };
 
         await _repository.AddAsync(company, ct);
@@ -56,6 +58,9 @@ public class CompaniesController : ControllerBase
 
         return CreatedAtAction(nameof(GetAll), new { id = company.Id }, ToDto(company));
     }
+
+    private static DocumentDto? ToDocDto(Document? d) =>
+        d == null ? null : new DocumentDto(d.Id, d.FileName, d.StoredFileName, d.ContentType, d.FileSizeBytes);
 
     private static CompanyDto ToDto(Company c) => new(
         c.Id,
@@ -68,20 +73,25 @@ public class CompaniesController : ControllerBase
         c.RegistrationNumber,
         c.Address,
         c.IncorporationDocumentId,
-        c.IncorporationDocument == null ? null : new DocumentDto(c.IncorporationDocument.Id, c.IncorporationDocument.FileName, c.IncorporationDocument.StoredFileName, c.IncorporationDocument.ContentType, c.IncorporationDocument.FileSizeBytes),
+        ToDocDto(c.IncorporationDocument),
+        c.HasManyPartners,
+        c.PartnersText,
+        c.PartnersIdsDocumentId,
+        ToDocDto(c.PartnersIdsDocument),
+        c.PartnersAttorneysDocumentId,
+        ToDocDto(c.PartnersAttorneysDocument),
         c.Amendments.Select(a => new CompanyAmendmentDto(
             a.Id, 
             a.SequenceNumber, 
             a.Title, 
             a.AmendmentDate, 
             a.DocumentId,
-            a.Document == null ? null : new DocumentDto(a.Document.Id, a.Document.FileName, a.Document.StoredFileName, a.Document.ContentType, a.Document.FileSizeBytes)
+            ToDocDto(a.Document)
         )).ToList(),
         c.Partners.Select(p => {
             var fullName = p.Client?.FullName ?? p.FullName;
             var nationalId = p.Client?.NationalIdNumber ?? p.NationalIdNumber;
             var doc = p.Client?.NationalIdDocument ?? p.NationalIdDocument;
-            var docDto = doc == null ? null : new DocumentDto(doc.Id, doc.FileName, doc.StoredFileName, doc.ContentType, doc.FileSizeBytes);
             return new CompanyPartnerDto(
                 p.Id, 
                 p.ClientId,
@@ -89,7 +99,7 @@ public class CompaniesController : ControllerBase
                 nationalId, 
                 p.OwnershipPercentage, 
                 doc?.Id ?? p.NationalIdDocumentId,
-                docDto
+                ToDocDto(doc)
             );
         }).ToList()
     );
@@ -121,6 +131,10 @@ public class CompaniesController : ControllerBase
         company.RegistrationNumber = dto.RegistrationNumber;
         company.Address = dto.Address;
         company.IncorporationDocumentId = dto.IncorporationDocumentId;
+        company.HasManyPartners = dto.HasManyPartners;
+        company.PartnersText = dto.PartnersText;
+        company.PartnersIdsDocumentId = dto.PartnersIdsDocumentId;
+        company.PartnersAttorneysDocumentId = dto.PartnersAttorneysDocumentId;
 
         _repository.Update(company);
         await _repository.SaveChangesAsync(ct);
@@ -157,7 +171,7 @@ public class CompaniesController : ControllerBase
                 a.Title, 
                 a.AmendmentDate, 
                 a.DocumentId, 
-                a.Document == null ? null : new DocumentDto(a.Document.Id, a.Document.FileName, a.Document.StoredFileName, a.Document.ContentType, a.Document.FileSizeBytes)
+                ToDocDto(a.Document)
             ));
 
         return Ok(amendments);
@@ -272,7 +286,6 @@ public class CompaniesController : ControllerBase
             var fullName = createdPartner.Client?.FullName ?? createdPartner.FullName;
             var nationalId = createdPartner.Client?.NationalIdNumber ?? createdPartner.NationalIdNumber;
             var doc = createdPartner.Client?.NationalIdDocument ?? createdPartner.NationalIdDocument;
-            var docDto = doc == null ? null : new DocumentDto(doc.Id, doc.FileName, doc.StoredFileName, doc.ContentType, doc.FileSizeBytes);
 
             return Ok(new CompanyPartnerDto(
                 createdPartner.Id,
@@ -281,7 +294,7 @@ public class CompaniesController : ControllerBase
                 nationalId,
                 createdPartner.OwnershipPercentage,
                 doc?.Id ?? createdPartner.NationalIdDocumentId,
-                docDto
+                ToDocDto(doc)
             ));
         }
 

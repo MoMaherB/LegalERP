@@ -30,6 +30,20 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
 
         builder.HasQueryFilter(c => !c.IsDeleted);
 
+        // Many-Partners mode
+        builder.Property(c => c.HasManyPartners).HasDefaultValue(false);
+        builder.Property(c => c.PartnersText).HasMaxLength(10000);
+
+        builder.HasOne(c => c.PartnersIdsDocument)
+            .WithMany()
+            .HasForeignKey(c => c.PartnersIdsDocumentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne(c => c.PartnersAttorneysDocument)
+            .WithMany()
+            .HasForeignKey(c => c.PartnersAttorneysDocumentId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasOne(c => c.IncorporationDocument)
             .WithMany()
             .HasForeignKey(c => c.IncorporationDocumentId)

@@ -115,139 +115,219 @@ else
     </div>
 
     @* ── Partners Section ── *@
-    <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
-        <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Partners"]</h3>
-        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartnerForm" style="padding: 6px 12px; font-size: 0.9rem;">
-            @(showAddPartnerForm ? Loc["Cancel"] : Loc["AddPartner"])
-        </button>
-    </div>
-
-    @if (showAddPartnerForm)
+    @if (company.HasManyPartners)
     {
-        <div class="ios-widget-card mb-4" style="border: 1px solid rgba(52, 211, 153, 0.3);">
+        @* ── Many-Partners Mode: Plain Text + Combined PDFs ── *@
+        <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+            <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Partners"] <span class="ios-status-badge ios-status-blue" style="font-size: 0.75rem;">@Loc["ManyPartnersMode"]</span></h3>
+        </div>
+
+        @* Partners Names (Plain Text) *@
+        <div class="ios-widget-card mb-4">
             <div class="p-4">
-                <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">
-                    @(editingPartnerId.HasValue ? Loc["EditPartner"] : Loc["AddCompanyPartner"])
-                </h5>
-                <div class="row g-3">
-                    <div class="col-md-8">
-                        <label class="form-label ios-details fw-bold">@Loc["SearchClientByName"] *</label>
-                        <input class="ios-input" @bind="clientSearchTerm" @bind:event="oninput"
-                               @onkeyup="HandleClientSearch" placeholder="@Loc["TypeClientNameSearch"]" />
-                        @if (clientSearchResults != null)
+                <h5 class="ios-title mb-3" style="font-size: 1.15rem;">@Loc["PartnersNames"]</h5>
+                <textarea class="ios-input w-100" rows="6" @bind="partnersTextEdit" 
+                          placeholder="@Loc["PartnersNamesPlaceholder"]"
+                          style="resize: vertical; min-height: 120px;"></textarea>
+                <div class="d-flex justify-content-end mt-3">
+                    <button class="ios-btn ios-btn-primary" @onclick="SavePartnersText" disabled="@isSavingPartnersText">
+                        @(isSavingPartnersText ? Loc["Saving"] : Loc["SaveChanges"])
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        @* Partners IDs Document (بطاقات الشركاء) *@
+        <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+            <div class="col">
+                <div class="ios-widget-card h-100">
+                    <div class="p-4 d-flex flex-column">
+                        <h5 class="ios-title mb-3" style="font-size: 1.15rem;">📋 @Loc["PartnersIds"]</h5>
+                        @if (company.PartnersIdsDocument != null)
                         {
-                            <div class="list-group mt-2 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100; border-radius: 12px;">
-                                @if (clientSearchResults.Count > 0)
-                                {
-                                    @foreach (var c in clientSearchResults)
-                                    {
-                                        <button type="button" class="list-group-item list-group-item-action border-0 @(selectedClientId == c.Id ? "active" : "")"
-                                                @onclick="() => SelectClient(c)">
-                                            <strong>@c.FullName</strong>
-                                            @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
-                                            {
-                                                <span class="ms-1 text-muted">(ID: @c.NationalIdNumber)</span>
-                                            }
-                                            @if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
-                                            {
-                                                <small class="ms-2 text-muted">📞 @c.PhoneNumber</small>
-                                            }
-                                        </button>
-                                    }
-                                }
-                                <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning border-0 text-center">
-                                    <strong>➕ @Loc["ClientNotFoundAddNew"]</strong>
-                                </a>
+                            <div class="flex-grow-1 mb-2">
+                                <FileThumbnail Document="company.PartnersIdsDocument" OwnerType="partnerids" OwnerId="company.Id" AllowReplace="true" OnReplace="HandlePartnersIdsReplace" />
                             </div>
                         }
-                        @if (selectedClientId.HasValue)
+                        else
                         {
-                            <div class="alert alert-success mt-3 mb-0 py-2 d-flex justify-content-between align-items-center" style="border-radius: 12px;">
-                                <span>✅ @Loc["Selected"]: <strong>@selectedClientName</strong></span>
-                                <button type="button" class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="ClearClientSelection">@Loc["Clear"]</button>
-                            </div>
+                            <p class="text-muted mb-3 flex-grow-1">@Loc["NoDocumentUploaded"]</p>
+                            <InputFile class="ios-input mb-2" OnChange="LoadPartnersIdsFile" accept=".pdf,.jpg,.jpeg,.png" />
+                            @if (partnersIdsFile != null)
+                            {
+                                <button class="ios-btn ios-btn-primary w-100" @onclick="UploadPartnersIdsDoc" disabled="@isUploadingPartnersIds">
+                                    @(isUploadingPartnersIds ? Loc["Uploading"].Value : Loc["UploadDocument"].Value)
+                                </button>
+                            }
                         }
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label ios-details fw-bold">@Loc["OwnershipPercentage"]</label>
-                        <input type="number" step="0.01" class="ios-input" @bind="newPartnerOwnership" placeholder="e.g. 25.5" />
-                    </div>
-
-                    <div class="col-12 mt-4">
-                        <button class="ios-btn ios-btn-primary me-2" @onclick="SavePartner" disabled="@isSavingPartner">
-                            @(isSavingPartner ? Loc["Saving"] : (editingPartnerId.HasValue ? Loc["SaveChanges"] : Loc["SavePartner"]))
-                        </button>
-                        <button class="ios-btn ios-btn-secondary" @onclick="CancelPartnerForm">@Loc["Cancel"]</button>
                     </div>
                 </div>
+            </div>
 
+            @* Partners Attorneys Document (توكيلات الشركاء) *@
+            <div class="col">
+                <div class="ios-widget-card h-100">
+                    <div class="p-4 d-flex flex-column">
+                        <h5 class="ios-title mb-3" style="font-size: 1.15rem;">📄 @Loc["PartnersAttorneys"]</h5>
+                        @if (company.PartnersAttorneysDocument != null)
+                        {
+                            <div class="flex-grow-1 mb-2">
+                                <FileThumbnail Document="company.PartnersAttorneysDocument" OwnerType="partnerattorneys" OwnerId="company.Id" AllowReplace="true" OnReplace="HandlePartnersAttorneysReplace" />
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted mb-3 flex-grow-1">@Loc["NoDocumentUploaded"]</p>
+                            <InputFile class="ios-input mb-2" OnChange="LoadPartnersAttorneysFile" accept=".pdf,.jpg,.jpeg,.png" />
+                            @if (partnersAttorneysFile != null)
+                            {
+                                <button class="ios-btn ios-btn-primary w-100" @onclick="UploadPartnersAttorneysDoc" disabled="@isUploadingPartnersAttorneys">
+                                    @(isUploadingPartnersAttorneys ? Loc["Uploading"].Value : Loc["UploadDocument"].Value)
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
             </div>
         </div>
     }
-
-    @if (company.Partners.Count == 0)
-    {
-        <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoPartnersRecorded"]</div>
-    }
     else
     {
-        <div class="ios-table-container mb-4">
-            <table class="ios-table">
-                <thead>
-                    <tr>
-                        <th>@Loc["Name"]</th>
-                        <th class="d-none d-md-table-cell">@Loc["NationalID"]</th>
-                        <th>@Loc["OwnershipPercentage"]</th>
-                        <th class="text-center">@Loc["Actions"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var partner in company.Partners)
-                    {
-                        <tr>
-                            <td>
-                                @if (partner.ClientId.HasValue)
-                                {
-                                    <a href="/clients/@partner.ClientId.Value" class="fw-bold text-decoration-none" style="color: var(--ios-primary, #007aff);">
-                                        @partner.FullName
-                                    </a>
-                                }
-                                else
-                                {
-                                    <strong>@partner.FullName</strong>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(partner.NationalIdNumber))
-                                {
-                                    <div class="d-md-none text-muted small mt-1">@partner.NationalIdNumber</div>
-                                }
-                            </td>
-                            <td class="d-none d-md-table-cell">@(partner.NationalIdNumber ?? "—")</td>
-                            <td>
-                                @if (partner.OwnershipPercentage.HasValue)
-                                {
-                                    <span class="ios-status-badge ios-status-blue">@partner.OwnershipPercentage.Value.ToString("0.00")%</span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">—</span>
-                                }
-                            </td>
-                            <td>
-                                <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
-                                    @if (_canEdit) { 
-                                        <button class="ios-btn ios-btn-secondary m-0" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => StartEditPartner(partner)">@Loc["Edit"]</button> 
-                                    }
-                                    @if (_canDelete) { 
-                                        <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button> 
-                                    }
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        @* ── Standard Partners Mode: Linked from Client ── *@
+        <div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+            <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Partners"]</h3>
+            <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartnerForm" style="padding: 6px 12px; font-size: 0.9rem;">
+                @(showAddPartnerForm ? Loc["Cancel"] : Loc["AddPartner"])
+            </button>
         </div>
+
+        @if (showAddPartnerForm)
+        {
+            <div class="ios-widget-card mb-4" style="border: 1px solid rgba(52, 211, 153, 0.3);">
+                <div class="p-4">
+                    <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">
+                        @(editingPartnerId.HasValue ? Loc["EditPartner"] : Loc["AddCompanyPartner"])
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label ios-details fw-bold">@Loc["SearchClientByName"] *</label>
+                            <input class="ios-input" @bind="clientSearchTerm" @bind:event="oninput"
+                                   @onkeyup="HandleClientSearch" placeholder="@Loc["TypeClientNameSearch"]" />
+                            @if (clientSearchResults != null)
+                            {
+                                <div class="list-group mt-2 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100; border-radius: 12px;">
+                                    @if (clientSearchResults.Count > 0)
+                                    {
+                                        @foreach (var c in clientSearchResults)
+                                        {
+                                            <button type="button" class="list-group-item list-group-item-action border-0 @(selectedClientId == c.Id ? "active" : "")"
+                                                    @onclick="() => SelectClient(c)">
+                                                <strong>@c.FullName</strong>
+                                                @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
+                                                {
+                                                    <span class="ms-1 text-muted">(ID: @c.NationalIdNumber)</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
+                                                {
+                                                    <small class="ms-2 text-muted">📞 @c.PhoneNumber</small>
+                                                }
+                                            </button>
+                                        }
+                                    }
+                                    <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning border-0 text-center">
+                                        <strong>➕ @Loc["ClientNotFoundAddNew"]</strong>
+                                    </a>
+                                </div>
+                            }
+                            @if (selectedClientId.HasValue)
+                            {
+                                <div class="alert alert-success mt-3 mb-0 py-2 d-flex justify-content-between align-items-center" style="border-radius: 12px;">
+                                    <span>✅ @Loc["Selected"]: <strong>@selectedClientName</strong></span>
+                                    <button type="button" class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="ClearClientSelection">@Loc["Clear"]</button>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label ios-details fw-bold">@Loc["OwnershipPercentage"]</label>
+                            <input type="number" step="0.01" class="ios-input" @bind="newPartnerOwnership" placeholder="e.g. 25.5" />
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <button class="ios-btn ios-btn-primary me-2" @onclick="SavePartner" disabled="@isSavingPartner">
+                                @(isSavingPartner ? Loc["Saving"] : (editingPartnerId.HasValue ? Loc["SaveChanges"] : Loc["SavePartner"]))
+                            </button>
+                            <button class="ios-btn ios-btn-secondary" @onclick="CancelPartnerForm">@Loc["Cancel"]</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+        @if (company.Partners.Count == 0)
+        {
+            <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoPartnersRecorded"]</div>
+        }
+        else
+        {
+            <div class="ios-table-container mb-4">
+                <table class="ios-table">
+                    <thead>
+                        <tr>
+                            <th>@Loc["Name"]</th>
+                            <th class="d-none d-md-table-cell">@Loc["NationalID"]</th>
+                            <th>@Loc["OwnershipPercentage"]</th>
+                            <th class="text-center">@Loc["Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var partner in company.Partners)
+                        {
+                            <tr>
+                                <td>
+                                    @if (partner.ClientId.HasValue)
+                                    {
+                                        <a href="/clients/@partner.ClientId.Value" class="fw-bold text-decoration-none" style="color: var(--ios-primary, #007aff);">
+                                            @partner.FullName
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <strong>@partner.FullName</strong>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(partner.NationalIdNumber))
+                                    {
+                                        <div class="d-md-none text-muted small mt-1">@partner.NationalIdNumber</div>
+                                    }
+                                </td>
+                                <td class="d-none d-md-table-cell">@(partner.NationalIdNumber ?? "—")</td>
+                                <td>
+                                    @if (partner.OwnershipPercentage.HasValue)
+                                    {
+                                        <span class="ios-status-badge ios-status-blue">@partner.OwnershipPercentage.Value.ToString("0.00")%</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                        @if (_canEdit) { 
+                                            <button class="ios-btn ios-btn-secondary m-0" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => StartEditPartner(partner)">@Loc["Edit"]</button> 
+                                        }
+                                        @if (_canDelete) { 
+                                            <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button> 
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     }
 
     @* ── Amendments Section ── *@
@@ -438,7 +518,11 @@ else
                 company.EstablishmentDate,
                 company.RegistrationNumber,
                 company.Address,
-                docId
+                docId,
+                company.HasManyPartners,
+                company.PartnersText,
+                company.PartnersIdsDocumentId,
+                company.PartnersAttorneysDocumentId
             );
             await CompanyApi.UpdateAsync(company.Id, updateDto);
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
@@ -499,6 +583,14 @@ else
     private IBrowserFile? newCompanyDocFile;
     private bool isUploadingCompanyDoc;
 
+    // Many-Partners mode state
+    private string? partnersTextEdit;
+    private bool isSavingPartnersText;
+    private IBrowserFile? partnersIdsFile;
+    private bool isUploadingPartnersIds;
+    private IBrowserFile? partnersAttorneysFile;
+    private bool isUploadingPartnersAttorneys;
+
     private Guid _lastLoadedId;
 
     protected override void OnInitialized()
@@ -527,6 +619,7 @@ else
     private async Task LoadCompany()
     {
         company = await CompanyApi.GetByIdAsync(Id);
+        partnersTextEdit = company?.PartnersText;
         await LoadCompanyDocuments();
     }
 
@@ -784,6 +877,90 @@ else
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadCompany();
         }
+    }
+
+    // ── Many-Partners Mode Methods ──
+
+    private UpdateCompanyDto BuildUpdateDto(
+        Guid? incDocId = null, Guid? idsDocId = null, Guid? attDocId = null, string? pText = null)
+    {
+        if (company == null) throw new InvalidOperationException();
+        return new UpdateCompanyDto(
+            company.FileNumber, company.Category, company.CompanyName,
+            company.CompanyNameEn, company.TradeName, company.EstablishmentDate,
+            company.RegistrationNumber, company.Address,
+            incDocId ?? company.IncorporationDocumentId,
+            company.HasManyPartners,
+            pText ?? company.PartnersText,
+            idsDocId ?? company.PartnersIdsDocumentId,
+            attDocId ?? company.PartnersAttorneysDocumentId);
+    }
+
+    private async Task SavePartnersText()
+    {
+        if (company == null) return;
+        isSavingPartnersText = true;
+        try
+        {
+            var dto = BuildUpdateDto(pText: partnersTextEdit);
+            await CompanyApi.UpdateAsync(company.Id, dto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            await LoadCompany();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(Loc["FailedToSaveCompany"].Value + ": " + ex.Message);
+        }
+        finally { isSavingPartnersText = false; }
+    }
+
+    private void LoadPartnersIdsFile(InputFileChangeEventArgs e) => partnersIdsFile = e.File;
+    private void LoadPartnersAttorneysFile(InputFileChangeEventArgs e) => partnersAttorneysFile = e.File;
+
+    private async Task UploadPartnersIdsDoc()
+    {
+        if (company == null || partnersIdsFile == null) return;
+        isUploadingPartnersIds = true;
+        try
+        {
+            var docId = await CompanyApi.UploadDocumentAsync("partnerids", company.Id, partnersIdsFile);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            var dto = BuildUpdateDto(idsDocId: docId);
+            await CompanyApi.UpdateAsync(company.Id, dto);
+            partnersIdsFile = null;
+            await LoadCompany();
+        }
+        catch (Exception ex) { ToastService.ShowError(ex.Message); }
+        finally { isUploadingPartnersIds = false; }
+    }
+
+    private async Task UploadPartnersAttorneysDoc()
+    {
+        if (company == null || partnersAttorneysFile == null) return;
+        isUploadingPartnersAttorneys = true;
+        try
+        {
+            var docId = await CompanyApi.UploadDocumentAsync("partnerattorneys", company.Id, partnersAttorneysFile);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            var dto = BuildUpdateDto(attDocId: docId);
+            await CompanyApi.UpdateAsync(company.Id, dto);
+            partnersAttorneysFile = null;
+            await LoadCompany();
+        }
+        catch (Exception ex) { ToastService.ShowError(ex.Message); }
+        finally { isUploadingPartnersAttorneys = false; }
+    }
+
+    private async Task HandlePartnersIdsReplace(IBrowserFile newFile)
+    {
+        partnersIdsFile = newFile;
+        await UploadPartnersIdsDoc();
+    }
+
+    private async Task HandlePartnersAttorneysReplace(IBrowserFile newFile)
+    {
+        partnersAttorneysFile = newFile;
+        await UploadPartnersAttorneysDoc();
     }
 
     private async Task HandleAmendmentReplace(Guid amendmentId, IBrowserFile newFile)
