@@ -1619,4 +1619,22 @@
   <data name="NoDocumentUploaded" xml:space="preserve">
     <value>لم يتم رفع مستند بعد</value>
   </data>
+  <data name="ActivePartners" xml:space="preserve">
+    <value>شركاء فعالون</value>
+  </data>
+  <data name="InactivePartners" xml:space="preserve">
+    <value>شركاء غير فعالون</value>
+  </data>
+  <data name="Activate" xml:space="preserve">
+    <value>تفعيل</value>
+  </data>
+  <data name="Deactivate" xml:space="preserve">
+    <value>إلغاء التفعيل</value>
+  </data>
+  <data name="PartnerName" xml:space="preserve">
+    <value>اسم الشريك</value>
+  </data>
+  <data name="PartnerNameRequired" xml:space="preserve">
+    <value>يجب إدخال اسم الشريك</value>
+  </data>
 </root>

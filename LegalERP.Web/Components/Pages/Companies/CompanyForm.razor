@@ -149,6 +149,8 @@ else
         public Guid? IncorporationDocumentId { get; set; }
         public DocumentDto? ExistingIncorporationDocument { get; set; }
         public bool HasManyPartners { get; set; }
+        public Guid? PartnersIdsDocumentId { get; set; }
+        public Guid? PartnersAttorneysDocumentId { get; set; }
     }
 
     private CompanyFormModel model = new();
@@ -170,6 +172,8 @@ else
                 model.Address = company.Address;
                 model.IncorporationDocumentId = company.IncorporationDocumentId;
                 model.HasManyPartners = company.HasManyPartners;
+                model.PartnersIdsDocumentId = company.PartnersIdsDocumentId;
+                model.PartnersAttorneysDocumentId = company.PartnersAttorneysDocumentId;
                 
                 // If the backend returned a DocumentDto, we could map it if it was in CompanyDto. 
                 // Currently CompanyDto only holds IncorporationDocumentId, not the full DocumentDto.
@@ -226,7 +230,10 @@ else
                     model.RegistrationNumber,
                     model.Address,
                     model.IncorporationDocumentId,
-                    model.HasManyPartners);
+                    model.HasManyPartners,
+                    null,
+                    model.PartnersIdsDocumentId,
+                    model.PartnersAttorneysDocumentId);
 
                 await CompanyApi.UpdateAsync(companyId, dto);
                 ToastService.ShowSuccess(Loc["OperationSuccess"].Value);

@@ -54,7 +54,8 @@ public record CompanyPartnerDto(
     string? NationalIdNumber,
     decimal? OwnershipPercentage,
     Guid? NationalIdDocumentId,
-    DocumentDto? NationalIdDocument
+    DocumentDto? NationalIdDocument,
+    bool IsActive
 );
 
 public record CreateCompanyDto(
@@ -100,7 +101,7 @@ public record UpdateCompanyAmendmentDto(
 );
 
 public record CreateCompanyPartnerDto(
-    Guid ClientId,
+    Guid? ClientId,
     decimal? OwnershipPercentage,
     string? FullName = null,
     string? NationalIdNumber = null,
@@ -108,7 +109,7 @@ public record CreateCompanyPartnerDto(
 );
 
 public record UpdateCompanyPartnerDto(
-    Guid ClientId,
+    Guid? ClientId,
     decimal? OwnershipPercentage,
     string? FullName = null,
     string? NationalIdNumber = null,

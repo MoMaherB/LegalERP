@@ -19,6 +19,7 @@ public class CompanyPartnerConfiguration : IEntityTypeConfiguration<CompanyPartn
         builder.Property(p => p.FullName).IsRequired().HasMaxLength(300);
         builder.Property(p => p.OwnershipPercentage).HasPrecision(5, 2);
         builder.HasQueryFilter(p => !p.IsDeleted);
+        builder.Property(p => p.IsActive).HasDefaultValue(true);
 
         // Explicit relationship to parent Company (uses existing CompanyId column)
         builder.HasOne(p => p.Company)

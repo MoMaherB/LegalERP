@@ -19,4 +19,5 @@ public class CompanyPartner : BaseEntity
     public decimal? OwnershipPercentage { get; set; }
     public Guid? NationalIdDocumentId { get; set; }
     public Document? NationalIdDocument { get; set; }
+    public bool IsActive { get; set; } = true;
 }

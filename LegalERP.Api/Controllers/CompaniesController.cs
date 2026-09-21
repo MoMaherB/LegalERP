@@ -99,7 +99,8 @@ public class CompaniesController : ControllerBase
                 nationalId, 
                 p.OwnershipPercentage, 
                 doc?.Id ?? p.NationalIdDocumentId,
-                ToDocDto(doc)
+                ToDocDto(doc),
+                p.IsActive
             );
         }).ToList()
     );
@@ -294,12 +295,13 @@ public class CompaniesController : ControllerBase
                 nationalId,
                 createdPartner.OwnershipPercentage,
                 doc?.Id ?? createdPartner.NationalIdDocumentId,
-                ToDocDto(doc)
+                ToDocDto(doc),
+                createdPartner.IsActive
             ));
         }
 
         return Ok(new CompanyPartnerDto(
-            partner.Id, partner.ClientId, partner.FullName, partner.NationalIdNumber, partner.OwnershipPercentage, partner.NationalIdDocumentId, null));
+            partner.Id, partner.ClientId, partner.FullName, partner.NationalIdNumber, partner.OwnershipPercentage, partner.NationalIdDocumentId, null, partner.IsActive));
     }
 
     // PUT /api/companies/{companyId}/partners/{partnerId}
@@ -324,6 +326,22 @@ public class CompaniesController : ControllerBase
         await _repository.SaveChangesAsync(ct);
 
         return NoContent();
+    }
+
+    [HttpPut("{companyId}/partners/{partnerId}/toggle-active")]
+    public async Task<IActionResult> TogglePartnerActive(Guid companyId, Guid partnerId, CancellationToken ct)
+    {
+        var company = await _repository.GetByIdAsync(companyId, ct);
+        if (company == null) return NotFound();
+
+        var partner = company.Partners.FirstOrDefault(p => p.Id == partnerId);
+        if (partner == null) return NotFound();
+
+        partner.IsActive = !partner.IsActive;
+        _repository.Update(company);
+        await _repository.SaveChangesAsync(ct);
+
+        return Ok(new { partner.Id, partner.IsActive });
     }
 
     // DELETE /api/companies/{companyId}/partners/{partnerId}

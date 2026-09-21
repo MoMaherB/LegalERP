@@ -108,6 +108,12 @@ public class CompanyApiClient
         response.EnsureSuccessStatusCode();
     }
 
+    public async Task TogglePartnerActiveAsync(Guid companyId, Guid partnerId)
+    {
+        var response = await _http.PutAsync($"api/companies/{companyId}/partners/{partnerId}/toggle-active", null);
+        response.EnsureSuccessStatusCode();
+    }
+
     // --- Document methods ---
 
     public async Task<List<DocumentDto>> GetDocumentsAsync(string ownerType, Guid ownerId)
