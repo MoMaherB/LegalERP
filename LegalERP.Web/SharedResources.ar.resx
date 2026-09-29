@@ -1596,7 +1596,7 @@
     <value>أبداً</value>
   </data>
   <data name="HasManyPartners" xml:space="preserve">
-    <value>أكثر من 10 شركاء؟</value>
+    <value>أكثر من 5 شركاء؟</value>
   </data>
   <data name="HasManyPartnersHint" xml:space="preserve">
     <value>عند التفعيل: يتم إدخال أسماء الشركاء كنص حر ورفع بطاقاتهم وتوكيلاتهم كملفات مجمعة</value>
@@ -1620,10 +1620,10 @@
     <value>لم يتم رفع مستند بعد</value>
   </data>
   <data name="ActivePartners" xml:space="preserve">
-    <value>شركاء فعالون</value>
+    <value>شركاء حاليون</value>
   </data>
   <data name="InactivePartners" xml:space="preserve">
-    <value>شركاء غير فعالون</value>
+    <value>شركاء سابقون</value>
   </data>
   <data name="Activate" xml:space="preserve">
     <value>تفعيل</value>

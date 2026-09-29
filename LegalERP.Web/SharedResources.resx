@@ -1401,7 +1401,7 @@
     <value>Never</value>
   </data>
   <data name="HasManyPartners" xml:space="preserve">
-    <value>More than 10 partners?</value>
+    <value>More than 5 partners?</value>
   </data>
   <data name="HasManyPartnersHint" xml:space="preserve">
     <value>When enabled: partner names are entered as plain text and their IDs/attorneys are uploaded as combined files</value>
@@ -1425,10 +1425,10 @@
     <value>No document uploaded yet</value>
   </data>
   <data name="ActivePartners" xml:space="preserve">
-    <value>Active Partners</value>
+    <value>Current Partners</value>
   </data>
   <data name="InactivePartners" xml:space="preserve">
-    <value>Inactive Partners</value>
+    <value>Former Partners</value>
   </data>
   <data name="Activate" xml:space="preserve">
     <value>Activate</value>
