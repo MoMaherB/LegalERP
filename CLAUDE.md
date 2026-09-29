@@ -872,4 +872,35 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 
 ---
 
+**Feature 29: Company Many-Partners Mode & Current/Former Partners — ✅ COMPLETED (2026-09-29)**
+- **Business Rule:** Companies with more than 5 partners can toggle a "Many Partners Mode" (`HasManyPartners` flag). This changes how partners are managed:
+  - **≤5 partners mode:** Partners are linked from the Client registry via search selector (existing flow). Each partner has a `ClientId` FK.
+  - **>5 partners mode:** Partners are added directly by typing a name (no Client search/linking). `ClientId` is `null`. Two bulk document upload slots are available at the company level: **بطاقات الشركاء** (Partners IDs) and **توكيلات الشركاء** (Partners Attorneys) — stored as combined PDF files on `Company.PartnersIdsDocumentId` and `Company.PartnersAttorneysDocumentId`.
+- **Current / Former Partners (شركاء حاليون / شركاء سابقون):**
+  - All partners (both modes) have an `IsActive` flag (default `true`).
+  - The UI splits partners into two numbered sections: **شركاء حاليون** (Current) and **شركاء سابقون** (Former), each with its own 1-based numbering column (`#`).
+  - A toggle button on each partner row immediately switches their status via `PUT /api/companies/{id}/partners/{partnerId}/toggle-active` — the UI updates instantly via local list manipulation + `StateHasChanged()` without a full page reload.
+  - When deactivated, the partner moves to the bottom of the Former section. When reactivated, they move to the bottom of the Current section.
+- **Domain:**
+  - `Company.cs`: Added `HasManyPartners` (bool), `PartnersText` (string?, legacy — unused since partners are now individual rows), `PartnersIdsDocumentId`, `PartnersIdsDocument`, `PartnersAttorneysDocumentId`, `PartnersAttorneysDocument`.
+  - `CompanyPartner.cs`: Added `IsActive` (bool, default `true`).
+- **Infrastructure:**
+  - `CompanyConfiguration.cs`: Configured new fields with defaults, max lengths, and `SetNull` FK delete behavior for partner document navigation properties.
+  - `CompanyPartnerConfiguration.cs`: Added `IsActive` with `HasDefaultValue(true)`.
+  - `CompanyRepository.cs`: Added `.Include()` for both new document navigation properties.
+  - Migrations: `AddCompanyManyPartnersMode`, `AddPartnerIsActive`.
+- **Application DTOs:**
+  - `CompanyDto`: Added `HasManyPartners`, `PartnersText`, `PartnersIdsDocumentId`, `PartnersIdsDocument`, `PartnersAttorneysDocumentId`, `PartnersAttorneysDocument`.
+  - `CompanyPartnerDto`: Added `IsActive`.
+  - `CreateCompanyPartnerDto` / `UpdateCompanyPartnerDto`: Changed `ClientId` from `Guid` to `Guid?` (nullable) to support >5 mode partners without client linking.
+- **API:**
+  - `CompaniesController.cs`: Updated `ToDto` mapping, `AddPartner` (accepts nullable `ClientId`), and added `TogglePartnerActive` endpoint.
+- **Web UI:**
+  - `CompanyForm.razor`: Toggle switch "أكثر من 5 شركاء؟" with hint text. Bug fix: preserves `PartnersIdsDocumentId` and `PartnersAttorneysDocumentId` when editing (previously these defaulted to null, wiping document references).
+  - `CompanyDetail.razor`: Unified partners section for both modes with `RenderPartnerTable` render fragment. Active/Inactive sections with numbered rows. >5 mode shows simple name input + bulk document upload cards. ≤5 mode shows client search selector.
+  - `CompanyApiClient.cs`: Added `TogglePartnerActiveAsync` method.
+- **Localization:** Added translations for `HasManyPartners`, `HasManyPartnersHint`, `ManyPartnersMode`, `PartnersNames`, `PartnersNamesPlaceholder`, `PartnersIds`, `PartnersAttorneys`, `NoDocumentUploaded`, `ActivePartners` (شركاء حاليون), `InactivePartners` (شركاء سابقون), `Activate`, `Deactivate`, `PartnerName`, `PartnerNameRequired`.
+
+---
+
 *End of reference document.*
