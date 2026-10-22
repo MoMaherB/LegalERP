@@ -1,0 +1,208 @@
+@using LegalERP.Application.Cases
+@using LegalERP.Web.Services
+@using LegalERP.Web.Services.Toast
+@using Microsoft.Extensions.Localization
+@inject CaseApiClient CaseApi
+@inject IToastService ToastService
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResources> Loc
+
+@* ── Hearings & Postponements (جلسات المحكمة وتسلسل التأجيلات) ── *@
+<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+    <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["HearingsAndPostponements"]</h3>
+    @if (CanEdit)
+    {
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddHearingForm" style="padding: 6px 12px; font-size: 0.9rem;">
+            @(showAddHearingForm ? Loc["Cancel"].Value : Loc["AddHearing"].Value)
+        </button>
+    }
+</div>
+
+@if (showAddHearingForm)
+{
+    <div class="ios-widget-card d-block w-100 mb-4">
+        <div class="p-4">
+            <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">
+                @(editingHearingId.HasValue ? Loc["Edit"].Value : Loc["RecordNewHearing"].Value)
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label ios-details fw-bold">@Loc["HearingDateForm"]</label>
+                    <input type="date" class="ios-input" @bind="newHearingDate" @bind:format="yyyy-MM-dd" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label ios-details fw-bold">@Loc["HearingPurpose"]</label>
+                    <input class="ios-input" @bind="newHearingPurpose" placeholder="@Loc["HearingPurpose"]" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label ios-details fw-bold">@Loc["HearingDecision"]</label>
+                    <input class="ios-input" @bind="newHearingDecision" placeholder="@Loc["HearingDecision"]" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label ios-details fw-bold">@Loc["HearingPostponement"]</label>
+                    <input class="ios-input" @bind="newPostponementReason" placeholder="@Loc["HearingPostponement"]" />
+                </div>
+                <div class="col-12">
+                    <button class="ios-btn ios-btn-primary me-2" @onclick="SaveHearing" disabled="@isSavingHearing">
+                        @(isSavingHearing ? Loc["Saving"].Value : Loc["SaveHearing"].Value)
+                    </button>
+                    <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddHearingForm">@Loc["Cancel"]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Case.Hearings is null || Case.Hearings.Count == 0)
+{
+    <div class="alert alert-light border" style="border-radius: 12px;">@Loc["NoHearings"]</div>
+}
+else
+{
+    <div class="ios-table-container mb-4 w-100">
+        <table class="ios-table">
+            <thead>
+                <tr>
+                    <th>@Loc["HearingDate"]</th>
+                    <th>@Loc["Purpose"]</th>
+                    <th class="d-none d-md-table-cell">@Loc["JudgeDecision"]</th>
+                    <th class="d-none d-lg-table-cell">@Loc["PostponementReason"]</th>
+                    <th class="text-end">@Loc["Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var hearing in Case.Hearings.OrderByDescending(h => h.HearingDate))
+                {
+                    <tr>
+                        <td>
+                            <strong>@hearing.HearingDate.ToString("yyyy-MM-dd")</strong>
+                            @if (!string.IsNullOrWhiteSpace(hearing.JudgeDecision))
+                            {
+                                <div class="d-md-none text-muted small mt-1">@hearing.JudgeDecision</div>
+                            }
+                        </td>
+                        <td>@hearing.Purpose</td>
+                        <td class="d-none d-md-table-cell">@hearing.JudgeDecision</td>
+                        <td class="d-none d-lg-table-cell">@hearing.PostponementReason</td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-1">
+                                @if (CanEdit)
+                                {
+                                    <button type="button" class="ios-btn ios-btn-secondary" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => StartEditHearing(hearing)">
+                                        @Loc["Edit"]
+                                    </button>
+                                }
+                                @if (CanDelete)
+                                {
+                                    <button type="button" class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteHearing(hearing.Id)">
+                                        @Loc["Delete"]
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CaseDto Case { get; set; } = default!;
+
+    [Parameter]
+    public bool CanEdit { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    private bool showAddHearingForm;
+    private Guid? editingHearingId;
+    private DateOnly newHearingDate = DateOnly.FromDateTime(DateTime.UtcNow);
+    private string? newHearingPurpose;
+    private string? newHearingDecision;
+    private string? newPostponementReason;
+    private bool isSavingHearing;
+
+    private void ToggleAddHearingForm()
+    {
+        showAddHearingForm = !showAddHearingForm;
+        ResetForm();
+    }
+
+    private void StartEditHearing(CaseHearingDto hearing)
+    {
+        editingHearingId = hearing.Id;
+        newHearingDate = hearing.HearingDate;
+        newHearingPurpose = hearing.Purpose;
+        newHearingDecision = hearing.JudgeDecision;
+        newPostponementReason = hearing.PostponementReason;
+        showAddHearingForm = true;
+    }
+
+    private void ResetForm()
+    {
+        editingHearingId = null;
+        newHearingDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        newHearingPurpose = null;
+        newHearingDecision = null;
+        newPostponementReason = null;
+    }
+
+    private async Task SaveHearing()
+    {
+        isSavingHearing = true;
+
+        try
+        {
+            if (editingHearingId.HasValue)
+            {
+                var updateDto = new UpdateCaseHearingDto(
+                    newHearingDate,
+                    newHearingPurpose,
+                    newHearingDecision,
+                    newPostponementReason
+                );
+                await CaseApi.UpdateHearingAsync(Case.Id, editingHearingId.Value, updateDto);
+            }
+            else
+            {
+                var createDto = new CreateCaseHearingDto(
+                    newHearingDate,
+                    newHearingPurpose,
+                    newHearingDecision,
+                    newPostponementReason
+                );
+                await CaseApi.AddHearingAsync(Case.Id, createDto);
+            }
+
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            showAddHearingForm = false;
+            ResetForm();
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            isSavingHearing = false;
+        }
+    }
+
+    private async Task DeleteHearing(Guid hearingId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteHearing"].Value);
+        if (confirmed)
+        {
+            await CaseApi.DeleteHearingAsync(Case.Id, hearingId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            await OnChanged.InvokeAsync();
+        }
+    }
+}

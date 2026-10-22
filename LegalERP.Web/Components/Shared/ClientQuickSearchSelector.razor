@@ -1,0 +1,143 @@
+@using LegalERP.Application.Clients
+@using LegalERP.Web.Services
+@using Microsoft.Extensions.Localization
+@inject ClientApiClient ClientApi
+@inject IStringLocalizer<SharedResources> Loc
+@implements IDisposable
+
+<div>
+    <label class="form-label ios-details fw-bold">@Loc["SearchClientByName"]@(Required ? " *" : "")</label>
+    <input class="ios-input" @bind="clientSearchTerm" @bind:event="oninput"
+           @onkeyup="HandleClientSearch" placeholder="@Loc["TypeClientNamePlaceholder"]" />
+    @if (clientSearchResults != null)
+    {
+        <div class="list-group mt-2 shadow-sm" style="max-height:220px; overflow-y:auto; position:relative; z-index:100; border-radius: 12px;">
+            @if (clientSearchResults.Count > 0)
+            {
+                @foreach (var c in clientSearchResults)
+                {
+                    <button type="button" class="list-group-item list-group-item-action border-0 @(SelectedClient?.Id == c.Id ? "active" : "")"
+                            @onclick="() => SelectClient(c)">
+                        <strong>@c.FullName</strong>
+                        @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
+                        {
+                            <span class="ms-1 text-muted">(ID: @c.NationalIdNumber)</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
+                        {
+                            <small class="ms-2 text-muted">📞 @c.PhoneNumber</small>
+                        }
+                    </button>
+                }
+            }
+            <a href="/clients/new" class="list-group-item list-group-item-action list-group-item-warning border-0 text-center">
+                <strong>➕ @Loc["ClientNotFoundAddNew"]</strong>
+            </a>
+        </div>
+    }
+    @if (SelectedClient != null)
+    {
+        <div class="alert alert-success mt-2 mb-0 py-2 d-flex justify-content-between align-items-center" style="border-radius: 12px;">
+            <span>
+                ✅ @Loc["Selected"]:
+                <strong>
+                    @SelectedClient.FullName@(!string.IsNullOrWhiteSpace(SelectedClient.NationalIdNumber) ? $" (ID: {SelectedClient.NationalIdNumber})" : "")
+                </strong>
+            </span>
+            <button type="button" class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="ClearSelection">@Loc["Clear"]</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public ClientSummaryDto? SelectedClient { get; set; }
+
+    [Parameter]
+    public EventCallback<ClientSummaryDto?> SelectedClientChanged { get; set; }
+
+    [Parameter]
+    public int DebounceMs { get; set; } = 150;
+
+    [Parameter]
+    public bool Required { get; set; }
+
+    private string? clientSearchTerm;
+    private List<ClientSummaryDto>? clientSearchResults;
+    private Guid? _lastSyncedClientId;
+    private CancellationTokenSource? _searchCts;
+
+    protected override void OnParametersSet()
+    {
+        if (SelectedClient?.Id != _lastSyncedClientId)
+        {
+            _lastSyncedClientId = SelectedClient?.Id;
+            if (SelectedClient != null)
+            {
+                clientSearchTerm = SelectedClient.FullName;
+            }
+            else
+            {
+                clientSearchTerm = null;
+                clientSearchResults = null;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+    }
+
+    private async Task HandleClientSearch(KeyboardEventArgs e)
+    {
+        _searchCts?.Cancel();
+        _searchCts?.Dispose();
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        if (string.IsNullOrWhiteSpace(clientSearchTerm))
+        {
+            clientSearchResults = null;
+            return;
+        }
+
+        try
+        {
+            if (DebounceMs > 0)
+            {
+                await Task.Delay(DebounceMs, token);
+            }
+
+            var results = await ClientApi.SearchAsync(clientSearchTerm);
+            if (!token.IsCancellationRequested)
+            {
+                clientSearchResults = results;
+                StateHasChanged();
+            }
+        }
+        catch (TaskCanceledException)
+        {
+            // Newer keystroke arrived
+        }
+    }
+
+    private async Task SelectClient(ClientSummaryDto client)
+    {
+        _lastSyncedClientId = client.Id;
+        clientSearchResults = null;
+        clientSearchTerm = client.FullName;
+        SelectedClient = client;
+        await SelectedClientChanged.InvokeAsync(client);
+    }
+
+    private async Task ClearSelection()
+    {
+        _lastSyncedClientId = null;
+        clientSearchTerm = null;
+        clientSearchResults = null;
+        SelectedClient = null;
+        await SelectedClientChanged.InvokeAsync(null);
+    }
+}

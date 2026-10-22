@@ -1,0 +1,197 @@
+@using LegalERP.Application.Companies
+@using LegalERP.Web.Services
+@using LegalERP.Web.Services.Toast
+@using LegalERP.Web.Components.Shared
+@using Microsoft.Extensions.Localization
+@using Microsoft.AspNetCore.Components.Forms
+@inject CompanyApiClient CompanyApi
+@inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Loc
+@inject IJSRuntime JS
+
+@* ── Amendments Section (عقود التعديل) ── *@
+<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+    <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["Amendments"]</h3>
+    @if (CanEdit)
+    {
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddAmendmentForm" style="padding: 6px 12px; font-size: 0.9rem;">
+            @(showAddAmendmentForm ? Loc["Cancel"] : Loc["AddAmendment"])
+        </button>
+    }
+</div>
+
+@if (showAddAmendmentForm)
+{
+    <div class="ios-widget-card mb-4" style="border: 1px solid rgba(59, 130, 246, 0.3);">
+        <div class="p-4">
+            <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">@Loc["NewAmendment"]</h5>
+            <div class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label ios-details fw-bold">@Loc["TitleLeaveBlankAuto"]</label>
+                    <input class="ios-input" @bind="newAmendmentTitle" placeholder="@NextAmendmentPlaceholder" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label ios-details fw-bold">@Loc["Date"]</label>
+                    <input type="date" class="ios-input" @bind="newAmendmentDate" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label ios-details fw-bold">@Loc["AmendmentContract"]</label>
+                    <InputFile class="ios-input" OnChange="LoadAmendmentFile" accept=".pdf,.jpg,.jpeg,.png" />
+                </div>
+                <div class="col-12 mt-4">
+                    <button class="ios-btn ios-btn-primary me-2" @onclick="AddAmendment" disabled="@isSavingAmendment">
+                        @(isSavingAmendment ? Loc["Saving"] : Loc["SaveAmendment"])
+                    </button>
+                    <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddAmendmentForm">@Loc["Cancel"]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Company.Amendments.Count == 0)
+{
+    <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoAmendmentsRecorded"]</div>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-4">
+        @foreach (var amendment in Company.Amendments.OrderBy(a => a.SequenceNumber))
+        {
+            <div class="col">
+                <div class="ios-widget-card h-100 p-3 d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="ios-status-badge ios-status-gray">#@amendment.SequenceNumber</span>
+                        <span class="text-muted small">@(amendment.AmendmentDate?.ToString("yyyy-MM-dd") ?? "—")</span>
+                    </div>
+                    <h6 class="fw-bold mb-2">@amendment.Title</h6>
+                    
+                    <div class="flex-grow-1">
+                        @if (amendment.Document != null)
+                        {
+                            <FileThumbnail Document="amendment.Document" OwnerType="amendment" OwnerId="amendment.Id" AllowReplace="@CanEdit" OnReplace="@(e => HandleAmendmentReplace(amendment.Id, e))" />
+                        }
+                        else
+                        {
+                            <div class="doc-card d-flex align-items-center justify-content-center bg-light text-muted" style="border:1px dashed #ccc; height:220px; border-radius:12px;">
+                                @Loc["NoContractUploaded"]
+                            </div>
+                        }
+                    </div>
+
+                    @if (CanDelete)
+                    {
+                        <button class="ios-btn ios-btn-danger w-100 mt-2" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteAmendment(amendment.Id)">@Loc["Delete"]</button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CompanyDto Company { get; set; } = default!;
+
+    [Parameter]
+    public bool CanEdit { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    private bool showAddAmendmentForm;
+    private string? newAmendmentTitle;
+    private DateOnly? newAmendmentDate;
+    private IBrowserFile? newAmendmentFile;
+    private bool isSavingAmendment;
+
+    private string NextAmendmentPlaceholder => CompanyAmendmentTitleHelper.GetNextAmendmentTitle(Company?.Amendments);
+
+    private void ToggleAddAmendmentForm()
+    {
+        showAddAmendmentForm = !showAddAmendmentForm;
+        newAmendmentTitle = null;
+        newAmendmentDate = null;
+        newAmendmentFile = null;
+    }
+
+    private void LoadAmendmentFile(InputFileChangeEventArgs e)
+    {
+        newAmendmentFile = e.File;
+    }
+
+    private async Task AddAmendment()
+    {
+        isSavingAmendment = true;
+
+        try
+        {
+            var dto = new CreateCompanyAmendmentDto(newAmendmentTitle, newAmendmentDate, null);
+            var result = await CompanyApi.AddAmendmentAsync(Company.Id, dto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+
+            if (result != null && newAmendmentFile != null)
+            {
+                var docId = await CompanyApi.UploadDocumentAsync("amendment", result.Id, newAmendmentFile);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+                var updateDto = new UpdateCompanyAmendmentDto(result.Title, result.AmendmentDate, docId);
+                await CompanyApi.UpdateAmendmentAsync(Company.Id, result.Id, updateDto);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            }
+
+            showAddAmendmentForm = false;
+            newAmendmentTitle = null;
+            newAmendmentDate = null;
+            newAmendmentFile = null;
+
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(Loc["FailedToAddAmendment"].Value + ": " + ex.Message);
+        }
+        finally
+        {
+            isSavingAmendment = false;
+        }
+    }
+
+    private async Task DeleteAmendment(Guid amendmentId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteAmendment"].Value);
+        if (confirmed)
+        {
+            await CompanyApi.DeleteAmendmentAsync(Company.Id, amendmentId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            await OnChanged.InvokeAsync();
+        }
+    }
+
+    private async Task HandleAmendmentReplace(Guid amendmentId, IBrowserFile newFile)
+    {
+        try
+        {
+            var amendment = Company.Amendments.First(a => a.Id == amendmentId);
+            var docId = await CompanyApi.UploadDocumentAsync("amendment", amendmentId, newFile);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            var updateDto = new UpdateCompanyAmendmentDto(amendment.Title, amendment.AmendmentDate, docId);
+            await CompanyApi.UpdateAmendmentAsync(Company.Id, amendmentId, updateDto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            
+            if (amendment.DocumentId.HasValue)
+            {
+                try { await CompanyApi.DeleteDocumentAsync(amendment.DocumentId.Value); } catch { /* ignore */ }
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            }
+
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", Loc["FailedToUploadDoc"].Value + ": " + ex.Message);
+        }
+    }
+}

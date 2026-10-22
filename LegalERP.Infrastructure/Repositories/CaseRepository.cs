@@ -19,7 +19,7 @@ public class CaseRepository : ICaseRepository
     public async Task<Case?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _db.Cases
             .Include(c => c.Parties!).ThenInclude(p => p.Document)
-            .Include(c => c.Parties!).ThenInclude(p => p.Client)
+            .Include(c => c.Parties!).ThenInclude(p => p.Client).ThenInclude(cl => cl!.NationalIdDocument)
             .Include(c => c.Memos!).ThenInclude(m => m.Document)
             .Include(c => c.Hearings)
             .Include(c => c.FeeTransactions)
@@ -74,6 +74,7 @@ public class CaseRepository : ICaseRepository
     public async Task<CaseParty?> GetPartyByIdAsync(Guid partyId, CancellationToken ct = default) =>
         await _db.CaseParties
             .Include(p => p.Document)
+            .Include(p => p.Client).ThenInclude(cl => cl!.NationalIdDocument)
             .FirstOrDefaultAsync(p => p.Id == partyId, ct);
 
     public void UpdateParty(CaseParty party)

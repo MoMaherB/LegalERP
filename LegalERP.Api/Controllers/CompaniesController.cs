@@ -193,13 +193,9 @@ public class CompaniesController : ControllerBase
             ? 1
             : company.Amendments.Max(a => a.SequenceNumber) + 1;
 
-        var title = dto.Title;
-        if (string.IsNullOrWhiteSpace(title))
-        {
-            var ordinals = new[] { "الأول", "الثاني", "الثالث", "الرابع", "الخامس", "السادس", "السابع", "الثامن", "التاسع", "العاشر" };
-            var ordinalStr = nextSequence <= 10 ? ordinals[nextSequence - 1] : nextSequence.ToString();
-            title = $"عقد التعديل {ordinalStr}";
-        }
+        var title = string.IsNullOrWhiteSpace(dto.Title)
+            ? CompanyAmendmentTitleHelper.GetOrdinalTitle(nextSequence)
+            : dto.Title;
 
         var amendment = new CompanyAmendment
         {

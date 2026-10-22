@@ -396,18 +396,25 @@ public class CasesController : ControllerBase
         c.Hearings?.OrderBy(h => h.HearingDate).Select(ToHearingDto).ToList() ?? new List<CaseHearingDto>()
     );
 
-    private static CasePartyDto ToPartyDto(CaseParty p) => new(
-        p.Id,
-        p.ClientId,
-        p.FullName,
-        p.Role,
-        p.IsOurClient,
-        p.NationalIdNumber,
-        p.PhoneNumber,
-        p.Notes,
-        p.DocumentId,
-        p.Document == null ? null : new DocumentDto(p.Document.Id, p.Document.FileName, p.Document.StoredFileName, p.Document.ContentType, p.Document.FileSizeBytes)
-    );
+    private static CasePartyDto ToPartyDto(CaseParty p)
+    {
+        var fullName = p.Client?.FullName ?? p.FullName;
+        var nationalId = p.Client?.NationalIdNumber ?? p.NationalIdNumber;
+        var phoneNumber = p.Client?.PhoneNumber ?? p.PhoneNumber;
+        var doc = p.Client?.NationalIdDocument ?? p.Document;
+        return new(
+            p.Id,
+            p.ClientId,
+            fullName,
+            p.Role,
+            p.IsOurClient,
+            nationalId,
+            phoneNumber,
+            p.Notes,
+            doc?.Id ?? p.DocumentId,
+            doc == null ? null : new DocumentDto(doc.Id, doc.FileName, doc.StoredFileName, doc.ContentType, doc.FileSizeBytes)
+        );
+    }
 
     private static CaseMemoDto ToMemoDto(CaseMemo m) => new(
         m.Id,

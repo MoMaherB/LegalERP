@@ -1,0 +1,436 @@
+@using LegalERP.Application.Companies
+@using LegalERP.Application.Clients
+@using LegalERP.Web.Services
+@using LegalERP.Web.Services.Toast
+@using LegalERP.Web.Components.Shared
+@using Microsoft.Extensions.Localization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@inject CompanyApiClient CompanyApi
+@inject ClientApiClient ClientApi
+@inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Loc
+@inject IJSRuntime JS
+
+@* ── Partners Section ── *@
+<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+    <h3 class="ios-title mb-0" style="font-size: 1.4rem;">
+        @Loc["Partners"]
+        @if (Company.HasManyPartners)
+        {
+            <span class="ios-status-badge ios-status-blue" style="font-size: 0.75rem;">@Loc["ManyPartnersMode"]</span>
+        }
+    </h3>
+    @if (CanEdit)
+    {
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartnerForm" style="padding: 6px 12px; font-size: 0.9rem;">
+            @(showAddPartnerForm ? Loc["Cancel"] : Loc["AddPartner"])
+        </button>
+    }
+</div>
+
+@if (showAddPartnerForm)
+{
+    <div class="ios-widget-card mb-4" style="border: 1px solid rgba(52, 211, 153, 0.3);">
+        <div class="p-4">
+            <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">
+                @(editingPartnerId.HasValue ? Loc["EditPartner"] : Loc["AddCompanyPartner"])
+            </h5>
+            <div class="row g-3">
+                @if (Company.HasManyPartners)
+                {
+                    @* >5 Mode: Direct name input (no client search) *@
+                    <div class="col-md-8">
+                        <label class="form-label ios-details fw-bold">@Loc["PartnerName"] *</label>
+                        <input class="ios-input" @bind="directPartnerName" placeholder="@Loc["PartnerName"]" />
+                    </div>
+                }
+                else
+                {
+                    @* ≤5 Mode: Client search *@
+                    <div class="col-md-8">
+                        <ClientQuickSearchSelector @bind-SelectedClient="selectedClient" Required="true" />
+                    </div>
+                }
+
+                <div class="col-md-4">
+                    <label class="form-label ios-details fw-bold">@Loc["OwnershipPercentage"]</label>
+                    <input type="number" step="0.01" class="ios-input" @bind="newPartnerOwnership" placeholder="e.g. 25.5" />
+                </div>
+
+                <div class="col-12 mt-4">
+                    <button class="ios-btn ios-btn-primary me-2" @onclick="SavePartner" disabled="@isSavingPartner">
+                        @(isSavingPartner ? Loc["Saving"] : (editingPartnerId.HasValue ? Loc["SaveChanges"] : Loc["SavePartner"]))
+                    </button>
+                    <button class="ios-btn ios-btn-secondary" @onclick="CancelPartnerForm">@Loc["Cancel"]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* ── Active Partners ── *@
+<h5 class="ios-title mb-2" style="font-size: 1.1rem; color: #34d399;">✅ @Loc["ActivePartners"] (@Company.Partners.Count(p => p.IsActive))</h5>
+@if (!Company.Partners.Any(p => p.IsActive))
+{
+    <div class="alert alert-light border mb-3" style="border-radius: 12px;">@Loc["NoPartnersRecorded"]</div>
+}
+else
+{
+    @RenderPartnerTable(Company.Partners.Where(p => p.IsActive).ToList(), true)
+}
+
+@* ── Inactive Partners ── *@
+@if (Company.Partners.Any(p => !p.IsActive))
+{
+    <h5 class="ios-title mb-2 mt-4" style="font-size: 1.1rem; color: #94a3b8;">⏸️ @Loc["InactivePartners"] (@Company.Partners.Count(p => !p.IsActive))</h5>
+    @RenderPartnerTable(Company.Partners.Where(p => !p.IsActive).ToList(), false)
+}
+
+@* ── Bulk Document Cards (>5 mode only) ── *@
+@if (Company.HasManyPartners)
+{
+    <div class="row row-cols-1 row-cols-md-2 g-3 mb-4 mt-3">
+        <div class="col">
+            <div class="ios-widget-card h-100">
+                <div class="p-4 d-flex flex-column">
+                    <h5 class="ios-title mb-3" style="font-size: 1.15rem;">📋 @Loc["PartnersIds"]</h5>
+                    @if (Company.PartnersIdsDocument != null)
+                    {
+                        <div class="flex-grow-1 mb-2">
+                            <FileThumbnail Document="Company.PartnersIdsDocument" OwnerType="partnerids" OwnerId="Company.Id" AllowReplace="@CanEdit" OnReplace="HandlePartnersIdsReplace" />
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-3 flex-grow-1">@Loc["NoDocumentUploaded"]</p>
+                        @if (CanEdit)
+                        {
+                            <InputFile class="ios-input mb-2" OnChange="LoadPartnersIdsFile" accept=".pdf,.jpg,.jpeg,.png" />
+                            @if (partnersIdsFile != null)
+                            {
+                                <button class="ios-btn ios-btn-primary w-100" @onclick="UploadPartnersIdsDoc" disabled="@isUploadingPartnersIds">
+                                    @(isUploadingPartnersIds ? Loc["Uploading"].Value : Loc["UploadDocument"].Value)
+                                </button>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="ios-widget-card h-100">
+                <div class="p-4 d-flex flex-column">
+                    <h5 class="ios-title mb-3" style="font-size: 1.15rem;">📄 @Loc["PartnersAttorneys"]</h5>
+                    @if (Company.PartnersAttorneysDocument != null)
+                    {
+                        <div class="flex-grow-1 mb-2">
+                            <FileThumbnail Document="Company.PartnersAttorneysDocument" OwnerType="partnerattorneys" OwnerId="Company.Id" AllowReplace="@CanEdit" OnReplace="HandlePartnersAttorneysReplace" />
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted mb-3 flex-grow-1">@Loc["NoDocumentUploaded"]</p>
+                        @if (CanEdit)
+                        {
+                            <InputFile class="ios-input mb-2" OnChange="LoadPartnersAttorneysFile" accept=".pdf,.jpg,.jpeg,.png" />
+                            @if (partnersAttorneysFile != null)
+                            {
+                                <button class="ios-btn ios-btn-primary w-100" @onclick="UploadPartnersAttorneysDoc" disabled="@isUploadingPartnersAttorneys">
+                                    @(isUploadingPartnersAttorneys ? Loc["Uploading"].Value : Loc["UploadDocument"].Value)
+                                </button>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CompanyDto Company { get; set; } = default!;
+
+    [Parameter]
+    public bool CanEdit { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    // Partner form state
+    private bool showAddPartnerForm;
+    private decimal? newPartnerOwnership;
+    private bool isSavingPartner;
+    private string? directPartnerName; // For >5 mode (direct text input)
+    private Guid? editingPartnerId;
+
+    // Client search state for ≤5 mode
+    private ClientSummaryDto? selectedClient;
+
+    // Bulk Document state for >5 mode
+    private IBrowserFile? partnersIdsFile;
+    private bool isUploadingPartnersIds;
+    private IBrowserFile? partnersAttorneysFile;
+    private bool isUploadingPartnersAttorneys;
+
+    private void ToggleAddPartnerForm()
+    {
+        if (showAddPartnerForm)
+        {
+            CancelPartnerForm();
+        }
+        else
+        {
+            editingPartnerId = null;
+            newPartnerOwnership = null;
+            selectedClient = null;
+            showAddPartnerForm = true;
+        }
+    }
+
+    private void StartEditPartner(CompanyPartnerDto partner)
+    {
+        editingPartnerId = partner.Id;
+        selectedClient = partner.ClientId.HasValue
+            ? new ClientSummaryDto(partner.ClientId.Value, null, partner.FullName, partner.NationalIdNumber, null)
+            : null;
+        directPartnerName = partner.FullName;
+        newPartnerOwnership = partner.OwnershipPercentage;
+        showAddPartnerForm = true;
+    }
+
+    private void CancelPartnerForm()
+    {
+        showAddPartnerForm = false;
+        editingPartnerId = null;
+        newPartnerOwnership = null;
+        directPartnerName = null;
+        selectedClient = null;
+    }
+
+    private async Task SavePartner()
+    {
+        if (Company == null) return;
+
+        // Validate based on mode
+        if (Company.HasManyPartners)
+        {
+            if (string.IsNullOrWhiteSpace(directPartnerName))
+            {
+                ToastService.ShowWarning(Loc["PartnerNameRequired"].Value);
+                return;
+            }
+        }
+        else
+        {
+            if (selectedClient is null)
+            {
+                ToastService.ShowWarning(Loc["MustSelectClient"].Value);
+                return;
+            }
+        }
+
+        isSavingPartner = true;
+
+        try
+        {
+            if (editingPartnerId.HasValue)
+            {
+                var dto = new UpdateCompanyPartnerDto(
+                    selectedClient?.Id, 
+                    newPartnerOwnership, 
+                    Company.HasManyPartners ? directPartnerName : null);
+                await CompanyApi.UpdatePartnerAsync(Company.Id, editingPartnerId.Value, dto);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            }
+            else
+            {
+                var dto = new CreateCompanyPartnerDto(
+                    selectedClient?.Id, 
+                    newPartnerOwnership,
+                    Company.HasManyPartners ? directPartnerName : null);
+                await CompanyApi.AddPartnerAsync(Company.Id, dto);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            }
+
+            CancelPartnerForm();
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(Loc["FailedToAddPartner"].Value + ": " + ex.Message);
+        }
+        finally
+        {
+            isSavingPartner = false;
+        }
+    }
+
+    private async Task DeletePartner(Guid partnerId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeletePartner"].Value);
+        if (confirmed)
+        {
+            await CompanyApi.DeletePartnerAsync(Company.Id, partnerId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            await OnChanged.InvokeAsync();
+        }
+    }
+
+    private async Task TogglePartnerActive(CompanyPartnerDto partner)
+    {
+        try
+        {
+            await CompanyApi.TogglePartnerActiveAsync(Company.Id, partner.Id);
+            // Instant UI update: replace in local list without full reload
+            var idx = Company.Partners.FindIndex(p => p.Id == partner.Id);
+            if (idx >= 0)
+            {
+                var p = Company.Partners[idx];
+                Company.Partners[idx] = p with { IsActive = !p.IsActive };
+            }
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private RenderFragment RenderPartnerTable(List<CompanyPartnerDto> partners, bool isActiveSection) => __builder =>
+    {
+        <div class="ios-table-container mb-3" style="@(isActiveSection ? "" : "opacity: 0.65;")">
+            <table class="ios-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;">#</th>
+                        <th>@Loc["Name"]</th>
+                        <th class="d-none d-md-table-cell">@Loc["NationalID"]</th>
+                        <th>@Loc["OwnershipPercentage"]</th>
+                        <th class="text-center">@Loc["Actions"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{ var rowNum = 0; }
+                    @foreach (var partner in partners)
+                    {
+                        rowNum++;
+                        <tr>
+                            <td style="text-align: center; font-weight: bold; color: #64748b;">@rowNum</td>
+                            <td>
+                                @if (partner.ClientId.HasValue)
+                                {
+                                    <a href="/clients/@partner.ClientId.Value" class="fw-bold text-decoration-none" style="color: var(--ios-primary, #007aff);">
+                                        @partner.FullName
+                                    </a>
+                                }
+                                else
+                                {
+                                    <strong>@partner.FullName</strong>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(partner.NationalIdNumber))
+                                {
+                                    <div class="d-md-none text-muted small mt-1">@partner.NationalIdNumber</div>
+                                }
+                            </td>
+                            <td class="d-none d-md-table-cell">@(partner.NationalIdNumber ?? "—")</td>
+                            <td>
+                                @if (partner.OwnershipPercentage.HasValue)
+                                {
+                                    <span class="ios-status-badge ios-status-blue">@partner.OwnershipPercentage.Value.ToString("0.00")%</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-center align-items-center gap-1 flex-nowrap">
+                                    @if (CanEdit)
+                                    {
+                                        <button class="ios-btn m-0 @(isActiveSection ? "ios-btn-warning" : "ios-btn-success")" 
+                                                style="padding: 4px 10px; font-size: 0.85rem;" 
+                                                @onclick="() => TogglePartnerActive(partner)">
+                                            @(isActiveSection ? Loc["Deactivate"] : Loc["Activate"])
+                                        </button>
+                                        <button class="ios-btn ios-btn-secondary m-0" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => StartEditPartner(partner)">@Loc["Edit"]</button>
+                                    }
+                                    @if (CanDelete)
+                                    {
+                                        <button class="ios-btn ios-btn-danger m-0" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeletePartner(partner.Id)">@Loc["Delete"]</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    };
+
+    private UpdateCompanyDto BuildUpdateDto(Guid? idsDocId = null, Guid? attDocId = null)
+    {
+        return new UpdateCompanyDto(
+            Company.FileNumber, Company.Category, Company.CompanyName,
+            Company.CompanyNameEn, Company.TradeName, Company.EstablishmentDate,
+            Company.RegistrationNumber, Company.Address,
+            Company.IncorporationDocumentId,
+            Company.HasManyPartners,
+            Company.PartnersText,
+            idsDocId ?? Company.PartnersIdsDocumentId,
+            attDocId ?? Company.PartnersAttorneysDocumentId);
+    }
+
+    private void LoadPartnersIdsFile(InputFileChangeEventArgs e) => partnersIdsFile = e.File;
+    private void LoadPartnersAttorneysFile(InputFileChangeEventArgs e) => partnersAttorneysFile = e.File;
+
+    private async Task UploadPartnersIdsDoc()
+    {
+        if (Company == null || partnersIdsFile == null) return;
+        isUploadingPartnersIds = true;
+        try
+        {
+            var docId = await CompanyApi.UploadDocumentAsync("partnerids", Company.Id, partnersIdsFile);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            var dto = BuildUpdateDto(idsDocId: docId);
+            await CompanyApi.UpdateAsync(Company.Id, dto);
+            partnersIdsFile = null;
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex) { ToastService.ShowError(ex.Message); }
+        finally { isUploadingPartnersIds = false; }
+    }
+
+    private async Task UploadPartnersAttorneysDoc()
+    {
+        if (Company == null || partnersAttorneysFile == null) return;
+        isUploadingPartnersAttorneys = true;
+        try
+        {
+            var docId = await CompanyApi.UploadDocumentAsync("partnerattorneys", Company.Id, partnersAttorneysFile);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            var dto = BuildUpdateDto(attDocId: docId);
+            await CompanyApi.UpdateAsync(Company.Id, dto);
+            partnersAttorneysFile = null;
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex) { ToastService.ShowError(ex.Message); }
+        finally { isUploadingPartnersAttorneys = false; }
+    }
+
+    private async Task HandlePartnersIdsReplace(IBrowserFile newFile)
+    {
+        partnersIdsFile = newFile;
+        await UploadPartnersIdsDoc();
+    }
+
+    private async Task HandlePartnersAttorneysReplace(IBrowserFile newFile)
+    {
+        partnersAttorneysFile = newFile;
+        await UploadPartnersAttorneysDoc();
+    }
+}

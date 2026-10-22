@@ -1,0 +1,217 @@
+@using LegalERP.Application.Companies
+@using LegalERP.Web.Services
+@using LegalERP.Web.Services.Toast
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Localization
+@inject CompanyApiClient CompanyApi
+@inject IToastService ToastService
+@inject IStringLocalizer<SharedResources> Loc
+@inject IJSRuntime JS
+
+<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+    <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc[TitleKey]</h3>
+    @if (CanEdit)
+    {
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddDocumentForm" style="padding: 6px 12px; font-size: 0.9rem;">
+            @(showAddDocumentForm ? Loc["Cancel"].Value : Loc["UploadDocument"].Value)
+        </button>
+    }
+</div>
+
+@if (showAddDocumentForm)
+{
+    <div class="ios-widget-card d-block w-100 mb-4">
+        <div class="p-4">
+            <h5 class="ios-title text-primary mb-3" style="font-size: 1.2rem;">@Loc["UploadDocCustomTitle"]</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label ios-details fw-bold">@Loc["DocTitleDescription"]</label>
+                    <input class="ios-input" @bind="newDocumentTitle" placeholder="@Loc["DocTitlePlaceholder"]" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label ios-details fw-bold">@Loc["DocFile"]</label>
+                    <InputFile class="ios-input" OnChange="LoadDocumentFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" />
+                </div>
+                <div class="col-12">
+                    <button class="ios-btn ios-btn-primary me-2" @onclick="UploadDocument" disabled="@isUploadingDocument">
+                        @(isUploadingDocument ? Loc["Saving"].Value : Loc["UploadSaveDoc"].Value)
+                    </button>
+                    <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddDocumentForm">@Loc["Cancel"]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (documents is null)
+{
+    <p>@Loc["Loading"]</p>
+}
+else if (documents.Count == 0)
+{
+    <div class="alert alert-light border" style="border-radius: 12px;">@Loc[EmptyMessageKey]</div>
+}
+else
+{
+    <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+        @foreach (var doc in documents)
+        {
+            <div class="col">
+                <div class="d-flex flex-column h-100 gap-2">
+                    <FileThumbnail Document="doc"
+                                   OwnerType="@OwnerType"
+                                   OwnerId="OwnerId"
+                                   AllowReplace="@CanEdit"
+                                   OnReplace="@(e => HandleDocumentReplace(doc, e))" />
+                    <div class="d-flex justify-content-between align-items-center px-1">
+                        <small class="ios-details fw-bold text-muted">@FormatFileSize(doc.FileSizeBytes)</small>
+                        @if (CanDelete)
+                        {
+                            <button class="ios-btn ios-btn-danger" style="padding: 3px 10px; font-size: 0.78rem;" @onclick="() => DeleteDocument(doc.Id)">@Loc["Delete"]</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public string OwnerType { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public Guid OwnerId { get; set; }
+
+    [Parameter]
+    public string TitleKey { get; set; } = "CaseDocuments";
+
+    [Parameter]
+    public string EmptyMessageKey { get; set; } = "NoCaseDocuments";
+
+    [Parameter]
+    public bool CanEdit { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    private List<DocumentDto>? documents;
+    private bool showAddDocumentForm;
+    private string? newDocumentTitle;
+    private IBrowserFile? newDocumentFile;
+    private bool isUploadingDocument;
+    private string? _lastOwnerType;
+    private Guid _lastOwnerId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (OwnerType != _lastOwnerType || OwnerId != _lastOwnerId)
+        {
+            _lastOwnerType = OwnerType;
+            _lastOwnerId = OwnerId;
+            await LoadDocuments();
+        }
+    }
+
+    private async Task LoadDocuments()
+    {
+        try
+        {
+            documents = await CompanyApi.GetDocumentsAsync(OwnerType, OwnerId);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+            documents = new List<DocumentDto>();
+        }
+    }
+
+    private void ToggleAddDocumentForm()
+    {
+        showAddDocumentForm = !showAddDocumentForm;
+        ResetForm();
+    }
+
+    private void ResetForm()
+    {
+        newDocumentTitle = null;
+        newDocumentFile = null;
+    }
+
+    private void LoadDocumentFile(InputFileChangeEventArgs e)
+    {
+        newDocumentFile = e.File;
+        if (string.IsNullOrWhiteSpace(newDocumentTitle))
+        {
+            newDocumentTitle = e.File.Name;
+        }
+    }
+
+    private async Task UploadDocument()
+    {
+        if (newDocumentFile == null)
+        {
+            ToastService.ShowWarning(Loc["PleaseSelectFile"].Value);
+            return;
+        }
+
+        isUploadingDocument = true;
+
+        try
+        {
+            await CompanyApi.UploadDocumentAsync(OwnerType, OwnerId, newDocumentFile, newDocumentTitle);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+
+            showAddDocumentForm = false;
+            ResetForm();
+
+            await LoadDocuments();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(Loc["FailedToUploadDoc"].Value + ": " + ex.Message);
+        }
+        finally
+        {
+            isUploadingDocument = false;
+        }
+    }
+
+    private async Task DeleteDocument(Guid docId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteDoc"].Value);
+        if (confirmed)
+        {
+            try
+            {
+                await CompanyApi.DeleteDocumentAsync(docId);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+                await LoadDocuments();
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowError(Loc["FailedToDeleteDoc"].Value + ": " + ex.Message);
+            }
+        }
+    }
+
+    private async Task HandleDocumentReplace(DocumentDto doc, IBrowserFile newFile)
+    {
+        try
+        {
+            await CompanyApi.UploadDocumentAsync(OwnerType, OwnerId, newFile, doc.FileName);
+            await CompanyApi.DeleteDocumentAsync(doc.Id);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            await LoadDocuments();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(Loc["FailedToUploadDoc"].Value + ": " + ex.Message);
+        }
+    }
+
+    public static string FormatFileSize(long fileSizeBytes)
+    {
+        return $"{(fileSizeBytes / 1024.0):0.0} KB";
+    }
+}

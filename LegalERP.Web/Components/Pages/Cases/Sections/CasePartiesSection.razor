@@ -1,0 +1,259 @@
+@using LegalERP.Application.Cases
+@using LegalERP.Application.Clients
+@using LegalERP.Domain.Enums
+@using LegalERP.Web.Components.Shared
+@using LegalERP.Web.Services
+@using LegalERP.Web.Services.Toast
+@using Microsoft.Extensions.Localization
+@inject CaseApiClient CaseApi
+@inject ClientApiClient ClientApi
+@inject NavigationManager NavManager
+@inject IToastService ToastService
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResources> Loc
+
+<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+    <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["CaseParties"]</h3>
+    @if (CanEdit)
+    {
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddPartyForm" style="padding: 6px 12px; font-size: 0.9rem;">
+            @(showAddPartyForm ? Loc["Cancel"].Value : Loc["AddParty"].Value)
+        </button>
+    }
+</div>
+
+@if (showAddPartyForm)
+{
+    <div class="ios-widget-card mb-4" style="border: 1px solid rgba(52, 211, 153, 0.3);">
+        <div class="p-4">
+            <h5 class="ios-title text-success mb-3" style="font-size: 1.2rem;">@Loc["AddCasePartyFromRegistry"]</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    @if (newPartyClientStatus == "client")
+                    {
+                        <ClientQuickSearchSelector @bind-SelectedClient="selectedClient" />
+                    }
+                    else
+                    {
+                        <label class="form-label ios-details fw-bold">@Loc["PartyName"] *</label>
+                        <input class="ios-input" @bind="manualOpponentName" placeholder="@Loc["PartyName"]" />
+                    }
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label ios-details fw-bold">@Loc["PartyPosition"]</label>
+                    <select class="ios-select" @bind="newPartyRole">
+                        <option value="@PartyRole.Defendant">@Loc[CasePartyRoleHelper.GetRoleResourceKey(Case.CaseType, PartyRole.Defendant)]</option>
+                        <option value="@PartyRole.Victim">@Loc[CasePartyRoleHelper.GetRoleResourceKey(Case.CaseType, PartyRole.Victim)]</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label ios-details fw-bold">@Loc["ClientStatus"]</label>
+                    <select class="ios-select" @bind="newPartyClientStatus">
+                        <option value="client">@Loc["OurClientGreen"]</option>
+                        <option value="opponent">@Loc["OpponentRed"]</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label ios-details fw-bold">@Loc["PartyNotes"]</label>
+                    <input class="ios-input" @bind="newPartyNotes" placeholder="@Loc["PartyNotesPlaceholder"]" />
+                </div>
+
+                <div class="col-12">
+                    <button class="ios-btn ios-btn-primary me-2" @onclick="AddParty" disabled="@isSavingParty">
+                        @(isSavingParty ? Loc["Saving"].Value : Loc["SaveParty"].Value)
+                    </button>
+                    <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddPartyForm">@Loc["Cancel"]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Case.Parties.Count == 0)
+{
+    <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoPartiesRecorded"]</div>
+}
+else
+{
+    <div class="ios-table-container mb-4">
+        <table class="ios-table">
+            <thead>
+                <tr>
+                    <th>@Loc["PartyName"]</th>
+                    <th>@Loc["LegalRole"]</th>
+                    <th>@Loc["Representation"]</th>
+                    <th class="d-none d-lg-table-cell">@Loc["NationalID"]</th>
+                    <th class="d-none d-md-table-cell">@Loc["PhoneNumber"]</th>
+                    <th class="d-none d-sm-table-cell">@Loc["AttachedDocument"]</th>
+                    <th>@Loc["Actions"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var party in Case.Parties)
+                {
+                    <tr>
+                        <td>
+                            @if (party.ClientId.HasValue)
+                            {
+                                <a @onclick="() => NavigateToClientSafe(party.ClientId.Value)" class="text-decoration-none fw-bold" style="cursor: pointer; color: #2c3e50;">
+                                    @party.FullName
+                                </a>
+                            }
+                            else
+                            {
+                                <strong>@party.FullName</strong>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(party.PhoneNumber))
+                            {
+                                <div class="d-md-none text-muted small mt-1">@party.PhoneNumber</div>
+                            }
+                        </td>
+                        <td>
+                            <span class="ios-status-badge ios-status-gray">
+                                @Loc[CasePartyRoleHelper.GetRoleResourceKey(Case.CaseType, party.Role)]
+                            </span>
+                        </td>
+                        <td>
+                            @if (party.IsOurClient)
+                            {
+                                <span class="ios-status-badge ios-status-green">@Loc["OurClient"]</span>
+                            }
+                            else
+                            {
+                                <span class="ios-status-badge ios-status-red">@Loc["Opponent"]</span>
+                            }
+                        </td>
+                        <td class="d-none d-lg-table-cell">@(party.NationalIdNumber ?? "—")</td>
+                        <td class="d-none d-md-table-cell">@(party.PhoneNumber ?? "—")</td>
+                        <td class="d-none d-sm-table-cell">
+                            @if (party.Document != null)
+                            {
+                                <FileThumbnail Document="party.Document" OwnerType="caseparty" OwnerId="party.Id" />
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td>
+                            @if (CanDelete)
+                            {
+                                <button class="ios-btn ios-btn-danger" style="padding: 4px 10px; font-size: 0.85rem;" @onclick="() => DeleteParty(party.Id)">@Loc["Delete"]</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CaseDto Case { get; set; } = default!;
+
+    [Parameter]
+    public bool CanEdit { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    private bool showAddPartyForm;
+    private PartyRole newPartyRole = PartyRole.Defendant;
+    private string newPartyClientStatus = "client";
+    private string? newPartyNotes;
+    private string? manualOpponentName;
+    private ClientSummaryDto? selectedClient;
+    private bool isSavingParty;
+
+    private void ToggleAddPartyForm()
+    {
+        showAddPartyForm = !showAddPartyForm;
+        selectedClient = null;
+        manualOpponentName = null;
+    }
+
+    private async Task NavigateToClientSafe(Guid clientId)
+    {
+        var clientExists = await ClientApi.GetByIdAsync(clientId);
+        if (clientExists == null)
+        {
+            ToastService.ShowError("العميل تم حذفه من قبل برجاء اضافة الطرف من جديد");
+        }
+        else
+        {
+            NavManager.NavigateTo($"/clients/{clientId}");
+        }
+    }
+
+    private async Task AddParty()
+    {
+        if (newPartyClientStatus == "client" && selectedClient is null)
+        {
+            ToastService.ShowWarning("You must select a Client from the search results. If the person is not in the system, click 'Add new client' to register them first.");
+            return;
+        }
+
+        if (newPartyClientStatus == "opponent" && string.IsNullOrWhiteSpace(manualOpponentName))
+        {
+            ToastService.ShowWarning("You must enter the opponent's name.");
+            return;
+        }
+
+        isSavingParty = true;
+
+        try
+        {
+            var isOurClient = newPartyClientStatus == "client";
+            var fullName = isOurClient ? selectedClient!.FullName : manualOpponentName!;
+            var clientId = isOurClient ? selectedClient!.Id : (Guid?)null;
+
+            var dto = new CreateCasePartyDto(
+                clientId,
+                fullName,
+                newPartyRole,
+                isOurClient,
+                null,
+                null,
+                newPartyNotes,
+                null
+            );
+
+            await CaseApi.AddPartyAsync(Case.Id, dto);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+
+            showAddPartyForm = false;
+            selectedClient = null;
+            manualOpponentName = null;
+            newPartyClientStatus = "client";
+            newPartyNotes = null;
+
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Failed to add party: " + ex.Message);
+        }
+        finally
+        {
+            isSavingParty = false;
+        }
+    }
+
+    private async Task DeleteParty(Guid partyId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteParty"].Value);
+        if (confirmed)
+        {
+            await CaseApi.DeletePartyAsync(Case.Id, partyId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            await OnChanged.InvokeAsync();
+        }
+    }
+}

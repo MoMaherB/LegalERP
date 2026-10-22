@@ -1,0 +1,265 @@
+@using LegalERP.Application.Cases
+@using LegalERP.Web.Components.Shared
+@using LegalERP.Web.Services
+@using LegalERP.Web.Services.Toast
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Localization
+@inject CaseApiClient CaseApi
+@inject CompanyApiClient CompanyApi
+@inject IToastService ToastService
+@inject IJSRuntime JS
+@inject IStringLocalizer<SharedResources> Loc
+
+<div class="d-flex justify-content-between align-items-center mb-3 mt-4">
+    <h3 class="ios-title mb-0" style="font-size: 1.4rem;">@Loc["LegalMemos"]</h3>
+    @if (CanEdit)
+    {
+        <button class="ios-btn ios-btn-primary" @onclick="ToggleAddMemoForm" style="padding: 6px 12px; font-size: 0.9rem;">
+            @(showAddMemoForm ? Loc["Cancel"].Value : Loc["AddLegalMemo"].Value)
+        </button>
+    }
+</div>
+
+@if (showAddMemoForm)
+{
+    <div class="ios-widget-card mb-4" style="border: 1px solid rgba(59, 130, 246, 0.3);">
+        <div class="p-4">
+            <h5 class="ios-title text-info mb-3" style="font-size: 1.2rem;">
+                @(editingMemoId.HasValue ? Loc["Edit"].Value : Loc["AddLegalMemoBrief"].Value)
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label ios-details fw-bold">@Loc["MemoTitle"]</label>
+                    <input class="ios-input" @bind="newMemoTitle" placeholder="@Loc["MemoTitlePlaceholder"]" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label ios-details fw-bold">@Loc["MemoDate"]</label>
+                    <input type="date" class="ios-input" @bind="newMemoDate" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label ios-details fw-bold">@Loc["MemoAttachedDocument"]</label>
+                    <InputFile class="ios-input" OnChange="LoadMemoFile" accept=".pdf,.doc,.docx" />
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label ios-details fw-bold">@Loc["MemoContent"]</label>
+                    <textarea class="ios-input" @bind="newMemoContent" rows="4" placeholder="@Loc["MemoContentPlaceholder"]"></textarea>
+                </div>
+
+                <div class="col-12">
+                    <button class="ios-btn ios-btn-primary me-2" @onclick="SaveMemo" disabled="@isSavingMemo">
+                        @(isSavingMemo ? Loc["Saving"].Value : Loc["SaveLegalMemo"].Value)
+                    </button>
+                    <button class="ios-btn ios-btn-secondary" @onclick="ToggleAddMemoForm">@Loc["Cancel"]</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (Case.Memos is null || Case.Memos.Count == 0)
+{
+    <div class="alert alert-light border mb-4" style="border-radius: 12px;">@Loc["NoLegalMemos"]</div>
+}
+else
+{
+    <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+        @foreach (var memo in Case.Memos.OrderByDescending(m => m.MemoDate))
+        {
+            <div class="col">
+                <div class="ios-widget-card h-100 d-flex flex-column p-3 gap-2" style="border-radius: 24px;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <strong class="ios-title mb-0 text-truncate text-primary" style="font-size: 1rem;" title="@memo.Title">@memo.Title</strong>
+                        <small class="ios-status-badge ios-status-gray px-1 py-0">📅 @memo.MemoDate.ToString("yyyy-MM-dd")</small>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(memo.Content))
+                    {
+                        <p class="border-start border-3 ps-2 py-1 mb-0 flex-grow-1" style="border-color: rgba(59, 130, 246, 0.5) !important; font-size: 0.85rem; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;" title="@memo.Content">@memo.Content</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted fst-italic mb-0 flex-grow-1" style="font-size: 0.85rem;">—</p>
+                    }
+
+                    @if (memo.Document != null)
+                    {
+                        <div class="mt-1" style="height: 160px;">
+                            <FileThumbnail Document="memo.Document" OwnerType="@MemoOwnerType" OwnerId="memo.Id" />
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top" style="border-color: rgba(0,0,0,0.05) !important;">
+                        <div class="d-flex gap-1">
+                            @if (CanEdit)
+                            {
+                                <button type="button" class="ios-btn ios-btn-secondary" style="padding: 2px 8px; font-size: 0.75rem;" @onclick="() => StartEditMemo(memo)">
+                                    @Loc["Edit"]
+                                </button>
+                                <label class="ios-btn ios-btn-secondary mb-0" style="padding: 2px 8px; font-size: 0.75rem; cursor: pointer;">
+                                    @Loc["UpdateFile"]
+                                    <InputFile OnChange="@((e) => UpdateMemoFile(memo.Id, e))" style="display: none;" accept=".pdf,.doc,.docx" />
+                                </label>
+                            }
+                        </div>
+                        @if (CanDelete)
+                        {
+                            <button class="ios-btn ios-btn-danger" style="padding: 2px 8px; font-size: 0.75rem;" @onclick="() => DeleteMemo(memo.Id)">@Loc["Delete"]</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private const string MemoOwnerType = "casememo";
+
+    [Parameter, EditorRequired]
+    public CaseDto Case { get; set; } = default!;
+
+    [Parameter]
+    public bool CanEdit { get; set; }
+
+    [Parameter]
+    public bool CanDelete { get; set; }
+
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    private bool showAddMemoForm;
+    private Guid? editingMemoId;
+    private string? newMemoTitle;
+    private string? newMemoContent;
+    private DateOnly newMemoDate = DateOnly.FromDateTime(DateTime.UtcNow);
+    private IBrowserFile? newMemoFile;
+    private bool isSavingMemo;
+
+    private void ToggleAddMemoForm()
+    {
+        showAddMemoForm = !showAddMemoForm;
+        ResetForm();
+    }
+
+    private void StartEditMemo(CaseMemoDto memo)
+    {
+        editingMemoId = memo.Id;
+        newMemoTitle = memo.Title;
+        newMemoContent = memo.Content;
+        newMemoDate = memo.MemoDate;
+        newMemoFile = null;
+        showAddMemoForm = true;
+    }
+
+    private void ResetForm()
+    {
+        editingMemoId = null;
+        newMemoTitle = null;
+        newMemoContent = null;
+        newMemoDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        newMemoFile = null;
+    }
+
+    private void LoadMemoFile(InputFileChangeEventArgs e)
+    {
+        newMemoFile = e.File;
+    }
+
+    private async Task SaveMemo()
+    {
+        if (string.IsNullOrWhiteSpace(newMemoTitle))
+        {
+            ToastService.ShowWarning(Loc["MemoTitle"].Value);
+            return;
+        }
+
+        isSavingMemo = true;
+
+        try
+        {
+            if (editingMemoId.HasValue)
+            {
+                var existingMemo = Case.Memos.First(m => m.Id == editingMemoId.Value);
+                var docId = existingMemo.DocumentId;
+
+                if (newMemoFile != null)
+                {
+                    docId = await CompanyApi.UploadDocumentAsync(MemoOwnerType, existingMemo.Id, newMemoFile);
+                    if (existingMemo.DocumentId.HasValue)
+                    {
+                        await CompanyApi.DeleteDocumentAsync(existingMemo.DocumentId.Value);
+                    }
+                }
+
+                var updateDto = new UpdateCaseMemoDto(newMemoTitle, newMemoContent, newMemoDate, docId);
+                await CaseApi.UpdateMemoAsync(Case.Id, existingMemo.Id, updateDto);
+            }
+            else
+            {
+                var dto = new CreateCaseMemoDto(newMemoTitle, newMemoContent, newMemoDate, null);
+                var createdMemo = await CaseApi.AddMemoAsync(Case.Id, dto);
+
+                if (createdMemo != null && newMemoFile != null)
+                {
+                    await UploadAndAttachDocumentAsync(createdMemo, newMemoFile, oldDocumentId: null);
+                }
+            }
+
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            showAddMemoForm = false;
+            ResetForm();
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            isSavingMemo = false;
+        }
+    }
+
+    private async Task UpdateMemoFile(Guid memoId, InputFileChangeEventArgs e)
+    {
+        try
+        {
+            var file = e.File;
+            if (file == null) return;
+
+            var existingMemo = Case.Memos.First(m => m.Id == memoId);
+            await UploadAndAttachDocumentAsync(existingMemo, file, existingMemo.DocumentId);
+
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+    }
+
+    private async Task UploadAndAttachDocumentAsync(CaseMemoDto memo, IBrowserFile file, Guid? oldDocumentId)
+    {
+        var newDocId = await CompanyApi.UploadDocumentAsync(MemoOwnerType, memo.Id, file);
+        var updateDto = new UpdateCaseMemoDto(memo.Title, memo.Content, memo.MemoDate, newDocId);
+        await CaseApi.UpdateMemoAsync(Case.Id, memo.Id, updateDto);
+
+        if (oldDocumentId.HasValue)
+        {
+            await CompanyApi.DeleteDocumentAsync(oldDocumentId.Value);
+        }
+    }
+
+    private async Task DeleteMemo(Guid memoId)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteMemo"].Value);
+        if (confirmed)
+        {
+            await CaseApi.DeleteMemoAsync(Case.Id, memoId);
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+            await OnChanged.InvokeAsync();
+        }
+    }
+}

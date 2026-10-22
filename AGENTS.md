@@ -915,6 +915,56 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - `CompanyApiClient.cs`: Added `TogglePartnerActiveAsync` method.
 - **Localization:** Added translations for `HasManyPartners`, `HasManyPartnersHint`, `ManyPartnersMode`, `PartnersNames`, `PartnersNamesPlaceholder`, `PartnersIds`, `PartnersAttorneys`, `NoDocumentUploaded`, `ActivePartners` (شركاء حاليون), `InactivePartners` (شركاء سابقون), `Activate`, `Deactivate`, `PartnerName`, `PartnerNameRequired`.
 
+**Refactor: Deepening CompanyDetail — Ticket 01: Extract CompanyAmendmentsSection — ✅ COMPLETED (2026-10-11)**
+- **Architecture Deepening:** Extracted the amendment contracts lifecycle out of `CompanyDetail.razor` into an independent component [`CompanyAmendmentsSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Companies/Sections/CompanyAmendmentsSection.razor).
+- **Encapsulated Behaviors:**
+  - Ordered amendment cards rendering with status badges.
+  - Automatic Arabic ordinal sequence title generation (`عقد التعديل الأول`, `الثاني`...).
+  - Form state for creating amendments with date, custom title, and contract file upload.
+  - Inline contract replacement modal and delete action with RBAC checks (`CanEdit`, `CanDelete`).
+- **Main View Simplification:** `CompanyDetail.razor` delegates amendment rendering to `<CompanyAmendmentsSection Company="company" CanEdit="_canEdit" CanDelete="_canDelete" OnChanged="LoadCompany" />`, removing over 150 lines of boilerplate markup and state methods from the host view.
+
+**Refactor: Deepening CompanyDetail — Ticket 02: Extract CompanyPartnersSection — ✅ COMPLETED (2026-10-11)**
+- **Architecture Deepening:** Extracted all partner management logic and bulk partner document slots out of `CompanyDetail.razor` into a modular, self-contained component [`CompanyPartnersSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Companies/Sections/CompanyPartnersSection.razor).
+- **Encapsulated Behaviors:**
+  - **Mode 1 (&le;5 partners):** Client autocomplete search with debouncing (`Task.Delay` + `CancellationTokenSource`), client selection badge, and clear actions.
+  - **Mode 2 (&gt;5 partners):** Direct partner name input without client search requirement.
+  - **Split Partner Tables:** Current partners (شركاء حاليون) and Former partners (شركاء سابقون), each with clean 1-based `#` row numbering.
+  - **Instant Status Toggle:** Fast active/inactive toggling via `TogglePartnerActiveAsync` with in-place list state updating and `StateHasChanged()` without full page reload.
+  - **Bulk Document Cards (>5 mode):** Partner IDs (`PartnersIdsDocument`) and Partner Attorneys (`PartnersAttorneysDocument`) uploads and replacements.
+  - **RBAC Protection:** Enforced `CanEdit` and `CanDelete` parameter flags for form display, editing, deactivation/activation, and partner deletion.
+- **Main View Simplification:** Replaced ~330 lines of partner markup, state fields, and API handler methods in `CompanyDetail.razor` with `<CompanyPartnersSection Company="company" CanEdit="_canEdit" CanDelete="_canDelete" OnChanged="LoadCompany" />`.
+**Refactor: Deepening CompanyDetail — Ticket 03: Extract CompanyDocumentsSection & Polish — ✅ COMPLETED (2026-10-12)**
+- **Architecture Deepening:** Extracted the general company documents grid, file upload form, file size formatting, and replacement handlers out of `CompanyDetail.razor` into an independent component [`CompanyDocumentsSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Companies/Sections/CompanyDocumentsSection.razor).
+- **Encapsulated Behaviors:**
+  - Independent loading and error boundary for company documents (`companydoc` owner type).
+  - Form state for uploading documents with title and allowed file extensions (`.pdf,.jpg,.jpeg,.png,.doc,.docx`).
+  - Extracted pure helper [`DocumentFormattingHelper.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Companies/DocumentFormattingHelper.cs) for file size calculations.
+  - Delete and inline replace actions with RBAC checks (`CanEdit`, `CanDelete`).
+- **Main View Simplification:** `CompanyDetail.razor` is polished into a concise orchestrator (reduced from 1,061 lines down to ~240 lines) delegating cleanly to its 3 deep child sections (`<CompanyPartnersSection>`, `<CompanyAmendmentsSection>`, `<CompanyDocumentsSection>`).
+- **Test-Driven Verification:** Test suite expanded to **35 tests** with 0 failures across 3 seams (logic formatting, bUnit component UI, and host orchestrator tree verification).
+
+**Refactor: Deepening CaseDetail — Ticket 01: Extract CasePartiesSection & Fix Client Party Resolution — ✅ COMPLETED (2026-10-19)**
+- **Architecture Deepening:**
+  - Extracted reusable, debounced, race-safe [`ClientQuickSearchSelector.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Shared/ClientQuickSearchSelector.razor) shared across [`CasePartiesSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Cases/Sections/CasePartiesSection.razor) and [`CompanyPartnersSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Companies/Sections/CompanyPartnersSection.razor).
+  - Extracted [`CasePartiesSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Cases/Sections/CasePartiesSection.razor) and pure helper [`CasePartyRoleHelper.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Cases/CasePartyRoleHelper.cs) (`DefendantCriminal`/`VictimCriminal` vs `DefendantCivil`/`PlaintiffCivil`).
+  - Fixed [`CasesController.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/CasesController.cs) (`ToPartyDto`) and [`CaseRepository.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Infrastructure/Repositories/CaseRepository.cs) so `Our Client` (`الموكل`) parties resolve `FullName`, `NationalIdNumber`, `PhoneNumber`, and `NationalIdDocument` directly from `p.Client` without `" (ID: ...)"` pollution.
+- **Test-Driven Verification:** Expanded test suite to **50 passing tests** (`CasePartyRoleHelperTests`, `CasesControllerPartyTests`, and `CasePartiesSectionTests`).
+
+**Refactor: Deepening CaseDetail — Ticket 02: Extract CaseMemosSection & Fix Memo Document Ownership — ✅ COMPLETED (2026-10-21)**
+- **Architecture Deepening:**
+  - Extracted [`CaseMemosSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Cases/Sections/CaseMemosSection.razor) encapsulating the Legal Memos & Briefs (`مذكرات`) lifecycle and delegated Legal Memos rendering in [`CaseDetail.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Cases/CaseDetail.razor).
+  - Fixed Legal Memo file upload sequencing so creating a memo with a file attachment creates the memo first and uploads the file with `ownerType = "casememo"` and `ownerId = createdMemo.Id` (eliminating random `Guid.NewGuid()` `OwnerId` values).
+  - Enforced `CanEdit` on inline `UpdateFile` and added automatic cleanup (`DeleteDocumentAsync`) of the superseded `Document` when replacing a memo's file.
+- **Test-Driven Verification:** Expanded test suite to **57 passing tests** (`CasesControllerMemoTests` and `CaseMemosSectionTests`).
+
+**Refactor: Deepening CaseDetail — Ticket 03: Extract CaseHearingsSection, Shared EntityDocumentsSection & Polish Orchestrator — ✅ COMPLETED (2026-10-21)**
+- **Architecture Deepening:**
+  - Extracted [`CaseHearingsSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Cases/Sections/CaseHearingsSection.razor) encapsulating chronological Hearings & Postponements (`الحكم و التأجيل`) rendering, adding, editing, and deleting with RBAC checks (`CanEdit`, `CanDelete`).
+  - Generalized general document management into shared [`EntityDocumentsSection.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Shared/EntityDocumentsSection.razor) (absorbing `CompanyDocumentsSection.razor` and `DocumentFormattingHelper.cs`) so both [`CompanyDetail.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Companies/CompanyDetail.razor) (`OwnerType="companydoc"`) and [`CaseDetail.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Cases/CaseDetail.razor) (`OwnerType="case"`) share one module seam for upload, size formatting, custom title preservation on inline replace, and deletion.
+  - Polished [`CaseDetail.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Cases/CaseDetail.razor) into a concise 184-line orchestrator delegating to `<CasePartiesSection>`, `<CaseMemosSection>`, `<CaseHearingsSection>`, `<EntityDocumentsSection>`, and `<SharedFinancials>`.
+- **Test-Driven Verification:** Expanded test suite to **68 passing tests** (`CaseHearingsSectionTests`, `EntityDocumentsSectionTests`, `CaseDetailOrchestratorTests`).
+
 ---
 
 *End of reference document.*
