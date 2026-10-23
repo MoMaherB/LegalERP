@@ -27,7 +27,7 @@ public class FinancialRecordDto
     
     public decimal? AgreedFee { get; set; }
     public decimal TotalCollected { get; set; }
-    public decimal RemainingBalance => (AgreedFee ?? 0) - TotalCollected;
+    public decimal RemainingBalance => FinancialLedgerCalculator.CalculateRemainingBalance(AgreedFee, TotalCollected);
     
     public PaymentStatus PaymentStatus { get; set; }
 }

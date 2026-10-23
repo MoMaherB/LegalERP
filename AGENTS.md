@@ -965,6 +965,12 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Polished [`CaseDetail.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Cases/CaseDetail.razor) into a concise 184-line orchestrator delegating to `<CasePartiesSection>`, `<CaseMemosSection>`, `<CaseHearingsSection>`, `<EntityDocumentsSection>`, and `<SharedFinancials>`.
 - **Test-Driven Verification:** Expanded test suite to **68 passing tests** (`CaseHearingsSectionTests`, `EntityDocumentsSectionTests`, `CaseDetailOrchestratorTests`).
 
+**Refactor: Unifying Financials Seam — Ticket 01: Extract FinancialLedgerCalculator & Fix Global Summary — ✅ COMPLETED (2026-10-23)**
+- **Architecture Deepening:**
+  - Extracted pure in-process [`FinancialLedgerCalculator.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Financials/FinancialLedgerCalculator.cs) centralizing `TotalCollected`, `RemainingBalance` (`0` when `AgreedFee` is `null`), `PaymentStatus`, `ToEntityFinancialsDto`, and `BuildSummary` across [`FinancialsController.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/FinancialsController.cs), [`CasesController.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/CasesController.cs), [`CompaniesController.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/CompaniesController.cs), and [`GlobalFinancialsDto.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Financials/GlobalFinancialsDto.cs).
+  - Fixed Company `ReferenceNumber` resolution on `/financials` (`GetSummary`) to read `RegistrationNumber` (`السجل التجاري`), falling back to `FileNumber` (`رقم الملف`) or `"N/A"`, instead of the unused `CommercialRegisterNumber` field.
+- **Test-Driven Verification:** Expanded test suite to **76 passing tests** (`FinancialLedgerCalculatorTests` and `FinancialsControllerTests`).
+
 ---
 
 *End of reference document.*

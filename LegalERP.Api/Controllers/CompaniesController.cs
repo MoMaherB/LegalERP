@@ -365,27 +365,7 @@ public class CompaniesController : ControllerBase
         var c = await _repository.GetByIdAsync(companyId, ct);
         if (c is null) return NotFound();
 
-        var transactions = c.FeeTransactions?.OrderBy(t => t.TransactionDate).ToList() ?? new List<FeeTransaction>();
-        var totalCollected = transactions.Sum(t => t.Amount);
-        
-        var remainingBalance = c.AgreedFee.HasValue ? c.AgreedFee.Value - totalCollected : 0;
-        
-        PaymentStatus status = PaymentStatus.Unpaid;
-        if (c.AgreedFee.HasValue && c.AgreedFee.Value > 0)
-        {
-            if (totalCollected >= c.AgreedFee.Value) status = PaymentStatus.Paid;
-            else if (totalCollected > 0) status = PaymentStatus.PartiallyPaid;
-        }
-
-        var dto = new EntityFinancialsDto(
-            c.AgreedFee,
-            totalCollected,
-            remainingBalance,
-            status,
-            transactions.Select(t => new FeeTransactionDto(t.Id, t.Amount, t.TransactionDate, t.ReceiptNumber, t.Notes)).ToList()
-        );
-
-        return Ok(dto);
+        return Ok(FinancialLedgerCalculator.ToEntityFinancialsDto(c.AgreedFee, c.FeeTransactions));
     }
 
     // PUT /api/companies/{companyId}/agreed-fee

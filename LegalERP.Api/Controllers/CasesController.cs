@@ -305,27 +305,7 @@ public class CasesController : ControllerBase
         var c = await _repository.GetByIdAsync(caseId, ct);
         if (c is null) return NotFound();
 
-        var transactions = c.FeeTransactions?.OrderBy(t => t.TransactionDate).ToList() ?? new List<FeeTransaction>();
-        var totalCollected = transactions.Sum(t => t.Amount);
-        
-        var remainingBalance = c.AgreedFee.HasValue ? c.AgreedFee.Value - totalCollected : 0;
-        
-        PaymentStatus status = PaymentStatus.Unpaid;
-        if (c.AgreedFee.HasValue && c.AgreedFee.Value > 0)
-        {
-            if (totalCollected >= c.AgreedFee.Value) status = PaymentStatus.Paid;
-            else if (totalCollected > 0) status = PaymentStatus.PartiallyPaid;
-        }
-
-        var dto = new EntityFinancialsDto(
-            c.AgreedFee,
-            totalCollected,
-            remainingBalance,
-            status,
-            transactions.Select(ToFeeTransactionDto).ToList()
-        );
-
-        return Ok(dto);
+        return Ok(FinancialLedgerCalculator.ToEntityFinancialsDto(c.AgreedFee, c.FeeTransactions));
     }
 
     // PUT /api/cases/{caseId}/agreed-fee
@@ -363,7 +343,7 @@ public class CasesController : ControllerBase
         await _repository.AddFeeTransactionAsync(transaction, ct);
         await _repository.SaveChangesAsync(ct);
 
-        return Ok(ToFeeTransactionDto(transaction));
+        return Ok(FinancialLedgerCalculator.ToTransactionDto(transaction));
     }
 
     // DELETE /api/cases/{caseId}/fee-transactions/{transactionId}
@@ -431,14 +411,6 @@ public class CasesController : ControllerBase
         h.Purpose,
         h.JudgeDecision,
         h.PostponementReason
-    );
-
-    private static FeeTransactionDto ToFeeTransactionDto(FeeTransaction t) => new(
-        t.Id,
-        t.Amount,
-        t.TransactionDate,
-        t.ReceiptNumber,
-        t.Notes
     );
 }
 
