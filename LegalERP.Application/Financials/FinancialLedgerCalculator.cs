@@ -15,7 +15,7 @@ public static class FinancialLedgerCalculator
         => transactions?.Sum(t => t.Amount) ?? 0m;
 
     public static decimal CalculateRemainingBalance(decimal? agreedFee, decimal totalCollected)
-        => agreedFee.HasValue ? agreedFee.Value - totalCollected : 0m;
+        => agreedFee.HasValue ? Math.Max(0m, agreedFee.Value - totalCollected) : 0m;
 
     public static PaymentStatus CalculateStatus(decimal? agreedFee, decimal totalCollected)
     {

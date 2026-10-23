@@ -25,12 +25,20 @@ public class FinancialLedgerCalculatorTests
         dto.Transactions.Should().ContainSingle(t => t.ReceiptNumber == "R-1" && t.Amount == 500m);
     }
 
+    [Fact]
+    public void CalculateRemainingBalance_WhenCollectedExceedsAgreedFee_ReturnsZeroAndDoesNotGoNegative()
+    {
+        // User symptom: 50,000 agreed and 60,000 collected must result in 0 remaining balance, not -10,000
+        var remaining = FinancialLedgerCalculator.CalculateRemainingBalance(agreedFee: 50000m, totalCollected: 60000m);
+        remaining.Should().Be(0m);
+    }
+
     [Theory]
     [InlineData(0, 0, 0, PaymentStatus.Unpaid)]
     [InlineData(1000, 0, 1000, PaymentStatus.Unpaid)]
     [InlineData(1000, 400, 600, PaymentStatus.PartiallyPaid)]
     [InlineData(1000, 1000, 0, PaymentStatus.Paid)]
-    [InlineData(1000, 1200, -200, PaymentStatus.Paid)]
+    [InlineData(50000, 60000, 0, PaymentStatus.Paid)]
     public void ToEntityFinancialsDto_WithAgreedFeeAndPayments_ComputesBalanceAndStatus(
         decimal agreedFee,
         decimal collectedAmount,

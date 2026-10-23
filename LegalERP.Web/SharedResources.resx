@@ -555,6 +555,9 @@
   <data name="ConfirmDeleteDoc" xml:space="preserve">
     <value>Are you sure you want to delete this document?</value>
   </data>
+  <data name="ConfirmDeleteTransaction" xml:space="preserve">
+    <value>Are you sure you want to delete this payment transaction?</value>
+  </data>
   <data name="AddCasePartyFromRegistry" xml:space="preserve">
     <value>Add Case Party (from Clients Registry)</value>
   </data>

@@ -555,6 +555,9 @@
   <data name="ConfirmDeleteDoc" xml:space="preserve">
     <value>هل أنت متأكد من حذف هذا المستند؟</value>
   </data>
+  <data name="ConfirmDeleteTransaction" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذه المعاملة المالية؟</value>
+  </data>
   <data name="AddCasePartyFromRegistry" xml:space="preserve">
     <value>إضافة طرف من سجل الموكلين</value>
   </data>
@@ -746,6 +749,9 @@
   </data>
   <data name="ConfirmDeleteDoc" xml:space="preserve">
     <value>هل أنت متأكد من حذف هذا المستند؟</value>
+  </data>
+  <data name="ConfirmDeleteTransaction" xml:space="preserve">
+    <value>هل أنت متأكد من حذف هذه المعاملة المالية؟</value>
   </data>
   <data name="AddCasePartyFromRegistry" xml:space="preserve">
     <value>إضافة طرف من سجل الموكلين</value>

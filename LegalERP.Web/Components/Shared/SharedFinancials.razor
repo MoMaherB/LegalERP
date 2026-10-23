@@ -2,9 +2,10 @@
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
 @using Microsoft.Extensions.Localization
-@inject CaseApiClient CaseApi
-@inject CompanyApiClient CompanyApi
+@using Microsoft.JSInterop
+@inject FinancialsApiClient FinancialsApi
 @inject IStringLocalizer<SharedResources> Loc
+@inject IJSRuntime JS
 
 @if (financials == null)
 {
@@ -19,7 +20,7 @@ else
                 <div class="card-body">
                     <h5 class="card-title text-muted">@Loc["AgreedFee"]</h5>
                     <div class="d-flex align-items-center">
-                        <h3 class="mb-0 me-2">@(financials.AgreedFee?.ToString("N2") ?? "—")</h3>
+                        <h3 class="mb-0 me-2">@(financials.AgreedFee?.ToString("N0") ?? "—")</h3>
                         <button class="btn btn-sm btn-outline-secondary glass-panel" @onclick="ToggleEditFee">
                             <i class="bi bi-pencil"></i>
                         </button>
@@ -40,7 +41,7 @@ else
             <div class="glass-card h-100 w-100">
                 <div class="card-body">
                     <h5 class="card-title text-muted">@Loc["CollectedAmount"]</h5>
-                    <h3 class="mb-0 text-success">@financials.TotalCollected.ToString("N2")</h3>
+                    <h3 class="mb-0 text-success">@financials.TotalCollected.ToString("N0")</h3>
                 </div>
             </div>
         </div>
@@ -50,7 +51,7 @@ else
                 <div class="card-body">
                     <h5 class="card-title text-muted">@Loc["RemainingBalance"]</h5>
                     <h3 class="mb-0 @GetBalanceColor(financials.PaymentStatus)">
-                        @financials.RemainingBalance.ToString("N2")
+                        @financials.RemainingBalance.ToString("N0")
                     </h3>
                     <div class="mt-2">
                         <span class="glass-badge @GetBadgeColor(financials.PaymentStatus)">
@@ -118,7 +119,7 @@ else
                                 <tr>
                                     <td>@tx.TransactionDate.ToString("yyyy-MM-dd")</td>
                                     <td>@(tx.ReceiptNumber ?? "—")</td>
-                                    <td class="text-end fw-bold text-success">@tx.Amount.ToString("N2")</td>
+                                    <td class="text-end fw-bold text-success">@tx.Amount.ToString("N0")</td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-danger glass-panel" @onclick="() => DeleteTransaction(tx.Id)">
                                             <i class="bi bi-trash"></i>
@@ -153,10 +154,7 @@ else
 
     private async Task LoadFinancials()
     {
-        if (OwnerType == "case")
-            financials = await CaseApi.GetFinancialsAsync(OwnerId);
-        else if (OwnerType == "company")
-            financials = await CompanyApi.GetFinancialsAsync(OwnerId);
+        financials = await FinancialsApi.GetFinancialsAsync(OwnerType, OwnerId);
     }
 
     private void ToggleEditFee()
@@ -171,11 +169,7 @@ else
     private async Task SaveFee()
     {
         var dto = new UpdateAgreedFeeDto(editFeeAmount);
-        if (OwnerType == "case")
-            await CaseApi.UpdateAgreedFeeAsync(OwnerId, dto);
-        else if (OwnerType == "company")
-            await CompanyApi.UpdateAgreedFeeAsync(OwnerId, dto);
-
+        await FinancialsApi.UpdateAgreedFeeAsync(OwnerType, OwnerId, dto);
         isEditingFee = false;
         await LoadFinancials();
     }
@@ -196,11 +190,7 @@ else
         isSaving = true;
         try
         {
-            if (OwnerType == "case")
-                await CaseApi.AddFeeTransactionAsync(OwnerId, newTransaction);
-            else if (OwnerType == "company")
-                await CompanyApi.AddFeeTransactionAsync(OwnerId, newTransaction);
-
+            await FinancialsApi.AddFeeTransactionAsync(OwnerType, OwnerId, newTransaction);
             showAddTransaction = false;
             await LoadFinancials();
         }
@@ -212,11 +202,10 @@ else
 
     private async Task DeleteTransaction(Guid id)
     {
-        if (OwnerType == "case")
-            await CaseApi.DeleteFeeTransactionAsync(OwnerId, id);
-        else if (OwnerType == "company")
-            await CompanyApi.DeleteFeeTransactionAsync(OwnerId, id);
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Loc["ConfirmDeleteTransaction"].Value);
+        if (!confirmed) return;
 
+        await FinancialsApi.DeleteFeeTransactionAsync(OwnerType, OwnerId, id);
         await LoadFinancials();
     }
 

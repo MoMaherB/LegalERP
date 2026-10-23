@@ -8,9 +8,9 @@ Consolidate all entity-level Financials (`الماليات`) API endpoints and H
 
 **Blocked by:** 01: Extract FinancialLedgerCalculator and Fix Global Financials Summary
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `FinancialsController` and `FinancialsApiClient` handle `GetFinancials`, `UpdateAgreedFee`, `AddFeeTransaction`, and `DeleteFeeTransaction` for both `"case"` and `"company"` owners.
-- [ ] The 8 duplicated financial endpoints on `CasesController` and `CompaniesController` (and their client methods on `CaseApiClient` and `CompanyApiClient`) are removed.
-- [ ] `SharedFinancials.razor` delegates all operations to `FinancialsApiClient` without `if (OwnerType == "case")` branching.
-- [ ] Automated tests verify `FinancialsController` entity operations, `SharedFinancials.razor`, and `FinancialsOverview.razor`.
+- [x] `FinancialsController` and `FinancialsApiClient` handle `GetFinancials`, `UpdateAgreedFee`, `AddFeeTransaction`, and `DeleteFeeTransaction` for both `"case"` and `"company"` owners.
+- [x] The 8 duplicated financial endpoints on `CasesController` and `CompaniesController` (and their client methods on `CaseApiClient` and `CompanyApiClient`) are removed.
+- [x] `SharedFinancials.razor` delegates all operations to `FinancialsApiClient` without `if (OwnerType == "case")` branching.
+- [x] Automated tests verify `FinancialsController` entity operations, `SharedFinancials.razor`, and `FinancialsOverview.razor`.

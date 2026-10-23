@@ -1,4 +1,4 @@
-@page "/financials"
+﻿@page "/financials"
 @attribute [Authorize(Roles = "SuperAdmin,Admin")]
 @using LegalERP.Application.Financials
 @using LegalERP.Domain.Enums
@@ -28,9 +28,9 @@ else
                 <div class="ios-content">
                     <h5 class="ios-title text-muted" style="font-size: 1.2rem;">@Loc["CasesTotal"]</h5>
                     <div class="mb-2">
-                        <small class="ios-details">@Loc["Agreed"]: @summary.TotalCaseAgreedFees.ToString("N2")</small>
+                        <small class="ios-details">@Loc["Agreed"]: @summary.TotalCaseAgreedFees.ToString("N0")</small>
                     </div>
-                    <h3 class="mb-0 text-primary fw-bold">@summary.TotalCaseCollected.ToString("N2") @Loc["Collected"]</h3>
+                    <h3 class="mb-0 text-primary fw-bold">@summary.TotalCaseCollected.ToString("N0") @Loc["Collected"]</h3>
                 </div>
             </div>
         </div>
@@ -40,9 +40,9 @@ else
                 <div class="ios-content">
                     <h5 class="ios-title text-muted" style="font-size: 1.2rem;">@Loc["CompaniesTotal"]</h5>
                     <div class="mb-2">
-                        <small class="ios-details">@Loc["Agreed"]: @summary.TotalCompanyAgreedFees.ToString("N2")</small>
+                        <small class="ios-details">@Loc["Agreed"]: @summary.TotalCompanyAgreedFees.ToString("N0")</small>
                     </div>
-                    <h3 class="mb-0 text-primary fw-bold">@summary.TotalCompanyCollected.ToString("N2") @Loc["Collected"]</h3>
+                    <h3 class="mb-0 text-primary fw-bold">@summary.TotalCompanyCollected.ToString("N0") @Loc["Collected"]</h3>
                 </div>
             </div>
         </div>
@@ -52,9 +52,9 @@ else
                 <div class="ios-content">
                     <h5 class="ios-title text-success fw-bold" style="font-size: 1.2rem;">@Loc["FirmGrandTotal"]</h5>
                     <div class="mb-2">
-                        <small class="text-success fw-bold">@Loc["TotalExpected"]: @summary.FirmTotalAgreedFees.ToString("N2")</small>
+                        <small class="text-success fw-bold">@Loc["TotalExpected"]: @summary.FirmTotalAgreedFees.ToString("N0")</small>
                     </div>
-                    <h2 class="mb-0 text-success fw-bold">@summary.FirmTotalCollected.ToString("N2") @Loc["Collected"]</h2>
+                    <h2 class="mb-0 text-success fw-bold">@summary.FirmTotalCollected.ToString("N0") @Loc["Collected"]</h2>
                 </div>
             </div>
         </div>
@@ -103,10 +103,10 @@ else
                                     <div class="d-md-none text-muted small mt-1">@record.ReferenceNumber</div>
                                 </td>
                                 <td class="d-none d-md-table-cell">@record.ReferenceNumber</td>
-                                <td class="d-none d-lg-table-cell">@(record.AgreedFee?.ToString("N2") ?? "—")</td>
-                                <td class="fw-bold text-success">@record.TotalCollected.ToString("N2")</td>
+                                <td class="d-none d-lg-table-cell">@(record.AgreedFee?.ToString("N0") ?? "—")</td>
+                                <td class="fw-bold text-success">@record.TotalCollected.ToString("N0")</td>
                                 <td class="d-none d-md-table-cell @(record.RemainingBalance > 0 ? "text-danger fw-bold" : "text-success fw-bold")">
-                                    @record.RemainingBalance.ToString("N2")
+                                    @record.RemainingBalance.ToString("N0")
                                 </td>
                                 <td>
                                     <span class="ios-status-badge @GetBadgeColor(record.PaymentStatus)">

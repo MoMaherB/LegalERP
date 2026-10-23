@@ -971,6 +971,16 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Fixed Company `ReferenceNumber` resolution on `/financials` (`GetSummary`) to read `RegistrationNumber` (`السجل التجاري`), falling back to `FileNumber` (`رقم الملف`) or `"N/A"`, instead of the unused `CommercialRegisterNumber` field.
 - **Test-Driven Verification:** Expanded test suite to **76 passing tests** (`FinancialLedgerCalculatorTests` and `FinancialsControllerTests`).
 
+**Refactor: Unifying Financials Seam — Ticket 02: Unify Entity Financials Endpoints & SharedFinancials — ✅ COMPLETED (2026-10-23)**
+- **Architecture Deepening:**
+  - Consolidated entity-level financials endpoints on [`FinancialsController.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/FinancialsController.cs) (`GET/PUT/POST/DELETE api/financials/{ownerType}/{ownerId}/...`) protected by `[Authorize(Roles = "SuperAdmin,Admin")]`.
+  - Added unified entity client methods on [`FinancialsApiClient.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Services/FinancialsApiClient.cs) (`GetFinancialsAsync`, `UpdateAgreedFeeAsync`, `AddFeeTransactionAsync`, `DeleteFeeTransactionAsync`).
+  - Refactored [`SharedFinancials.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Shared/SharedFinancials.razor) to communicate strictly through `FinancialsApiClient`, completely removing `CaseApiClient`/`CompanyApiClient` injections and eliminating all `if (OwnerType == "case")` branching. Added confirmation dialog on transaction deletion with localized string `ConfirmDeleteTransaction`.
+  - Cleaned up the codebase by removing the 8 redundant endpoints in [`CasesController.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/CasesController.cs) and [`CompaniesController.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/CompaniesController.cs), and removing duplicate financial methods in [`CaseApiClient.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Services/CaseApiClient.cs) and [`CompanyApiClient.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Services/CompanyApiClient.cs).
+- **Test-Driven Verification:** Expanded test suite to **95 passing tests** with 0 failures across 3 seams (`FinancialLedgerCalculatorTests`, `FinancialsControllerTests`, `SharedFinancialsTests`, and `FinancialsOverviewTests`).
+  - Fixed currency formatting across all financial views to whole numbers (`N0`) suppressing confusing cents/piastres (`.00` / `,00`).
+  - Clamped remaining balance to `Math.Max(0m, ...)` so collected amounts exceeding the agreed fee settle at `0` remaining (Paid) without displaying negative balances.
+
 ---
 
 *End of reference document.*
