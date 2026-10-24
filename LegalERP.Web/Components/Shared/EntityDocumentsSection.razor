@@ -3,7 +3,7 @@
 @using LegalERP.Web.Services.Toast
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.Extensions.Localization
-@inject CompanyApiClient CompanyApi
+@inject DocumentApiClient DocumentApi
 @inject IToastService ToastService
 @inject IStringLocalizer<SharedResources> Loc
 @inject IJSRuntime JS
@@ -117,7 +117,7 @@ else
     {
         try
         {
-            documents = await CompanyApi.GetDocumentsAsync(OwnerType, OwnerId);
+            documents = await DocumentApi.GetDocumentsAsync(OwnerType, OwnerId);
         }
         catch (Exception ex)
         {
@@ -159,7 +159,7 @@ else
 
         try
         {
-            await CompanyApi.UploadDocumentAsync(OwnerType, OwnerId, newDocumentFile, newDocumentTitle);
+            await DocumentApi.UploadDocumentAsync(OwnerType, OwnerId, newDocumentFile, newDocumentTitle);
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
 
             showAddDocumentForm = false;
@@ -184,7 +184,7 @@ else
         {
             try
             {
-                await CompanyApi.DeleteDocumentAsync(docId);
+                await DocumentApi.DeleteDocumentAsync(docId);
                 ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                 await LoadDocuments();
             }
@@ -199,8 +199,7 @@ else
     {
         try
         {
-            await CompanyApi.UploadDocumentAsync(OwnerType, OwnerId, newFile, doc.FileName);
-            await CompanyApi.DeleteDocumentAsync(doc.Id);
+            await DocumentApi.ReplaceDocumentAsync(doc.Id, newFile, Path.GetFileNameWithoutExtension(doc.FileName));
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await LoadDocuments();
         }

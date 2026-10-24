@@ -43,6 +43,7 @@ public class CompanyDetailOrchestratorTests : TestContext
         Services.AddSingleton(_mockToast.Object);
         Services.AddSingleton(_mockLoc.Object);
         Services.AddSingleton(new CompanyApiClient(_mockHttpFactory.Object));
+        Services.AddSingleton(new DocumentApiClient(_mockHttpFactory.Object));
         Services.AddSingleton(new ClientApiClient(_mockHttpFactory.Object));
         Services.AddSingleton(new CaseApiClient(_mockHttpFactory.Object));
         Services.AddSingleton(new FinancialsApiClient(_mockHttpFactory.Object));

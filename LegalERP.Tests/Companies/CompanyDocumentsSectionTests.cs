@@ -1,14 +1,17 @@
 using Bunit;
 using FluentAssertions;
+using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
 using LegalERP.Web;
 using LegalERP.Web.Components.Shared;
 using LegalERP.Web.Services;
 using LegalERP.Web.Services.Toast;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
 using System.Net;
+using System.Text;
 using System.Text.Json;
 using Xunit;
 
@@ -31,12 +34,12 @@ public class CompanyDocumentsSectionTests : TestContext
 
         Services.AddSingleton(_mockToast.Object);
         Services.AddSingleton(_mockLoc.Object);
-        Services.AddSingleton(new CompanyApiClient(_mockHttpFactory.Object));
+        Services.AddSingleton(new DocumentApiClient(_mockHttpFactory.Object));
     }
 
     private IRenderedComponent<EntityDocumentsSection> RenderCompanyDocuments(Guid companyId, bool canEdit, bool canDelete) =>
         RenderComponent<EntityDocumentsSection>(parameters => parameters
-            .Add(p => p.OwnerType, "companydoc")
+            .Add(p => p.OwnerType, DocumentOwnerTypes.CompanyDoc)
             .Add(p => p.OwnerId, companyId)
             .Add(p => p.TitleKey, "CompanyDocuments")
             .Add(p => p.EmptyMessageKey, "NoCompanyDocuments")
@@ -122,9 +125,35 @@ public class CompanyDocumentsSectionTests : TestContext
         toggleButton.TextContent.Should().Contain("Cancel");
     }
 
+    [Fact]
+    public async Task CompanyDocumentsSection_WhenReplacingDocument_CallsPutReplaceEndpointWithoutSeparateDelete()
+    {
+        var companyId = Guid.NewGuid();
+        var docId = Guid.NewGuid();
+        var existingDoc = new DocumentDto(docId, "contract.pdf", "stored1.pdf", "application/pdf", 2048);
+        _handler.SetResponse(new List<DocumentDto> { existingDoc });
+
+        var cut = RenderCompanyDocuments(companyId, canEdit: true, canDelete: true);
+
+        var mockFile = new Mock<IBrowserFile>();
+        mockFile.Setup(f => f.Name).Returns("updated-contract.pdf");
+        mockFile.Setup(f => f.ContentType).Returns("application/pdf");
+        mockFile.Setup(f => f.OpenReadStream(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .Returns(new MemoryStream(Encoding.UTF8.GetBytes("new pdf bytes")));
+
+        var thumbnail = cut.FindComponent<FileThumbnail>();
+        await cut.InvokeAsync(() => thumbnail.Instance.OnReplace.InvokeAsync(mockFile.Object));
+
+        _handler.Requests.Should().Contain(r =>
+            r.Method == HttpMethod.Put &&
+            r.RequestUri!.ToString().Contains($"api/documents/{docId}/replace"));
+        _handler.Requests.Should().NotContain(r => r.Method == HttpMethod.Delete);
+    }
+
     private class FakeHttpMessageHandler : HttpMessageHandler
     {
         private string _json = "[]";
+        public List<HttpRequestMessage> Requests { get; } = new();
 
         public void SetResponse<T>(T data)
         {
@@ -133,9 +162,20 @@ public class CompanyDocumentsSectionTests : TestContext
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            Requests.Add(request);
+
+            if (request.Method == HttpMethod.Put && request.RequestUri?.ToString().Contains("/replace") == true)
+            {
+                var replaced = new DocumentDto(Guid.NewGuid(), "updated-contract.pdf", "stored2.pdf", "application/pdf", 4096);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(replaced), Encoding.UTF8, "application/json")
+                });
+            }
+
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent(_json, System.Text.Encoding.UTF8, "application/json")
+                Content = new StringContent(_json, Encoding.UTF8, "application/json")
             });
         }
     }

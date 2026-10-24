@@ -42,6 +42,7 @@ builder.Services.AddHttpClient("LegalErpApi", client =>
 
 // ── App Services ──────────────────────────────────────────────────────────────
 builder.Services.AddScoped<CompanyApiClient>();
+builder.Services.AddScoped<DocumentApiClient>();
 builder.Services.AddScoped<CaseApiClient>();
 builder.Services.AddScoped<ClientApiClient>();
 builder.Services.AddScoped<NotificationApiClient>();

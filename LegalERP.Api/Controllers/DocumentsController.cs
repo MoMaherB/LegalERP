@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using LegalERP.Application.Companies;
 using LegalERP.Application.Storage;
 using LegalERP.Domain.Entities;
 using LegalERP.Infrastructure.Persistence;
@@ -17,6 +18,8 @@ namespace LegalERP.Api.Controllers;
 [Authorize]   // All endpoints require authentication
 public class DocumentsController : ControllerBase
 {
+    private static readonly string[] AllowedExtensions = { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
+
     private readonly ApplicationDbContext _db;
     private readonly IFileStorageService _storage;
 
@@ -36,22 +39,15 @@ public class DocumentsController : ControllerBase
         IFormFile file,
         CancellationToken ct)
     {
-        if (file == null || file.Length == 0)
-            return BadRequest("No file provided.");
-
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
-        if (Array.IndexOf(allowedExtensions, ext) < 0)
-            return BadRequest("Invalid file type. Only PDF, Word documents, and images are allowed.");
+        var validationError = ValidateUploadedFile(file, out var ext);
+        if (validationError != null)
+            return BadRequest(validationError);
 
         using var stream = file.OpenReadStream();
         
         var storedFileName = await _storage.SaveFileAsync(stream, file.FileName, ownerType, ownerId, ct);
 
-        // Use the custom title if provided, otherwise fallback to the original filename
-        var displayName = !string.IsNullOrWhiteSpace(title)
-            ? title + ext  // keep the extension so download works correctly
-            : file.FileName;
+        var displayName = ResolveDisplayFileName(file.FileName, title, ext);
 
         var document = new Document
         {
@@ -67,6 +63,73 @@ public class DocumentsController : ControllerBase
         await _db.SaveChangesAsync(ct);
 
         return Ok(document.Id);
+    }
+
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
+    [HttpPut("{id:guid}/replace")]
+    [RequestSizeLimit(100 * 1024 * 1024)]
+    public async Task<ActionResult<DocumentDto>> Replace(
+        Guid id,
+        IFormFile file,
+        CancellationToken ct,
+        [FromQuery] string? title = null)
+    {
+        var doc = await _db.Documents.FirstOrDefaultAsync(d => d.Id == id && !d.IsDeleted, ct);
+        if (doc == null) return NotFound();
+
+        var validationError = ValidateUploadedFile(file, out var ext);
+        if (validationError != null)
+            return BadRequest(validationError);
+
+        var oldStoredFileName = doc.StoredFileName;
+
+        using var stream = file.OpenReadStream();
+        var newStoredFileName = await _storage.SaveFileAsync(stream, file.FileName, doc.OwnerType, doc.OwnerId, ct);
+
+        doc.FileName = ResolveDisplayFileName(file.FileName, title, ext);
+        doc.StoredFileName = newStoredFileName;
+        doc.ContentType = file.ContentType;
+        doc.FileSizeBytes = file.Length;
+        doc.UpdatedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+
+        if (!string.IsNullOrWhiteSpace(oldStoredFileName) && oldStoredFileName != newStoredFileName)
+        {
+            await _storage.DeleteFileAsync(doc.OwnerType, doc.OwnerId, oldStoredFileName, ct);
+        }
+
+        return Ok(new DocumentDto(
+            doc.Id,
+            doc.FileName,
+            doc.StoredFileName,
+            doc.ContentType,
+            doc.FileSizeBytes));
+    }
+
+    private static string? ValidateUploadedFile(IFormFile? file, out string extension)
+    {
+        extension = string.Empty;
+        if (file == null || file.Length == 0)
+            return "No file provided.";
+
+        extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (Array.IndexOf(AllowedExtensions, extension) < 0)
+            return "Invalid file type. Only PDF, Word documents, and images are allowed.";
+
+        return null;
+    }
+
+    private static string ResolveDisplayFileName(string originalFileName, string? customTitle, string extension)
+    {
+        if (string.IsNullOrWhiteSpace(customTitle))
+            return originalFileName;
+
+        var cleanTitle = customTitle.EndsWith(extension, StringComparison.OrdinalIgnoreCase)
+            ? customTitle[..^extension.Length]
+            : customTitle;
+
+        return cleanTitle + extension;
     }
 
     [AllowAnonymous]
@@ -184,7 +247,7 @@ public class DocumentsController : ControllerBase
         return Ok(docs);
     }
 
-    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {

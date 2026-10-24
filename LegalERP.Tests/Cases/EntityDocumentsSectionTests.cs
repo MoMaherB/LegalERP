@@ -1,5 +1,6 @@
 using Bunit;
 using FluentAssertions;
+using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
 using LegalERP.Web;
 using LegalERP.Web.Components.Shared;
@@ -32,7 +33,7 @@ public class EntityDocumentsSectionTests : TestContext
 
         Services.AddSingleton(_mockToast.Object);
         Services.AddSingleton(_mockLoc.Object);
-        Services.AddSingleton(new CompanyApiClient(_mockHttpFactory.Object));
+        Services.AddSingleton(new DocumentApiClient(_mockHttpFactory.Object));
     }
 
     [Fact]
@@ -42,7 +43,7 @@ public class EntityDocumentsSectionTests : TestContext
         _handler.SetDocuments(new List<DocumentDto>());
 
         var cut = RenderComponent<EntityDocumentsSection>(p => p
-            .Add(x => x.OwnerType, "case")
+            .Add(x => x.OwnerType, DocumentOwnerTypes.Case)
             .Add(x => x.OwnerId, caseId)
             .Add(x => x.TitleKey, "CaseDocuments")
             .Add(x => x.EmptyMessageKey, "NoCaseDocuments")
@@ -66,7 +67,7 @@ public class EntityDocumentsSectionTests : TestContext
         });
 
         var cut = RenderComponent<EntityDocumentsSection>(p => p
-            .Add(x => x.OwnerType, "case")
+            .Add(x => x.OwnerType, DocumentOwnerTypes.Case)
             .Add(x => x.OwnerId, caseId)
             .Add(x => x.TitleKey, "CaseDocuments")
             .Add(x => x.EmptyMessageKey, "NoCaseDocuments")
@@ -84,7 +85,7 @@ public class EntityDocumentsSectionTests : TestContext
         _handler.SetDocuments(new List<DocumentDto>());
 
         var cut = RenderComponent<EntityDocumentsSection>(p => p
-            .Add(x => x.OwnerType, "case")
+            .Add(x => x.OwnerType, DocumentOwnerTypes.Case)
             .Add(x => x.OwnerId, caseId)
             .Add(x => x.TitleKey, "CaseDocuments")
             .Add(x => x.EmptyMessageKey, "NoCaseDocuments")
@@ -109,7 +110,7 @@ public class EntityDocumentsSectionTests : TestContext
     }
 
     [Fact]
-    public async Task EntityDocumentsSection_ReplacingDocumentInline_UploadsNewAndDeletesOldDocument()
+    public async Task EntityDocumentsSection_ReplacingDocumentInline_ReplacesDocumentInPlaceViaPut()
     {
         var caseId = Guid.NewGuid();
         var oldDocId = Guid.NewGuid();
@@ -119,7 +120,7 @@ public class EntityDocumentsSectionTests : TestContext
         });
 
         var cut = RenderComponent<EntityDocumentsSection>(p => p
-            .Add(x => x.OwnerType, "case")
+            .Add(x => x.OwnerType, DocumentOwnerTypes.Case)
             .Add(x => x.OwnerId, caseId)
             .Add(x => x.TitleKey, "CaseDocuments")
             .Add(x => x.EmptyMessageKey, "NoCaseDocuments")
@@ -136,11 +137,10 @@ public class EntityDocumentsSectionTests : TestContext
         await cut.InvokeAsync(() => thumbnail.Instance.OnReplace.InvokeAsync(mockFile.Object));
 
         _handler.Requests.Should().Contain(r =>
-            r.Method == HttpMethod.Post &&
-            r.Uri.Contains($"ownerType=case&ownerId={caseId}"));
-        _handler.Requests.Should().Contain(r =>
-            r.Method == HttpMethod.Delete &&
-            r.Uri.EndsWith($"api/documents/{oldDocId}"));
+            r.Method == HttpMethod.Put &&
+            r.Uri.Contains($"api/documents/{oldDocId}/replace") &&
+            r.Uri.Contains("title=old"));
+        _handler.Requests.Should().NotContain(r => r.Method == HttpMethod.Delete);
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public class EntityDocumentsSectionTests : TestContext
         JSInterop.Setup<bool>("confirm", _ => true).SetResult(true);
 
         var cut = RenderComponent<EntityDocumentsSection>(p => p
-            .Add(x => x.OwnerType, "case")
+            .Add(x => x.OwnerType, DocumentOwnerTypes.Case)
             .Add(x => x.OwnerId, caseId)
             .Add(x => x.TitleKey, "CaseDocuments")
             .Add(x => x.EmptyMessageKey, "NoCaseDocuments")
@@ -186,6 +186,15 @@ public class EntityDocumentsSectionTests : TestContext
                 return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent($"\"{Guid.NewGuid()}\"", System.Text.Encoding.UTF8, "application/json")
+                });
+            }
+
+            if (request.Method == HttpMethod.Put && uri.Contains("/replace"))
+            {
+                var replaced = new DocumentDto(Guid.NewGuid(), "replacement.pdf", "stored-new.pdf", "application/pdf", 2048);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(replaced), System.Text.Encoding.UTF8, "application/json")
                 });
             }
 
