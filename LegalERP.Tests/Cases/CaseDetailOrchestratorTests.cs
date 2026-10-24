@@ -81,6 +81,38 @@ public class CaseDetailOrchestratorTests : TestContext
         cut.FindComponents<SharedFinancials>().Should().HaveCount(1);
     }
 
+    [Fact]
+    public void CaseDetail_ActionButtons_AreAlignedInSingleHorizontalFlexContainer()
+    {
+        var caseId = Guid.NewGuid();
+        var caseDto = new CaseDto(
+            Id: caseId,
+            CaseNumber: "C-2026-999",
+            Title: "Sample Case",
+            CaseType: CaseType.Civil,
+            Status: CaseStatus.Active,
+            Outcome: null,
+            FilingDate: new DateOnly(2026, 1, 10),
+            CourtName: "Cairo Court",
+            JudgeName: "Judge Hassan",
+            Notes: null,
+            Parties: new List<CasePartyDto>(),
+            Memos: new List<CaseMemoDto>(),
+            Hearings: new List<CaseHearingDto>()
+        );
+
+        _handler.SetCase(caseDto);
+
+        var cut = RenderComponent<CaseDetail>(parameters => parameters
+            .Add(p => p.Id, caseId));
+
+        var actionsContainer = cut.Find("div.d-flex.align-items-center.gap-2");
+        actionsContainer.Should().NotBeNull();
+        actionsContainer.QuerySelector("a.ios-btn-secondary").Should().NotBeNull();
+        actionsContainer.QuerySelector("a.ios-btn-primary").Should().NotBeNull();
+        actionsContainer.QuerySelector("button.ios-btn-danger").Should().NotBeNull();
+    }
+
     private class FakeHttpMessageHandler : HttpMessageHandler
     {
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)

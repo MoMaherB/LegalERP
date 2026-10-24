@@ -33,15 +33,15 @@
 else
 {
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <a href="/cases" class="ios-btn ios-btn-secondary me-2 text-decoration-none">@Loc["Back"]</a>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/cases" class="ios-btn ios-btn-secondary text-decoration-none m-0">@Loc["Back"]</a>
             @if (_canEdit)
             {
-                <a href="/cases/edit/@caseDto.Id" class="ios-btn ios-btn-primary me-2 text-decoration-none">@Loc["Edit"]</a>
+                <a href="/cases/edit/@caseDto.Id" class="ios-btn ios-btn-primary text-decoration-none m-0">@Loc["Edit"]</a>
             }
             @if (_canDelete)
             {
-                <button class="ios-btn ios-btn-danger" @onclick="DeleteCase">@Loc["Delete"]</button>
+                <button class="ios-btn ios-btn-danger m-0" @onclick="DeleteCase">@Loc["Delete"]</button>
             }
         </div>
     </div>
