@@ -3,8 +3,10 @@ using LegalERP.Api.Controllers;
 using LegalERP.Application.Companies;
 using LegalERP.Domain.Entities;
 using LegalERP.Domain.Enums;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
+using System.Reflection;
 using Xunit;
 
 namespace LegalERP.Tests.Companies;
@@ -131,6 +133,31 @@ public class CompaniesControllerAmendmentTests
         // Assert
         result.Should().BeOfType<NoContentResult>();
         _mockRepo.Verify(r => r.SoftDeleteAmendment(amendment), Times.Once);
+        _mockRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task TogglePartnerActive_RequiresEditorOrAdminRoleAndTogglesPartnerActiveFlag()
+    {
+        var method = typeof(CompaniesController).GetMethod(nameof(CompaniesController.TogglePartnerActive));
+        method.Should().NotBeNull();
+        var authAttr = method!.GetCustomAttribute<AuthorizeAttribute>();
+        authAttr.Should().NotBeNull();
+        authAttr!.Roles.Should().Be("SuperAdmin,Admin,Editor");
+
+        var companyId = Guid.NewGuid();
+        var partnerId = Guid.NewGuid();
+        var partner = new CompanyPartner { Id = partnerId, CompanyId = companyId, FullName = "شريك 1", IsActive = true };
+        var company = new Company { Id = companyId, CompanyName = "شركة النور", Partners = [partner] };
+
+        _mockRepo.Setup(r => r.GetByIdAsync(companyId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(company);
+
+        var result = await _controller.TogglePartnerActive(companyId, partnerId, CancellationToken.None);
+
+        result.Should().BeOfType<OkObjectResult>();
+        partner.IsActive.Should().BeFalse();
+        _mockRepo.Verify(r => r.Update(company), Times.Once);
         _mockRepo.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 }

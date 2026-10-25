@@ -16,7 +16,9 @@
             {
                 @foreach (var c in clientSearchResults)
                 {
+                    var isExcluded = IsExcluded(c.Id);
                     <button type="button" class="list-group-item list-group-item-action border-0 @(SelectedClient?.Id == c.Id ? "active" : "")"
+                            disabled="@isExcluded"
                             @onclick="() => SelectClient(c)">
                         <strong>@c.FullName</strong>
                         @if (!string.IsNullOrWhiteSpace(c.NationalIdNumber))
@@ -26,6 +28,10 @@
                         @if (!string.IsNullOrWhiteSpace(c.PhoneNumber))
                         {
                             <small class="ms-2 text-muted">📞 @c.PhoneNumber</small>
+                        }
+                        @if (isExcluded)
+                        {
+                            <span class="ios-status-badge ios-status-green ms-2">@Loc["AlreadyLinked"]</span>
                         }
                     </button>
                 }
@@ -61,6 +67,9 @@
 
     [Parameter]
     public bool Required { get; set; }
+
+    [Parameter]
+    public IReadOnlyCollection<Guid>? ExcludedClientIds { get; set; }
 
     private string? clientSearchTerm;
     private List<ClientSummaryDto>? clientSearchResults;
@@ -123,8 +132,15 @@
         }
     }
 
+    private bool IsExcluded(Guid id) => ExcludedClientIds?.Contains(id) == true;
+
     private async Task SelectClient(ClientSummaryDto client)
     {
+        if (IsExcluded(client.Id))
+        {
+            return;
+        }
+
         _lastSyncedClientId = client.Id;
         clientSearchResults = null;
         clientSearchTerm = client.FullName;

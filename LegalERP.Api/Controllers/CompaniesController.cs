@@ -324,6 +324,7 @@ public class CompaniesController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "SuperAdmin,Admin,Editor")]
     [HttpPut("{companyId}/partners/{partnerId}/toggle-active")]
     public async Task<IActionResult> TogglePartnerActive(Guid companyId, Guid partnerId, CancellationToken ct)
     {

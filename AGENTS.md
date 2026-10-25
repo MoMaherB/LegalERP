@@ -989,6 +989,13 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Fixed [`ClientForm.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Clients/ClientForm.razor) so creating a new client with a National ID scan creates the client first and uploads the document with `ownerId = created.Id` rather than a throwaway `Guid.NewGuid()`.
 - **Test-Driven Verification:** Expanded test suite to **107 passing tests** with 0 failures (`DocumentsControllerTests`, `ClientFormTests`, `CompanyDocumentsSectionTests`, `EntityDocumentsSectionTests`, `CompanyAmendmentsSectionTests`, `CaseMemosSectionTests`).
 
+**Refactor: AttorneyDetail Client Quick-Search Selector & TogglePartnerActive RBAC — Ticket 01 — ✅ COMPLETED (2026-10-25)**
+- **Architecture Deepening:**
+  - Extended [`ClientQuickSearchSelector.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Shared/ClientQuickSearchSelector.razor) with an optional `ExcludedClientIds` (`IReadOnlyCollection<Guid>?`) parameter so already-linked clients render with the `@Loc["AlreadyLinked"]` badge and `disabled` state.
+  - Migrated [`AttorneyDetail.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Attorneys/AttorneyDetail.razor) to use `<ClientQuickSearchSelector>`, removing manual client search state, manual search results table, and direct `ClientApiClient` injection.
+  - Added `[Authorize(Roles = "SuperAdmin,Admin,Editor")]` to [`CompaniesController.TogglePartnerActive`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/CompaniesController.cs#L327).
+- **Test-Driven Verification:** Expanded test suite to **110 passing tests** with 0 failures (`ClientQuickSearchSelectorTests`, `AttorneyDetailTests`, `CompaniesControllerAmendmentTests`).
+
 ---
 
 *End of reference document.*
