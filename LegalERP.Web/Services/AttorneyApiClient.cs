@@ -1,5 +1,4 @@
 using LegalERP.Application.Attorneys;
-using LegalERP.Application.Companies;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -76,21 +75,5 @@ public class AttorneyApiClient
     {
         var response = await _http.DeleteAsync($"api/attorneys/{attorneyId}/clients/{linkId}");
         response.EnsureSuccessStatusCode();
-    }
-
-    public async Task<Guid> UploadDocumentAsync(Guid attorneyId, Microsoft.AspNetCore.Components.Forms.IBrowserFile file)
-    {
-        using var content = new MultipartFormDataContent();
-        using var fileStream = file.OpenReadStream(100 * 1024 * 1024); // max 100MB
-        var streamContent = new StreamContent(fileStream);
-        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType);
-        content.Add(streamContent, "file", file.Name);
-
-        var url = $"api/documents/upload?ownerType=Attorney&ownerId={attorneyId}";
-        var response = await _http.PostAsync(url, content);
-        response.EnsureSuccessStatusCode();
-
-        var idStr = await response.Content.ReadAsStringAsync();
-        return Guid.Parse(idStr.Trim('"'));
     }
 }

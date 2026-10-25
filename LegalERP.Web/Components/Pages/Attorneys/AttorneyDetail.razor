@@ -1,10 +1,12 @@
 @page "/attorneys/{Id:guid}"
 @using LegalERP.Application.Attorneys
 @using LegalERP.Application.Clients
+@using LegalERP.Application.Common
 @using LegalERP.Application.Companies
 @using LegalERP.Web.Services
 @using LegalERP.Web.Components.Shared
 @inject AttorneyApiClient AttorneyApi
+@inject DocumentApiClient DocumentApi
 @inject ClientApiClient ClientApi
 @inject NavigationManager NavManager
 @inject LegalERP.Web.Services.Toast.IToastService ToastService
@@ -71,7 +73,7 @@ else
             {
                 <div class="row">
                     <div class="col-md-4">
-                        <FileThumbnail Document="attorney.Document" OwnerType="Attorney" OwnerId="attorney.Id"
+                        <FileThumbnail Document="attorney.Document" OwnerType="@DocumentOwnerTypes.Attorney" OwnerId="attorney.Id"
                                        AllowReplace="true" OnReplace="HandleReplaceDocument" />
                     </div>
                 </div>
@@ -289,8 +291,15 @@ else
     {
         try
         {
-            var newDocId = await AttorneyApi.UploadDocumentAsync(Id, file);
-            await AttorneyApi.UpdateAsync(Id, new UpdateAttorneyDto(attorney!.AttorneyNumber, attorney.Notes, newDocId));
+            if (attorney?.Document != null)
+            {
+                await DocumentApi.ReplaceDocumentAsync(attorney.Document.Id, file);
+            }
+            else
+            {
+                var newDocId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.Attorney, Id, file);
+                await AttorneyApi.UpdateAsync(Id, new UpdateAttorneyDto(attorney!.AttorneyNumber, attorney.Notes, newDocId));
+            }
             ToastService.ShowSuccess(Loc["AttorneyUpdated"].Value);
             await LoadAttorney();
         }

@@ -1,11 +1,12 @@
 @using LegalERP.Application.Cases
+@using LegalERP.Application.Common
 @using LegalERP.Web.Components.Shared
 @using LegalERP.Web.Services
 @using LegalERP.Web.Services.Toast
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.Extensions.Localization
 @inject CaseApiClient CaseApi
-@inject CompanyApiClient CompanyApi
+@inject DocumentApiClient DocumentApi
 @inject IToastService ToastService
 @inject IJSRuntime JS
 @inject IStringLocalizer<SharedResources> Loc
@@ -85,7 +86,7 @@ else
                     @if (memo.Document != null)
                     {
                         <div class="mt-1" style="height: 160px;">
-                            <FileThumbnail Document="memo.Document" OwnerType="@MemoOwnerType" OwnerId="memo.Id" />
+                            <FileThumbnail Document="memo.Document" OwnerType="@DocumentOwnerTypes.CaseMemo" OwnerId="memo.Id" />
                         </div>
                     }
 
@@ -114,8 +115,6 @@ else
 }
 
 @code {
-    private const string MemoOwnerType = "casememo";
-
     [Parameter, EditorRequired]
     public CaseDto Case { get; set; } = default!;
 
@@ -185,11 +184,11 @@ else
 
                 if (newMemoFile != null)
                 {
-                    docId = await CompanyApi.UploadDocumentAsync(MemoOwnerType, existingMemo.Id, newMemoFile);
-                    if (existingMemo.DocumentId.HasValue)
-                    {
-                        await CompanyApi.DeleteDocumentAsync(existingMemo.DocumentId.Value);
-                    }
+                    docId = await DocumentApi.UploadOrReplaceDocumentAsync(
+                        existingMemo.DocumentId,
+                        DocumentOwnerTypes.CaseMemo,
+                        existingMemo.Id,
+                        newMemoFile);
                 }
 
                 var updateDto = new UpdateCaseMemoDto(newMemoTitle, newMemoContent, newMemoDate, docId);
@@ -202,7 +201,7 @@ else
 
                 if (createdMemo != null && newMemoFile != null)
                 {
-                    await UploadAndAttachDocumentAsync(createdMemo, newMemoFile, oldDocumentId: null);
+                    await UploadAndAttachDocumentAsync(createdMemo, newMemoFile);
                 }
             }
 
@@ -229,7 +228,14 @@ else
             if (file == null) return;
 
             var existingMemo = Case.Memos.First(m => m.Id == memoId);
-            await UploadAndAttachDocumentAsync(existingMemo, file, existingMemo.DocumentId);
+            if (existingMemo.DocumentId.HasValue)
+            {
+                await DocumentApi.ReplaceDocumentAsync(existingMemo.DocumentId.Value, file);
+            }
+            else
+            {
+                await UploadAndAttachDocumentAsync(existingMemo, file);
+            }
 
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await OnChanged.InvokeAsync();
@@ -240,16 +246,11 @@ else
         }
     }
 
-    private async Task UploadAndAttachDocumentAsync(CaseMemoDto memo, IBrowserFile file, Guid? oldDocumentId)
+    private async Task UploadAndAttachDocumentAsync(CaseMemoDto memo, IBrowserFile file)
     {
-        var newDocId = await CompanyApi.UploadDocumentAsync(MemoOwnerType, memo.Id, file);
+        var newDocId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.CaseMemo, memo.Id, file);
         var updateDto = new UpdateCaseMemoDto(memo.Title, memo.Content, memo.MemoDate, newDocId);
         await CaseApi.UpdateMemoAsync(Case.Id, memo.Id, updateDto);
-
-        if (oldDocumentId.HasValue)
-        {
-            await CompanyApi.DeleteDocumentAsync(oldDocumentId.Value);
-        }
     }
 
     private async Task DeleteMemo(Guid memoId)

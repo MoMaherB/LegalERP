@@ -40,7 +40,7 @@ public class CaseMemosSectionTests : TestContext
         Services.AddSingleton(_mockToast.Object);
         Services.AddSingleton(_mockLoc.Object);
         Services.AddSingleton(new CaseApiClient(_mockHttpFactory.Object));
-        Services.AddSingleton(new CompanyApiClient(_mockHttpFactory.Object));
+        Services.AddSingleton(new DocumentApiClient(_mockHttpFactory.Object));
     }
 
     private static CaseDto CreateCase(List<CaseMemoDto>? memos = null)
@@ -113,33 +113,25 @@ public class CaseMemosSectionTests : TestContext
             .Add(p => p.OnChanged, () => { onChangedCalled = true; })
         );
 
-        // Open Add Memo form
         cut.Find("button.ios-btn-primary").Click();
 
-        // Enter memo title and content
         cut.Find("input[placeholder='MemoTitlePlaceholder']").Change("مذكرة بالطلبات الختامية");
         cut.Find("textarea[placeholder='MemoContentPlaceholder']").Change("نص المذكرة القانونية");
 
-        // Select a file via InputFile
         var inputFile = cut.FindComponent<InputFile>();
         var fileContent = InputFileContent.CreateFromText("PDF content", "brief.pdf", null, "application/pdf");
         inputFile.UploadFiles(fileContent);
 
-        // Click SaveLegalMemo
         var saveBtn = cut.FindAll("button.ios-btn-primary").First(b => b.TextContent.Contains("SaveLegalMemo"));
         await cut.InvokeAsync(() => saveBtn.Click());
 
-        // Verify:
-        // 1. Memo was created first with DocumentId == null
         _httpHandler.LastCreatedMemo.Should().NotBeNull();
         _httpHandler.LastCreatedMemo!.Title.Should().Be("مذكرة بالطلبات الختامية");
         _httpHandler.LastCreatedMemo.DocumentId.Should().BeNull();
 
-        // 2. Document was uploaded with ownerType = "casememo" and ownerId == CreatedMemoId (never a random Guid!)
         _httpHandler.LastUploadedOwnerType.Should().Be("casememo");
         _httpHandler.LastUploadedOwnerId.Should().Be(_httpHandler.CreatedMemoId);
 
-        // 3. Memo was updated with the uploaded DocumentId
         _httpHandler.LastUpdatedMemo.Should().NotBeNull();
         _httpHandler.LastUpdatedMemoId.Should().Be(_httpHandler.CreatedMemoId);
         _httpHandler.LastUpdatedMemo!.DocumentId.Should().Be(_httpHandler.UploadedDocumentId);
@@ -147,7 +139,7 @@ public class CaseMemosSectionTests : TestContext
     }
 
     [Fact]
-    public async Task CaseMemosSection_WhenReplacingMemoFile_UploadsWithMemoIdUpdatesMemoAndDeletesOldDocument()
+    public async Task CaseMemosSection_WhenReplacingMemoFile_ReplacesInPlaceViaDocumentApiWhenDocumentAlreadyExists()
     {
         var memoId = Guid.NewGuid();
         var oldDocId = Guid.NewGuid();
@@ -166,24 +158,15 @@ public class CaseMemosSectionTests : TestContext
             .Add(p => p.OnChanged, () => { onChangedCalled = true; })
         );
 
-        // Find the inline replacement InputFile inside the memo card
         var inputFiles = cut.FindComponents<InputFile>();
         inputFiles.Should().ContainSingle();
 
         var replacementFile = InputFileContent.CreateFromText("Updated PDF", "new-brief.pdf", null, "application/pdf");
         await cut.InvokeAsync(() => inputFiles[0].UploadFiles(replacementFile));
 
-        // Verify upload used ownerType="casememo" and ownerId=memoId
-        _httpHandler.LastUploadedOwnerType.Should().Be("casememo");
-        _httpHandler.LastUploadedOwnerId.Should().Be(memoId);
-
-        // Verify memo was updated with new DocumentId
-        _httpHandler.LastUpdatedMemoId.Should().Be(memoId);
-        _httpHandler.LastUpdatedMemo.Should().NotBeNull();
-        _httpHandler.LastUpdatedMemo!.DocumentId.Should().Be(_httpHandler.UploadedDocumentId);
-
-        // Verify old document was deleted to prevent orphans
-        _httpHandler.DeletedDocumentIds.Should().Contain(oldDocId);
+        _httpHandler.ReplacedDocumentIds.Should().ContainSingle().Which.Should().Be(oldDocId);
+        _httpHandler.LastUpdatedMemo.Should().BeNull();
+        _httpHandler.DeletedDocumentIds.Should().BeEmpty();
         onChangedCalled.Should().BeTrue();
     }
 
@@ -202,6 +185,7 @@ public class CaseMemosSectionTests : TestContext
         public UpdateCaseMemoDto? LastUpdatedMemo { get; private set; }
         public string? LastUploadedOwnerType { get; private set; }
         public Guid? LastUploadedOwnerId { get; private set; }
+        public List<Guid> ReplacedDocumentIds { get; } = new();
         public List<Guid> DeletedDocumentIds { get; } = new();
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -231,7 +215,6 @@ public class CaseMemosSectionTests : TestContext
 
             if (request.Method == HttpMethod.Post && path.EndsWith("/api/documents/upload", StringComparison.OrdinalIgnoreCase))
             {
-                // Parse ownerType and ownerId from query string (?ownerType=casememo&ownerId=...)
                 var queryParams = query.TrimStart('?')
                     .Split('&', StringSplitOptions.RemoveEmptyEntries)
                     .Select(p => p.Split('=', 2))
@@ -246,6 +229,19 @@ public class CaseMemosSectionTests : TestContext
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new StringContent($"\"{UploadedDocumentId}\"", Encoding.UTF8, "application/json")
+                };
+            }
+
+            if (request.Method == HttpMethod.Put && path.EndsWith("/replace", StringComparison.OrdinalIgnoreCase))
+            {
+                var segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (segments.Length >= 3 && Guid.TryParse(segments[^2], out var docId))
+                    ReplacedDocumentIds.Add(docId);
+
+                var dto = new DocumentDto(UploadedDocumentId, "new-brief.pdf", "stored-new.pdf", "application/pdf", 2048);
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent(JsonSerializer.Serialize(dto, JsonOptions), Encoding.UTF8, "application/json")
                 };
             }
 

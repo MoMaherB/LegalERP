@@ -67,6 +67,22 @@ public class DocumentApiClient
         }
     }
 
+    public async Task<Guid> UploadOrReplaceDocumentAsync(
+        Guid? existingDocumentId,
+        string ownerType,
+        Guid ownerId,
+        IBrowserFile file,
+        string? title = null)
+    {
+        if (existingDocumentId.HasValue)
+        {
+            await ReplaceDocumentAsync(existingDocumentId.Value, file, title);
+            return existingDocumentId.Value;
+        }
+
+        return await UploadDocumentAsync(ownerType, ownerId, file, title);
+    }
+
     public async Task DeleteDocumentAsync(Guid id)
     {
         var response = await _http.DeleteAsync($"api/documents/{id}");

@@ -1,18 +1,20 @@
 @page "/companies/{Id:guid}"
-@using LegalERP.Web.Services.Toast
-@inject IToastService ToastService
+@using LegalERP.Application.Common
 @using LegalERP.Application.Companies
 @using LegalERP.Web.Services
+@using LegalERP.Web.Services.Toast
 @using LegalERP.Web.Components.Shared
 @using LegalERP.Web.Components.Pages.Companies.Sections
 @using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.Extensions.Localization
+@using Microsoft.AspNetCore.Components.Authorization
 @inject CompanyApiClient CompanyApi
+@inject DocumentApiClient DocumentApi
+@inject IToastService ToastService
 @inject NavigationManager NavManager
 @inject IJSRuntime JS
-@using Microsoft.Extensions.Localization
 @inject IStringLocalizer<SharedResources> Loc
 @inject AuthenticationStateProvider AuthStateProvider
-@using Microsoft.AspNetCore.Components.Authorization
 @rendermode InteractiveServer
 @implements IDisposable
 
@@ -92,7 +94,7 @@ else
                     @if (company.IncorporationDocument != null)
                     {
                         <div class="mb-3 flex-grow-1">
-                            <FileThumbnail Document="company.IncorporationDocument" OwnerType="company" OwnerId="company.Id" AllowReplace="true" OnReplace="HandleContractReplace" />
+                            <FileThumbnail Document="company.IncorporationDocument" OwnerType="@DocumentOwnerTypes.Company" OwnerId="company.Id" AllowReplace="_canEdit" OnReplace="HandleContractReplace" />
                         </div>
                     }
                     else
@@ -115,12 +117,11 @@ else
     @* ── Partners Section ── *@
     <CompanyPartnersSection Company="company" CanEdit="_canEdit" CanDelete="_canDelete" OnChanged="LoadCompany" />
 
-
     @* ── Amendments Section (عقود التعديل) ── *@
     <CompanyAmendmentsSection Company="company" CanEdit="_canEdit" CanDelete="_canDelete" OnChanged="LoadCompany" />
 
     @* ── Company Documents Section (مستندات الشركة) ── *@
-    <EntityDocumentsSection OwnerType="companydoc" OwnerId="company.Id" TitleKey="CompanyDocuments" EmptyMessageKey="NoCompanyDocuments" CanEdit="_canEdit" CanDelete="_canDelete" />
+    <EntityDocumentsSection OwnerType="@DocumentOwnerTypes.CompanyDoc" OwnerId="company.Id" TitleKey="CompanyDocuments" EmptyMessageKey="NoCompanyDocuments" CanEdit="_canEdit" CanDelete="_canDelete" />
 
     <AuthorizeView Roles="SuperAdmin,Admin">
         <Authorized>
@@ -152,7 +153,6 @@ else
     private void LoadIncorporationFile(InputFileChangeEventArgs e)
     {
         incorporationContractFile = e.File;
-
     }
 
     private async Task UploadIncorporationContract()
@@ -163,7 +163,7 @@ else
 
         try
         {
-            var docId = await CompanyApi.UploadDocumentAsync("company", company.Id, incorporationContractFile);
+            var docId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.Company, company.Id, incorporationContractFile);
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             var updateDto = new UpdateCompanyDto(
                 company.FileNumber,
@@ -188,7 +188,7 @@ else
         }
         catch (Exception ex)
         {
-            ToastService.ShowError("Failed to upload contract: " + ex.Message);
+            ToastService.ShowError(Loc["FailedToUploadDoc"].Value + ": " + ex.Message);
         }
         finally
         {
@@ -198,16 +198,29 @@ else
 
     private async Task HandleContractReplace(IBrowserFile newFile)
     {
-        incorporationContractFile = newFile;
-        await UploadIncorporationContract();
+        if (company == null) return;
+
+        try
+        {
+            if (company.IncorporationDocumentId.HasValue)
+            {
+                await DocumentApi.ReplaceDocumentAsync(company.IncorporationDocumentId.Value, newFile);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+                await LoadCompany();
+            }
+            else
+            {
+                incorporationContractFile = newFile;
+                await UploadIncorporationContract();
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(Loc["FailedToUploadDoc"].Value + ": " + ex.Message);
+        }
     }
 
     private Guid _lastLoadedId;
-
-    protected override void OnInitialized()
-    {
-        
-    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -224,7 +237,6 @@ else
 
     public void Dispose()
     {
-        
     }
 
     private async Task LoadCompany()
@@ -234,5 +246,3 @@ else
 
     private void GoBack() => NavManager.NavigateTo("/companies");
 }
-
-

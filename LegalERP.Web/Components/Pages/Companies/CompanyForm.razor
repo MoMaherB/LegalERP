@@ -1,16 +1,15 @@
 @page "/companies/new"
-@using LegalERP.Web.Services.Toast
-@inject IToastService ToastService
 @page "/companies/edit/{Id:guid}"
-@using LegalERP.Web.Services.Toast
-@inject IToastService ToastService
+@using LegalERP.Application.Common
 @using LegalERP.Application.Companies
 @using LegalERP.Domain.Enums
 @using LegalERP.Web.Services
-@inject CompanyApiClient CompanyApi
-@inject NavigationManager NavManager
-@inject LegalERP.Web.Services.Toast.IToastService ToastService
+@using LegalERP.Web.Services.Toast
 @using Microsoft.Extensions.Localization
+@inject CompanyApiClient CompanyApi
+@inject DocumentApiClient DocumentApi
+@inject NavigationManager NavManager
+@inject IToastService ToastService
 @inject IStringLocalizer<SharedResources> Loc
 @rendermode InteractiveServer
 
@@ -122,8 +121,6 @@ else
             }
         </button>
     </EditForm>
-
-
 }
 
 @code {
@@ -174,10 +171,6 @@ else
                 model.HasManyPartners = company.HasManyPartners;
                 model.PartnersIdsDocumentId = company.PartnersIdsDocumentId;
                 model.PartnersAttorneysDocumentId = company.PartnersAttorneysDocumentId;
-                
-                // If the backend returned a DocumentDto, we could map it if it was in CompanyDto. 
-                // Currently CompanyDto only holds IncorporationDocumentId, not the full DocumentDto.
-                // We'll leave ExistingIncorporationDocument out for now unless added to DTO.
             }
             else
             {
@@ -194,7 +187,6 @@ else
 
     private async Task HandleSubmit()
     {
-
         isSaving = true;
 
         if (string.IsNullOrWhiteSpace(model.CompanyName))
@@ -212,12 +204,14 @@ else
             {
                 companyId = Id!.Value;
                 
-                // If a new file is selected, upload it first
                 if (selectedFile != null)
                 {
-                    var docId = await CompanyApi.UploadDocumentAsync("company", companyId, selectedFile);
+                    model.IncorporationDocumentId = await DocumentApi.UploadOrReplaceDocumentAsync(
+                        model.IncorporationDocumentId,
+                        DocumentOwnerTypes.Company,
+                        companyId,
+                        selectedFile);
                     ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
-                    model.IncorporationDocumentId = docId;
                 }
 
                 var dto = new UpdateCompanyDto(
@@ -240,7 +234,6 @@ else
             }
             else
             {
-                // Create basic company first
                 var createDto = new CreateCompanyDto(
                     model.FileNumber,
                     model.Category,
@@ -251,7 +244,7 @@ else
                     model.RegistrationNumber,
                     model.Address,
                     null,
-                    model.HasManyPartners); // No document ID yet
+                    model.HasManyPartners);
 
                 var newCompany = await CompanyApi.CreateAsync(createDto);
                 ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
@@ -259,10 +252,9 @@ else
                 
                 companyId = newCompany.Id;
 
-                // If a file was selected, upload it and update the company
                 if (selectedFile != null)
                 {
-                    var docId = await CompanyApi.UploadDocumentAsync("company", companyId, selectedFile);
+                    var docId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.Company, companyId, selectedFile);
                     ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                     
                     var updateDto = new UpdateCompanyDto(
@@ -282,7 +274,6 @@ else
                 }
             }
 
-            // Navigate directly to the company detail page where they can add partners
             NavManager.NavigateTo($"/companies/{companyId}");
         }
         catch (Exception ex)
@@ -297,8 +288,3 @@ else
 
     private void GoBack() { NavManager.NavigateTo("/companies"); }
 }
-
-
-
-
-

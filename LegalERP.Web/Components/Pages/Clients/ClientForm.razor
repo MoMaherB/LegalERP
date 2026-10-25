@@ -1,20 +1,17 @@
 @page "/clients/new"
-@using LegalERP.Web.Services.Toast
-@inject IToastService ToastService
 @page "/clients/edit/{Id:guid}"
-@using LegalERP.Web.Services.Toast
-@inject IToastService ToastService
 @using LegalERP.Application.Clients
+@using LegalERP.Application.Common
 @using LegalERP.Application.Companies
 @using LegalERP.Web.Services
-@inject ClientApiClient ClientApi
-@inject CompanyApiClient CompanyApi
-@inject NavigationManager NavManager
-@inject LegalERP.Web.Services.Toast.IToastService ToastService
-@rendermode InteractiveServer
-
+@using LegalERP.Web.Services.Toast
 @using Microsoft.Extensions.Localization
+@inject ClientApiClient ClientApi
+@inject DocumentApiClient DocumentApi
+@inject NavigationManager NavManager
+@inject IToastService ToastService
 @inject IStringLocalizer<SharedResources> Loc
+@rendermode InteractiveServer
 
 <PageTitle>@(IsEditMode ? Loc["EditClient"] : Loc["AddNewClient"])</PageTitle>
 
@@ -95,8 +92,6 @@ else
             </div>
         </div>
 
-
-
         <div class="d-flex gap-2">
             <button type="submit" class="ios-btn ios-btn-primary" disabled="@isSubmitting">
                 @(isSubmitting ? Loc["Saving"] : (IsEditMode ? Loc["SaveChanges"] : Loc["CreateClient"]))
@@ -169,28 +164,23 @@ else
 
         try
         {
-            // Upload new documents if provided
-            Guid? natIdDocId = model.NationalIdDocumentId;
-
-            if (nationalIdFile != null)
-            {
-                natIdDocId = await CompanyApi.UploadDocumentAsync("client", IsEditMode ? Id!.Value : Guid.NewGuid(), nationalIdFile);
-            }
-
             if (IsEditMode)
             {
-                var updateDto = new UpdateClientDto(
-                    model.FileNumber,
-                    model.FullName,
-                    model.FullNameEn,
-                    model.NationalIdNumber,
-                    model.PhoneNumber,
-                    model.Email,
-                    model.Address,
-                    model.Notes,
-                    natIdDocId
-                );
-                await ClientApi.UpdateAsync(Id!.Value, updateDto); ToastService.ShowSuccess(Loc["ClientUpdated"].Value); await Task.Delay(500); NavManager.NavigateTo($"/clients/{Id.Value}");
+                Guid? natIdDocId = model.NationalIdDocumentId;
+
+                if (nationalIdFile != null)
+                {
+                    natIdDocId = await DocumentApi.UploadOrReplaceDocumentAsync(
+                        natIdDocId,
+                        DocumentOwnerTypes.Client,
+                        Id!.Value,
+                        nationalIdFile);
+                }
+
+                await ClientApi.UpdateAsync(Id!.Value, BuildUpdateDto(natIdDocId));
+                ToastService.ShowSuccess(Loc["ClientUpdated"].Value);
+                await Task.Delay(500);
+                NavManager.NavigateTo($"/clients/{Id.Value}");
             }
             else
             {
@@ -203,13 +193,26 @@ else
                     model.Email,
                     model.Address,
                     model.Notes,
-                    natIdDocId
+                    null
                 );
                 var created = await ClientApi.CreateAsync(createDto);
-                if (created != null) { ToastService.ShowSuccess(Loc["ClientCreated"].Value); await Task.Delay(500); NavManager.NavigateTo($"/clients/{created.Id}"); }
+                if (created != null)
+                {
+                    if (nationalIdFile != null)
+                    {
+                        var uploadedDocId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.Client, created.Id, nationalIdFile);
+                        await ClientApi.UpdateAsync(created.Id, BuildUpdateDto(uploadedDocId));
+                    }
+
+                    ToastService.ShowSuccess(Loc["ClientCreated"].Value);
+                    await Task.Delay(500);
+                    NavManager.NavigateTo($"/clients/{created.Id}");
+                }
                 else
                 {
-                    ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " " + Loc["Saving"].Value); await Task.Delay(500); NavManager.NavigateTo("/clients");
+                    ToastService.ShowSuccess(Loc["Success"].Value + ": " + Loc["Client"].Value + " " + Loc["Saving"].Value);
+                    await Task.Delay(500);
+                    NavManager.NavigateTo("/clients");
                 }
             }
         }
@@ -222,6 +225,18 @@ else
             isSubmitting = false;
         }
     }
+
+    private UpdateClientDto BuildUpdateDto(Guid? nationalIdDocumentId) => new(
+        model.FileNumber,
+        model.FullName,
+        model.FullNameEn,
+        model.NationalIdNumber,
+        model.PhoneNumber,
+        model.Email,
+        model.Address,
+        model.Notes,
+        nationalIdDocumentId
+    );
 
     private class ClientFormModel
     {
@@ -236,7 +251,3 @@ else
         public Guid? NationalIdDocumentId { get; set; }
     }
 }
-
-
-
-

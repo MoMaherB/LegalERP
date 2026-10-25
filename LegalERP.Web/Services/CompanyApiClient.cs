@@ -9,7 +9,6 @@ public class CompanyApiClient
 {
     private readonly HttpClient _http;
 
-
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         Converters = { new JsonStringEnumConverter() }
@@ -113,39 +112,4 @@ public class CompanyApiClient
         var response = await _http.PutAsync($"api/companies/{companyId}/partners/{partnerId}/toggle-active", null);
         response.EnsureSuccessStatusCode();
     }
-
-    // --- Document methods ---
-
-    public async Task<List<DocumentDto>> GetDocumentsAsync(string ownerType, Guid ownerId)
-    {
-        var result = await _http.GetFromJsonAsync<List<DocumentDto>>($"api/documents?ownerType={ownerType}&ownerId={ownerId}", JsonOptions);
-        return result ?? new List<DocumentDto>();
-    }
-
-    public async Task<Guid> UploadDocumentAsync(string ownerType, Guid ownerId, Microsoft.AspNetCore.Components.Forms.IBrowserFile file, string? title = null)
-    {
-        using var content = new MultipartFormDataContent();
-        using var fileStream = file.OpenReadStream(100 * 1024 * 1024); // max 100MB
-        var streamContent = new StreamContent(fileStream);
-        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-        
-        content.Add(streamContent, "file", file.Name);
-
-        var url = $"api/documents/upload?ownerType={ownerType}&ownerId={ownerId}";
-        if (!string.IsNullOrWhiteSpace(title))
-            url += $"&title={Uri.EscapeDataString(title)}";
-
-        var response = await _http.PostAsync(url, content);
-        response.EnsureSuccessStatusCode();
-        
-        var idStr = await response.Content.ReadAsStringAsync();
-        return Guid.Parse(idStr.Trim('"'));
-    }
-
-    public async Task DeleteDocumentAsync(Guid id)
-    {
-        var response = await _http.DeleteAsync($"api/documents/{id}");
-        response.EnsureSuccessStatusCode();
-    }
-
 }

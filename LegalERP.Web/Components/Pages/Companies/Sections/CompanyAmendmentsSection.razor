@@ -1,3 +1,4 @@
+@using LegalERP.Application.Common
 @using LegalERP.Application.Companies
 @using LegalERP.Web.Services
 @using LegalERP.Web.Services.Toast
@@ -5,6 +6,7 @@
 @using Microsoft.Extensions.Localization
 @using Microsoft.AspNetCore.Components.Forms
 @inject CompanyApiClient CompanyApi
+@inject DocumentApiClient DocumentApi
 @inject IToastService ToastService
 @inject IStringLocalizer<SharedResources> Loc
 @inject IJSRuntime JS
@@ -69,7 +71,7 @@ else
                     <div class="flex-grow-1">
                         @if (amendment.Document != null)
                         {
-                            <FileThumbnail Document="amendment.Document" OwnerType="amendment" OwnerId="amendment.Id" AllowReplace="@CanEdit" OnReplace="@(e => HandleAmendmentReplace(amendment.Id, e))" />
+                            <FileThumbnail Document="amendment.Document" OwnerType="@DocumentOwnerTypes.Amendment" OwnerId="amendment.Id" AllowReplace="@CanEdit" OnReplace="@(e => HandleAmendmentReplace(amendment.Id, e))" />
                         }
                         else
                         {
@@ -135,7 +137,7 @@ else
 
             if (result != null && newAmendmentFile != null)
             {
-                var docId = await CompanyApi.UploadDocumentAsync("amendment", result.Id, newAmendmentFile);
+                var docId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.Amendment, result.Id, newAmendmentFile);
                 ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
                 var updateDto = new UpdateCompanyAmendmentDto(result.Title, result.AmendmentDate, docId);
                 await CompanyApi.UpdateAmendmentAsync(Company.Id, result.Id, updateDto);
@@ -175,18 +177,18 @@ else
         try
         {
             var amendment = Company.Amendments.First(a => a.Id == amendmentId);
-            var docId = await CompanyApi.UploadDocumentAsync("amendment", amendmentId, newFile);
-            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
-            var updateDto = new UpdateCompanyAmendmentDto(amendment.Title, amendment.AmendmentDate, docId);
-            await CompanyApi.UpdateAmendmentAsync(Company.Id, amendmentId, updateDto);
-            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
-            
             if (amendment.DocumentId.HasValue)
             {
-                try { await CompanyApi.DeleteDocumentAsync(amendment.DocumentId.Value); } catch { /* ignore */ }
-                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+                await DocumentApi.ReplaceDocumentAsync(amendment.DocumentId.Value, newFile);
+            }
+            else
+            {
+                var docId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.Amendment, amendmentId, newFile);
+                var updateDto = new UpdateCompanyAmendmentDto(amendment.Title, amendment.AmendmentDate, docId);
+                await CompanyApi.UpdateAmendmentAsync(Company.Id, amendmentId, updateDto);
             }
 
+            ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)

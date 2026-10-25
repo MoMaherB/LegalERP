@@ -981,6 +981,14 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Fixed currency formatting across all financial views to whole numbers (`N0`) suppressing confusing cents/piastres (`.00` / `,00`).
   - Clamped remaining balance to `Math.Max(0m, ...)` so collected amounts exceeding the agreed fee settle at `0` remaining (Paid) without displaying negative balances.
 
+**Refactor: Polymorphic Document Lifecycle & DocumentApiClient Unification — Tickets 01 & 02 — ✅ COMPLETED (2026-10-25)**
+- **Architecture Deepening:**
+  - Created [`DocumentOwnerTypes.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Common/DocumentOwnerTypes.cs) defining canonical owner type constants (`Company`, `CompanyDoc`, `Amendment`, `PartnerIds`, `PartnerAttorneys`, `Client`, `Case`, `CaseMemo`, `CaseParty`, `Attorney`, `Users`).
+  - Added atomic in-place `PUT api/documents/{id:guid}/replace` (`[Authorize(Roles = "SuperAdmin,Admin,Editor")]`) to [`DocumentsController.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/DocumentsController.cs) that replaces the stored file on disk, deletes the superseded file via `IFileStorageService`, and updates `Document` metadata while preserving `Document.Id` and optional custom titles (`BR-2.12`). Tightened `DELETE api/documents/{id:guid}` to `[Authorize(Roles = "SuperAdmin,Admin")]`.
+  - Extracted and registered [`DocumentApiClient.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Services/DocumentApiClient.cs) (`GetDocumentsAsync`, `UploadDocumentAsync`, `ReplaceDocumentAsync`, `UploadOrReplaceDocumentAsync`, `DeleteDocumentAsync`), migrated all Blazor pages, sections, and forms (`EntityDocumentsSection`, `CompanyDetail`, `CompanyAmendmentsSection`, `CompanyPartnersSection`, `CompanyForm`, `CaseMemosSection`, `ClientForm`, `AttorneyDetail`, `AttorneyForm`), and removed the misplaced/duplicated document methods from [`CompanyApiClient.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Services/CompanyApiClient.cs) and [`AttorneyApiClient.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Services/AttorneyApiClient.cs).
+  - Fixed [`ClientForm.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Clients/ClientForm.razor) so creating a new client with a National ID scan creates the client first and uploads the document with `ownerId = created.Id` rather than a throwaway `Guid.NewGuid()`.
+- **Test-Driven Verification:** Expanded test suite to **107 passing tests** with 0 failures (`DocumentsControllerTests`, `ClientFormTests`, `CompanyDocumentsSectionTests`, `EntityDocumentsSectionTests`, `CompanyAmendmentsSectionTests`, `CaseMemosSectionTests`).
+
 ---
 
 *End of reference document.*

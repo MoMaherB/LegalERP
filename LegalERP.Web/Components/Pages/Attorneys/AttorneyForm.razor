@@ -1,9 +1,11 @@
 @page "/attorneys/new"
 @page "/attorneys/edit/{Id:guid}"
 @using LegalERP.Application.Attorneys
+@using LegalERP.Application.Common
 @using LegalERP.Application.Companies
 @using LegalERP.Web.Services
 @inject AttorneyApiClient AttorneyApi
+@inject DocumentApiClient DocumentApi
 @inject NavigationManager NavManager
 @inject LegalERP.Web.Services.Toast.IToastService ToastService
 @rendermode InteractiveServer
@@ -130,7 +132,11 @@ else
             {
                 if (documentFile != null)
                 {
-                    docId = await AttorneyApi.UploadDocumentAsync(Id!.Value, documentFile);
+                    docId = await DocumentApi.UploadOrReplaceDocumentAsync(
+                        docId,
+                        DocumentOwnerTypes.Attorney,
+                        Id!.Value,
+                        documentFile);
                 }
 
                 var updateDto = new UpdateAttorneyDto(
@@ -155,7 +161,7 @@ else
                 {
                     if (documentFile != null)
                     {
-                        var uploadedDocId = await AttorneyApi.UploadDocumentAsync(created.Id, documentFile);
+                        var uploadedDocId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.Attorney, created.Id, documentFile);
                         // Update attorney with the uploaded document ID
                         await AttorneyApi.UpdateAsync(created.Id, new UpdateAttorneyDto(
                             model.AttorneyNumber, model.Notes, uploadedDocId));

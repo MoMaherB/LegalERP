@@ -1,3 +1,4 @@
+@using LegalERP.Application.Common
 @using LegalERP.Application.Companies
 @using LegalERP.Application.Clients
 @using LegalERP.Web.Services
@@ -7,6 +8,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Web
 @inject CompanyApiClient CompanyApi
+@inject DocumentApiClient DocumentApi
 @inject ClientApiClient ClientApi
 @inject IToastService ToastService
 @inject IStringLocalizer<SharedResources> Loc
@@ -98,7 +100,7 @@ else
                     @if (Company.PartnersIdsDocument != null)
                     {
                         <div class="flex-grow-1 mb-2">
-                            <FileThumbnail Document="Company.PartnersIdsDocument" OwnerType="partnerids" OwnerId="Company.Id" AllowReplace="@CanEdit" OnReplace="HandlePartnersIdsReplace" />
+                            <FileThumbnail Document="Company.PartnersIdsDocument" OwnerType="@DocumentOwnerTypes.PartnerIds" OwnerId="Company.Id" AllowReplace="@CanEdit" OnReplace="HandlePartnersIdsReplace" />
                         </div>
                     }
                     else
@@ -125,7 +127,7 @@ else
                     @if (Company.PartnersAttorneysDocument != null)
                     {
                         <div class="flex-grow-1 mb-2">
-                            <FileThumbnail Document="Company.PartnersAttorneysDocument" OwnerType="partnerattorneys" OwnerId="Company.Id" AllowReplace="@CanEdit" OnReplace="HandlePartnersAttorneysReplace" />
+                            <FileThumbnail Document="Company.PartnersAttorneysDocument" OwnerType="@DocumentOwnerTypes.PartnerAttorneys" OwnerId="Company.Id" AllowReplace="@CanEdit" OnReplace="HandlePartnersAttorneysReplace" />
                         </div>
                     }
                     else
@@ -394,7 +396,7 @@ else
         isUploadingPartnersIds = true;
         try
         {
-            var docId = await CompanyApi.UploadDocumentAsync("partnerids", Company.Id, partnersIdsFile);
+            var docId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.PartnerIds, Company.Id, partnersIdsFile);
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             var dto = BuildUpdateDto(idsDocId: docId);
             await CompanyApi.UpdateAsync(Company.Id, dto);
@@ -411,7 +413,7 @@ else
         isUploadingPartnersAttorneys = true;
         try
         {
-            var docId = await CompanyApi.UploadDocumentAsync("partnerattorneys", Company.Id, partnersAttorneysFile);
+            var docId = await DocumentApi.UploadDocumentAsync(DocumentOwnerTypes.PartnerAttorneys, Company.Id, partnersAttorneysFile);
             ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
             var dto = BuildUpdateDto(attDocId: docId);
             await CompanyApi.UpdateAsync(Company.Id, dto);
@@ -424,12 +426,36 @@ else
 
     private async Task HandlePartnersIdsReplace(IBrowserFile newFile)
     {
+        if (Company.PartnersIdsDocumentId.HasValue)
+        {
+            try
+            {
+                await DocumentApi.ReplaceDocumentAsync(Company.PartnersIdsDocumentId.Value, newFile);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+                await OnChanged.InvokeAsync();
+            }
+            catch (Exception ex) { ToastService.ShowError(ex.Message); }
+            return;
+        }
+
         partnersIdsFile = newFile;
         await UploadPartnersIdsDoc();
     }
 
     private async Task HandlePartnersAttorneysReplace(IBrowserFile newFile)
     {
+        if (Company.PartnersAttorneysDocumentId.HasValue)
+        {
+            try
+            {
+                await DocumentApi.ReplaceDocumentAsync(Company.PartnersAttorneysDocumentId.Value, newFile);
+                ToastService.ShowSuccess(Loc["OperationSuccess"].Value);
+                await OnChanged.InvokeAsync();
+            }
+            catch (Exception ex) { ToastService.ShowError(ex.Message); }
+            return;
+        }
+
         partnersAttorneysFile = newFile;
         await UploadPartnersAttorneysDoc();
     }
