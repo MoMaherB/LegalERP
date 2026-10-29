@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using LegalERP.Application.Backups;
+using LegalERP.Application.Common;
 using LegalERP.Domain.Entities;
 using LegalERP.Domain.Enums;
 using LegalERP.Infrastructure.Persistence;
@@ -74,190 +74,55 @@ public class BackupArchiveService : IBackupArchiveService
         {
             Directory.CreateDirectory(targetBase);
 
-            // 1. Companies & Contracts
             var companies = await _db.Companies
                 .Include(c => c.IncorporationDocument)
+                .Include(c => c.PartnersIdsDocument)
+                .Include(c => c.PartnersAttorneysDocument)
                 .Include(c => c.Amendments).ThenInclude(a => a.Document)
                 .ToListAsync(ct);
 
             var companyDocs = await _db.Documents
-                .Where(d => d.OwnerType == "companydoc" && !d.IsDeleted)
+                .Where(d => d.OwnerType == DocumentOwnerTypes.CompanyDoc && !d.IsDeleted)
                 .ToListAsync(ct);
 
-            var companiesFolder = Path.Combine(targetBase, "companies");
-            Directory.CreateDirectory(companiesFolder);
-
-            foreach (var comp in companies)
-            {
-                var folderName = SanitizeName(!string.IsNullOrWhiteSpace(comp.FileNumber) 
-                    ? $"{comp.FileNumber} - {comp.CompanyName}" 
-                    : comp.CompanyName);
-
-                var compDir = Path.Combine(companiesFolder, folderName);
-                Directory.CreateDirectory(compDir);
-
-                // A. Incorporation Document
-                if (comp.IncorporationDocument != null)
-                {
-                    var ext = Path.GetExtension(comp.IncorporationDocument.FileName);
-                    var cleanFileName = SanitizeName($"عقد التأسيس_{comp.FileNumber ?? comp.CompanyName}") + ext;
-                    if (LinkOrCopyFile("company", comp.Id, comp.IncorporationDocument.StoredFileName, compDir, cleanFileName, out var size))
-                    {
-                        totalFilesCopied++;
-                        totalBytesCopied += size;
-                    }
-                }
-
-                // B. Amendments
-                if (comp.Amendments != null && comp.Amendments.Count > 0)
-                {
-                    var amendDir = Path.Combine(compDir, "التعديلات");
-                    Directory.CreateDirectory(amendDir);
-
-                    var sortedAmends = comp.Amendments.OrderBy(a => a.SequenceNumber).ToList();
-                    foreach (var amend in sortedAmends)
-                    {
-                        if (amend.Document != null)
-                        {
-                            var ext = Path.GetExtension(amend.Document.FileName);
-                            var amendName = SanitizeName($"عقد التعديل رقم {amend.SequenceNumber}") + ext;
-                            if (LinkOrCopyFile("company", comp.Id, amend.Document.StoredFileName, amendDir, amendName, out var size))
-                            {
-                                totalFilesCopied++;
-                                totalBytesCopied += size;
-                            }
-                        }
-                    }
-                }
-
-                // C. General Company Records & Licenses
-                var generalDocs = companyDocs.Where(d => d.OwnerId == comp.Id).ToList();
-                if (generalDocs.Count > 0)
-                {
-                    var recordsDir = Path.Combine(compDir, "سجلات وتراخيص الشركة");
-                    Directory.CreateDirectory(recordsDir);
-
-                    foreach (var gdoc in generalDocs)
-                    {
-                        var cleanFileName = SanitizeName(Path.GetFileNameWithoutExtension(gdoc.FileName)) + Path.GetExtension(gdoc.FileName);
-                        if (LinkOrCopyFile("companydoc", comp.Id, gdoc.StoredFileName, recordsDir, cleanFileName, out var size))
-                        {
-                            totalFilesCopied++;
-                            totalBytesCopied += size;
-                        }
-                    }
-                }
-            }
-
-            // 2. Clients & IDs
             var clients = await _db.Clients
                 .Include(c => c.NationalIdDocument)
                 .ToListAsync(ct);
 
-            var clientsFolder = Path.Combine(targetBase, "clients");
-            Directory.CreateDirectory(clientsFolder);
-
-            foreach (var client in clients)
-            {
-                var folderName = SanitizeName(!string.IsNullOrWhiteSpace(client.FileNumber)
-                    ? $"{client.FileNumber} - {client.FullName}"
-                    : client.FullName);
-
-                var clientDir = Path.Combine(clientsFolder, folderName);
-                Directory.CreateDirectory(clientDir);
-
-                if (client.NationalIdDocument != null)
-                {
-                    var ext = Path.GetExtension(client.NationalIdDocument.FileName);
-                    var cleanFileName = SanitizeName($"صورة الهوية_{client.FileNumber ?? client.FullName}") + ext;
-                    if (LinkOrCopyFile("client", client.Id, client.NationalIdDocument.StoredFileName, clientDir, cleanFileName, out var size))
-                    {
-                        totalFilesCopied++;
-                        totalBytesCopied += size;
-                    }
-                }
-            }
-
-            // 3. Cases, Memos & Evidence
             var cases = await _db.Cases
                 .Include(c => c.Memos).ThenInclude(m => m.Document)
                 .ToListAsync(ct);
 
             var caseDocs = await _db.Documents
-                .Where(d => d.OwnerType == "case" && !d.IsDeleted)
+                .Where(d => d.OwnerType == DocumentOwnerTypes.Case && !d.IsDeleted)
                 .ToListAsync(ct);
 
-            var casesFolder = Path.Combine(targetBase, "cases");
-            Directory.CreateDirectory(casesFolder);
-
-            foreach (var c in cases)
-            {
-                var folderName = SanitizeName(!string.IsNullOrWhiteSpace(c.CourtName)
-                    ? $"قضية {c.CaseNumber} - {c.CourtName}"
-                    : $"قضية {c.CaseNumber}");
-
-                var caseDir = Path.Combine(casesFolder, folderName);
-                Directory.CreateDirectory(caseDir);
-
-                // Memos
-                if (c.Memos != null && c.Memos.Count > 0)
-                {
-                    var memosDir = Path.Combine(caseDir, "المذكرات القانونية");
-                    Directory.CreateDirectory(memosDir);
-
-                    foreach (var memo in c.Memos)
-                    {
-                        if (memo.Document != null)
-                        {
-                            var ext = Path.GetExtension(memo.Document.FileName);
-                            var memoName = SanitizeName(string.IsNullOrWhiteSpace(memo.Title) ? "مذكرة دفاع" : memo.Title) + ext;
-                            if (LinkOrCopyFile("memo", memo.Id, memo.Document.StoredFileName, memosDir, memoName, out var size))
-                            {
-                                totalFilesCopied++;
-                                totalBytesCopied += size;
-                            }
-                        }
-                    }
-                }
-
-                // General Case Documents
-                var attachedCaseDocs = caseDocs.Where(d => d.OwnerId == c.Id).ToList();
-                if (attachedCaseDocs.Count > 0)
-                {
-                    var docsDir = Path.Combine(caseDir, "المستندات والمستخرجات");
-                    Directory.CreateDirectory(docsDir);
-
-                    foreach (var doc in attachedCaseDocs)
-                    {
-                        var cleanFileName = SanitizeName(Path.GetFileNameWithoutExtension(doc.FileName)) + Path.GetExtension(doc.FileName);
-                        if (LinkOrCopyFile("case", c.Id, doc.StoredFileName, docsDir, cleanFileName, out var size))
-                        {
-                            totalFilesCopied++;
-                            totalBytesCopied += size;
-                        }
-                    }
-                }
-            }
-
-            // 4. Powers of Attorney (التوكيلات)
             var attorneys = await _db.Attorneys
                 .Include(a => a.Document)
                 .ToListAsync(ct);
 
-            var attFolder = Path.Combine(targetBase, "attornies");
-            Directory.CreateDirectory(attFolder);
+            var manifest = BackupArchiveManifestBuilder.Build(
+                companies,
+                companyDocs,
+                clients,
+                cases,
+                caseDocs,
+                attorneys);
 
-            foreach (var att in attorneys)
+            foreach (var relativeDir in manifest.Directories)
             {
-                if (att.Document != null)
+                Directory.CreateDirectory(Path.Combine(targetBase, relativeDir));
+            }
+
+            foreach (var entry in manifest.Entries)
+            {
+                var targetDir = Path.Combine(targetBase, entry.RelativeDirectory);
+                Directory.CreateDirectory(targetDir);
+
+                if (LinkOrCopyDocument(entry.SourceDocument, targetDir, entry.FileName, out var size))
                 {
-                    var ext = Path.GetExtension(att.Document.FileName);
-                    var cleanFileName = SanitizeName($"توكيل_{att.AttorneyNumber}") + ext;
-                    if (LinkOrCopyFile("attorney", att.Id, att.Document.StoredFileName, attFolder, cleanFileName, out var size))
-                    {
-                        totalFilesCopied++;
-                        totalBytesCopied += size;
-                    }
+                    totalFilesCopied++;
+                    totalBytesCopied += size;
                 }
             }
 
@@ -385,23 +250,23 @@ public class BackupArchiveService : IBackupArchiveService
 
     // ── Helper Methods ────────────────────────────────────────────────────────
 
-    private bool LinkOrCopyFile(string ownerType, Guid ownerId, string storedFileName, string targetDir, string desiredFileName, out long fileSize)
+    private bool LinkOrCopyDocument(Document doc, string targetDir, string desiredFileName, out long fileSize)
     {
         fileSize = 0;
-        var sourcePath = Path.Combine(_storageBasePath, ownerType.ToLower(), ownerId.ToString(), storedFileName);
+        var ownerTypeSegment = (doc.OwnerType ?? string.Empty).ToLowerInvariant();
+        var sourcePath = Path.Combine(_storageBasePath, ownerTypeSegment, doc.OwnerId.ToString(), doc.StoredFileName);
 
         if (!File.Exists(sourcePath))
         {
             // Fallback check in flat uploads
-            sourcePath = Path.Combine(_storageBasePath, storedFileName);
+            sourcePath = Path.Combine(_storageBasePath, doc.StoredFileName);
             if (!File.Exists(sourcePath)) return false;
         }
 
         var fileInfo = new FileInfo(sourcePath);
         fileSize = fileInfo.Length;
 
-        // Resolve duplicate names in target directory
-        var targetPath = GetUniqueFilePath(targetDir, desiredFileName);
+        var targetPath = Path.Combine(targetDir, desiredFileName);
 
         try
         {
@@ -424,37 +289,6 @@ public class BackupArchiveService : IBackupArchiveService
                 return false;
             }
         }
-    }
-
-    private static string GetUniqueFilePath(string directory, string fileName)
-    {
-        var targetPath = Path.Combine(directory, fileName);
-        if (!File.Exists(targetPath)) return targetPath;
-
-        var nameOnly = Path.GetFileNameWithoutExtension(fileName);
-        var ext = Path.GetExtension(fileName);
-        int counter = 2;
-
-        while (File.Exists(targetPath))
-        {
-            targetPath = Path.Combine(directory, $"{nameOnly} ({counter}){ext}");
-            counter++;
-        }
-
-        return targetPath;
-    }
-
-    private static string SanitizeName(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name)) return "بدون اسم";
-
-        // Replace illegal filesystem characters: / \ : * ? " < > |
-        var sanitized = Regex.Replace(name.Trim(), @"[/\\:*?""<>|]", "-");
-        // Remove duplicate spaces and hyphens
-        sanitized = Regex.Replace(sanitized, @"\s+", " ");
-        sanitized = Regex.Replace(sanitized, @"-+", "-").Trim(' ', '-', '.');
-
-        return string.IsNullOrWhiteSpace(sanitized) ? "ملف" : sanitized;
     }
 
     private static void CreateHardLinkSafe(string newFileName, string existingFileName)

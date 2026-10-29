@@ -272,7 +272,7 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 | TR-9.2 | Each component (API, database, reverse proxy) shall run in isolated processes or containers (e.g., Docker Compose) on the VPS, so components can be restarted, updated, or resource-limited independently despite sharing one machine. |
 | TR-9.3 | An Nginx (or equivalent) reverse proxy shall terminate HTTPS/SSL (e.g., via Let's Encrypt) and route traffic to the API and Web App. |
 | TR-9.4 | A single VPS provider (e.g., Hetzner, Contabo, DigitalOcean) shall be selected primarily on a cost basis, sized for a single-firm workload (moderate CPU/RAM, SSD storage sized with headroom for document growth). |
-| TR-9.5 | Automated daily backups shall cover both the PostgreSQL database (e.g., `pg_dump`) and the document storage directory, shipped to a secondary location off the VPS (e.g., a low-cost object storage bucket used purely for backup archives, or a second small VPS/disk) to protect against total server loss. |
+| TR-9.5 | Automated daily and on-demand backups shall use a **Dual-Stream Incremental Google Drive Architecture powered by `rclone`**: (1) **Lawyer's Google Drive Stream (`أرشيف المحامي`)**: generates a zero-byte-overhead hardlinked Arabic folder tree (`companies/`, `clients/`, `cases/`, `attornies/`) via `BackupArchiveManifestBuilder` + `File.CreateHardLink` and runs `rclone sync` to the Lawyer's Google Drive remote; and (2) **Developer's Google Drive Disaster-Recovery Stream (`نسخة المطور الشاملة`)**: uploads a compressed daily PostgreSQL `pg_dump` snapshot (`database/db_YYYY-MM-DD.dump`) via `rclone copy` plus an incremental delta sync (`rclone sync`) of raw `uploads/{owner_type}/{owner_id}/{stored_file_name}` files. Both streams operate **incrementally (WhatsApp-style)** via `rclone` — only newly added or replaced documents are uploaded on each run, with zero extra disk usage on the VPS. |
 | TR-9.6 | Because there is no managed-service redundancy, a basic disaster-recovery runbook shall be documented (how to restore the database dump and storage archive onto a fresh VPS) before go-live. |
 
 ---
@@ -868,21 +868,17 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Updated `NavMenu.razor` adding the **Attorneys (التوكيلات)** subsection directly under Clients.
   - Added complete bilingual English and Arabic localization keys to `SharedResources.resx` and `SharedResources.ar.resx`.
 
-**Feature 28: System Backup & Google Drive Human-Readable Legal Archive — ✅ COMPLETED (2026-09-10)**
-- **Architecture Overview:** Dual-stream backup strategy:
-  1. *Developer / Sysadmin Disaster Recovery Stream:* Compressed PostgreSQL database dumps and raw file backups for full bare-metal server recovery.
-  2. *Lawyer's Google Drive Business Archive Stream:* An automated C# mapping engine that formats live company founding contracts, amendments, client IDs, court briefs/evidence, and powers of attorney into a human-readable physical filing cabinet folder tree (`companies/`, `clients/`, `cases/`, `attornies/`).
-- **Domain & Application:**
-  - `BackupRecord` entity tracking backup history, file counts, sizes, status, and error logs.
-  - `IBackupArchiveService` defining human-readable archive generation and database snapshot triggers.
-  - `BackupDto` records for API payloads and frontend reporting.
-- **Infrastructure & Storage:**
-  - `BackupArchiveService` featuring filename sanitization (converting forbidden OS characters `/` $\rightarrow$ `-`), duplicate resolution, and zero-byte hardlinking (`File.CreateHardLink`).
-  - Production deployment and restore shell scripts (`deploy/scripts/backup-daily.sh`, `restore.sh`, `deploy/scripts/rclone.conf.template`).
-- **Web & API:**
-  - `BackupsController` (`/api/backups`) protected by `SuperAdmin` authorization.
-  - `BackupManagement.razor` (`/admin/backups`) providing live archive generation and on-demand database backup download.
-  - Bilingual localization in English and Arabic.
+**Feature 28: System Backup & Dual-Stream Incremental `rclone` Google Drive Architecture — ✅ COMPLETED / READY FOR VPS DEPLOYMENT (Updated 2026-10-28)**
+- **Architecture Overview (Dual-Stream Incremental Sync via `rclone` — "WhatsApp-Style"):**
+  1. **Stream 1 — Lawyer's Google Drive Business Archive (`أرشيف المحامي القانوني`):**
+     - Uses `BackupArchiveManifestBuilder` in memory + OS hardlinks (`CreateHardLink`) to format live company founding contracts, amendments, bulk partner documents, client IDs, case memos/evidence, and powers of attorney into a human-readable Arabic folder hierarchy (`companies/`, `clients/`, `cases/`, `attornies/`) with **0 extra bytes of disk usage**.
+     - `rclone sync` mirrors only new/changed files from `legal_archive/` to the Lawyer's Google Drive (`gdrive_lawyer:LawFirmArchive`).
+  2. **Stream 2 — Developer's Google Drive Disaster Recovery Backup (`نسخة المطور الشاملة للاستعادة`):**
+     - Protects 100% of the system so the project can be restored onto a brand-new server if the VPS fails, without building a massive multi-gigabyte `.zip` on disk every day:
+       - **Database Snapshot (`database/db_YYYY-MM-DD.dump`):** Runs `pg_dump -F c` and uploads the compressed database dump via `rclone copy` to `gdrive_dev:SystemBackups/Database/`.
+       - **Raw Storage Incremental Sync (`uploads/{ownerType}/{ownerId}/{storedFileName}`):** Runs `rclone sync` on `uploads/` (including `users/` profile pictures) to `gdrive_dev:SystemBackups/uploads/`, uploading only newly added or replaced files.
+  3. **Authentication & Deployment (`deploy/scripts/backup-daily.sh` & `restore.sh`):**
+     - Uses `rclone` remotes (`gdrive_lawyer` and `gdrive_dev`) configured outside of source code (`rclone config`), requiring zero Google Cloud Console setup or credentials in C# code.
 
 ---
 
@@ -995,6 +991,21 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
   - Migrated [`AttorneyDetail.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Attorneys/AttorneyDetail.razor) to use `<ClientQuickSearchSelector>`, removing manual client search state, manual search results table, and direct `ClientApiClient` injection.
   - Added `[Authorize(Roles = "SuperAdmin,Admin,Editor")]` to [`CompaniesController.TogglePartnerActive`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/CompaniesController.cs#L327).
 - **Test-Driven Verification:** Expanded test suite to **110 passing tests** with 0 failures (`ClientQuickSearchSelectorTests`, `AttorneyDetailTests`, `CompaniesControllerAmendmentTests`).
+
+**Refactor: BackupArchiveManifestBuilder & Fix Silent Backup Data Loss — Ticket 01 — ✅ COMPLETED (2026-10-25)**
+- **Architecture Deepening & Bug Fixes:**
+  - Extracted pure in-process [`BackupArchiveManifestBuilder.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Backups/BackupArchiveManifestBuilder.cs) encapsulating the Arabic folder tree (`companies/`, `clients/`, `cases/`, `attornies/`), filename sanitization (`SanitizeName`), in-memory duplicate filename disambiguation (`(2)`, `(3)`), and `Document` source resolution.
+  - Refactored [`BackupArchiveService.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Infrastructure/Services/BackupArchiveService.cs) (`GenerateHumanReadableArchiveAsync` and `LinkOrCopyDocument`) to read `doc.OwnerType`, `doc.OwnerId`, and `doc.StoredFileName` directly from each `Document` entity and `.Include(...)` `PartnersIdsDocument` and `PartnersAttorneysDocument`, eliminating silent backup omissions for Company Amendments (`amendment`), Case Legal Memos (`casememo`), and Bulk Partner Documents (`partnerids`, `partnerattorneys`).
+- **Test-Driven Verification:** Expanded test suite to **117 passing tests** with 0 failures (`BackupArchiveManifestBuilderTests`, `BackupArchiveServiceTests`).
+
+**Refactor: Shared IRcloneRunner Seam & Omit Empty Archive Directories — Ticket 01 — ✅ COMPLETED (2026-10-29)**
+- **Empty Directory Omission:**
+  - Updated [`BackupArchiveManifestBuilder.Build`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Backups/BackupArchiveManifestBuilder.cs) so `Manifest.Directories` derives solely from `entries.Select(e => e.RelativeDirectory).Distinct()`, eliminating empty folders for companies, clients, cases, and attorneys that have zero attached documents.
+- **Shared IRcloneRunner Seam & Process Execution:**
+  - Created [`IRcloneRunner.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Backups/IRcloneRunner.cs) in Application and [`RcloneProcessRunner.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Infrastructure/Services/RcloneProcessRunner.cs) in Infrastructure with active PATH probing, WinGet packages/links auto-detection on Windows, Linux candidate paths (`/usr/bin/rclone`, `/usr/local/bin/rclone`), and process execution for `rclone sync` and `rclone copy` with cancellation handling and error logging.
+  - Created [`BackupRemoteOptions.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Backups/BackupRemoteOptions.cs) in Application and [`BackupRemoteOptionsResolver.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Infrastructure/Services/BackupRemoteOptionsResolver.cs) in Infrastructure resolving remote names from `.env` in the solution root or `IConfiguration`.
+  - Registered `IRcloneRunner` as a singleton in [`Program.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Program.cs).
+- **Test-Driven Verification:** Expanded test suite to **127 passing tests** with 0 failures (`BackupArchiveManifestBuilderTests`, `BackupRemoteOptionsResolverTests`, `RcloneProcessRunnerTests`).
 
 ---
 

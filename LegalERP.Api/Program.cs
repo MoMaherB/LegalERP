@@ -111,6 +111,7 @@ builder.Services.AddScoped<LegalERP.Application.Storage.IFileStorageService, Leg
 builder.Services.AddScoped<WebPushNotificationService>();
 builder.Services.AddScoped<HearingReminderJob>();
 builder.Services.AddScoped<LegalERP.Application.Backups.IBackupArchiveService, LegalERP.Infrastructure.Services.BackupArchiveService>();
+builder.Services.AddSingleton<LegalERP.Application.Backups.IRcloneRunner, LegalERP.Infrastructure.Services.RcloneProcessRunner>();
 
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers()
