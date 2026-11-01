@@ -14,10 +14,14 @@ namespace LegalERP.Api.Controllers;
 public class BackupsController : ControllerBase
 {
     private readonly IBackupArchiveService _backupService;
+    private readonly IBackupJobCoordinator _jobCoordinator;
 
-    public BackupsController(IBackupArchiveService backupService)
+    public BackupsController(
+        IBackupArchiveService backupService,
+        IBackupJobCoordinator jobCoordinator)
     {
         _backupService = backupService;
+        _jobCoordinator = jobCoordinator;
     }
 
     [HttpGet]
@@ -34,10 +38,29 @@ public class BackupsController : ControllerBase
         return Ok(summary);
     }
 
-    [HttpPost("export-archive")]
-    public async Task<ActionResult<BackupResultDto>> ExportArchive(CancellationToken ct)
+    [HttpGet("active")]
+    public async Task<ActionResult<ActiveBackupStatusDto>> GetActiveBackup(CancellationToken ct)
     {
-        var result = await _backupService.GenerateHumanReadableArchiveAsync(null, ct);
+        var status = await _jobCoordinator.GetActiveBackupStatusAsync(ct);
+        return Ok(status);
+    }
+
+    [HttpPost("export-archive")]
+    public async Task<ActionResult<BackupStartResultDto>> ExportArchive(CancellationToken ct)
+    {
+        var result = await _jobCoordinator.StartArchiveBackupAsync(ct);
+        if (!result.Started)
+        {
+            return Conflict(result);
+        }
+
+        return Ok(result);
+    }
+
+    [HttpPost("cancel")]
+    public async Task<ActionResult<BackupCancelResultDto>> CancelActiveBackup(CancellationToken ct)
+    {
+        var result = await _jobCoordinator.CancelActiveBackupAsync(ct);
         return Ok(result);
     }
 

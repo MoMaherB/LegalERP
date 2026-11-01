@@ -10,7 +10,7 @@
 2. Expose `POST api/backups/sync-developer-backup` (`[Authorize(Roles = "SuperAdmin")]`) on `BackupsController` and `SyncDeveloperBackupAsync()` on `BackupApiClient`.
 3. Update Card 2 in `BackupManagement.razor` (`/admin/backups`) to add a primary **"مزامنة نسخة النظام الشاملة"** button (with loading spinner and toast notification that refreshes `LoadData()` so "آخر نسخة لقاعدة البيانات" and the Backup History table update live on screen) alongside the existing local `.dump` download link.
 
-**Blocked by:** 01: Shared IRcloneRunner Seam & Omit Empty Archive Directories, 02: Sync Lawyer's Organized Archive (Card 1) to Google Drive via IRcloneRunner
+**Blocked by:** 01: Shared IRcloneRunner Seam & Omit Empty Archive Directories, 02: Sync Lawyer's Organized Archive (Card 1) to Google Drive via IRcloneRunner, and `backup-job-reliability` tickets 01 (single app-wide background job), 02 (live progress), 03 (cancel). Card 2 must run through the same single-flight background job so it can never overlap with Card 1, and gets progress + cancel for free.
 
 **Status:** ready-for-agent
 

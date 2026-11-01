@@ -33,11 +33,28 @@ public class BackupApiClient
         return await _http.GetFromJsonAsync<BackupStatusSummaryDto>("api/backups/summary", JsonOptions);
     }
 
-    public async Task<BackupResultDto?> ExportArchiveAsync()
+    public async Task<ActiveBackupStatusDto?> GetActiveBackupStatusAsync()
+    {
+        return await _http.GetFromJsonAsync<ActiveBackupStatusDto>("api/backups/active", JsonOptions);
+    }
+
+    public async Task<BackupStartResultDto?> StartArchiveBackupAsync()
     {
         var response = await _http.PostAsync("api/backups/export-archive", null);
+        if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+        {
+            return await response.Content.ReadFromJsonAsync<BackupStartResultDto>(JsonOptions);
+        }
+
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<BackupResultDto>(JsonOptions);
+        return await response.Content.ReadFromJsonAsync<BackupStartResultDto>(JsonOptions);
+    }
+
+    public async Task<BackupCancelResultDto?> CancelActiveBackupAsync()
+    {
+        var response = await _http.PostAsync("api/backups/cancel", null);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<BackupCancelResultDto>(JsonOptions);
     }
 
     public string GetDownloadSnapshotUrl()

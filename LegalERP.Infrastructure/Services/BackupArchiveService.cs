@@ -22,13 +22,19 @@ public class BackupArchiveService : IBackupArchiveService
     private readonly ApplicationDbContext _db;
     private readonly IConfiguration _config;
     private readonly ILogger<BackupArchiveService> _logger;
+    private readonly IRcloneRunner _rcloneRunner;
     private readonly string _storageBasePath;
 
-    public BackupArchiveService(ApplicationDbContext db, IConfiguration config, ILogger<BackupArchiveService> logger)
+    public BackupArchiveService(
+        ApplicationDbContext db,
+        IConfiguration config,
+        ILogger<BackupArchiveService> logger,
+        IRcloneRunner rcloneRunner)
     {
         _db = db;
         _config = config;
         _logger = logger;
+        _rcloneRunner = rcloneRunner;
 
         // Base directory where uploads currently reside
         var configuredPath = _config["Storage:BasePath"];
@@ -50,29 +56,74 @@ public class BackupArchiveService : IBackupArchiveService
         }
     }
 
-    public async Task<BackupResultDto> GenerateHumanReadableArchiveAsync(string? customTargetPath = null, CancellationToken ct = default)
+    public async Task<BackupResultDto> GenerateHumanReadableArchiveAsync(
+        string? customTargetPath = null,
+        CancellationToken ct = default,
+        Guid? existingRecordId = null,
+        Action<BackupProgressSnapshotDto>? onProgress = null)
     {
         var targetBase = !string.IsNullOrWhiteSpace(customTargetPath)
             ? customTargetPath
             : Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "exports", "legal_archive");
 
-        var record = new BackupRecord
+        BackupRecord? record = null;
+        if (existingRecordId.HasValue)
         {
-            BackupType = BackupType.GoogleDriveArchive,
-            Status = BackupStatus.Running,
-            DestinationPath = targetBase,
-            CreatedAt = DateTime.UtcNow
-        };
+            record = await _db.BackupRecords.FirstOrDefaultAsync(r => r.Id == existingRecordId.Value, ct);
+        }
 
-        _db.BackupRecords.Add(record);
-        await _db.SaveChangesAsync(ct);
+        if (record == null)
+        {
+            record = new BackupRecord
+            {
+                Id = existingRecordId ?? Guid.NewGuid(),
+                BackupType = BackupType.GoogleDriveArchive,
+                Status = BackupStatus.Running,
+                DestinationPath = targetBase,
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.BackupRecords.Add(record);
+            await _db.SaveChangesAsync(ct);
+        }
+        else if (string.IsNullOrWhiteSpace(record.DestinationPath))
+        {
+            record.DestinationPath = targetBase;
+            await _db.SaveChangesAsync(ct);
+        }
 
         int totalFilesCopied = 0;
         long totalBytesCopied = 0;
 
         try
         {
-            Directory.CreateDirectory(targetBase);
+            // Clean any stale staging files and folders before rebuilding
+            if (Directory.Exists(targetBase))
+            {
+                try
+                {
+                    Directory.Delete(targetBase, recursive: true);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Could not delete directory {TargetBase} recursively; cleaning files individually.", targetBase);
+                    foreach (var file in Directory.GetFiles(targetBase, "*", SearchOption.AllDirectories))
+                    {
+                        try { File.Delete(file); }
+                        catch (Exception fileEx)
+                        {
+                            _logger.LogWarning(fileEx, "Failed to delete file {File} during cleanup.", file);
+                        }
+                    }
+                    foreach (var subDir in Directory.GetDirectories(targetBase, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
+                    {
+                        try { Directory.Delete(subDir, recursive: false); }
+                        catch (Exception dirEx)
+                        {
+                            _logger.LogWarning(dirEx, "Failed to delete directory {Dir} during cleanup.", subDir);
+                        }
+                    }
+                }
+            }
 
             var companies = await _db.Companies
                 .Include(c => c.IncorporationDocument)
@@ -109,38 +160,99 @@ public class BackupArchiveService : IBackupArchiveService
                 caseDocs,
                 attorneys);
 
-            foreach (var relativeDir in manifest.Directories)
+            // Only create targetBase if there is at least one entry/directory to export
+            if (manifest.Entries.Count > 0)
             {
-                Directory.CreateDirectory(Path.Combine(targetBase, relativeDir));
+                Directory.CreateDirectory(targetBase);
+
+                foreach (var relativeDir in manifest.Directories)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    Directory.CreateDirectory(Path.Combine(targetBase, relativeDir));
+                }
+
+                foreach (var entry in manifest.Entries)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var targetDir = Path.Combine(targetBase, entry.RelativeDirectory);
+
+                    if (LinkOrCopyDocument(entry.SourceDocument, targetDir, entry.FileName, out var size))
+                    {
+                        totalFilesCopied++;
+                        totalBytesCopied += size;
+                    }
+                }
             }
 
-            foreach (var entry in manifest.Entries)
-            {
-                var targetDir = Path.Combine(targetBase, entry.RelativeDirectory);
-                Directory.CreateDirectory(targetDir);
+            // Persist staged file count and total size immediately so the Running row reflects actual archive metrics
+            record.FileCount = totalFilesCopied;
+            record.TotalSizeBytes = totalBytesCopied;
+            await _db.SaveChangesAsync(ct);
 
-                if (LinkOrCopyDocument(entry.SourceDocument, targetDir, entry.FileName, out var size))
+            // Sync to Google Drive via rclone if configured and not an explicit local-only override
+            var isLocalOnlyOverride = !string.IsNullOrWhiteSpace(customTargetPath);
+            var remoteOptions = BackupRemoteOptionsResolver.Resolve(_config);
+            var lawyerRemote = remoteOptions.LawyerRemote;
+
+            if (!isLocalOnlyOverride && !string.IsNullOrWhiteSpace(lawyerRemote))
+            {
+                if (manifest.Entries.Count == 0)
                 {
-                    totalFilesCopied++;
-                    totalBytesCopied += size;
+                    _logger.LogWarning("Legal archive has 0 files. Skipping rclone sync to prevent purging remote archive at {Remote}.", lawyerRemote);
+                }
+                else
+                {
+                    // Ensure directory exists so rclone has a valid source directory
+                    if (!Directory.Exists(targetBase))
+                    {
+                        Directory.CreateDirectory(targetBase);
+                    }
+
+                    Action<BackupProgressSnapshotDto>? normalizedProgress = null;
+                    if (onProgress != null)
+                    {
+                        normalizedProgress = snapshot =>
+                        {
+                            onProgress(NormalizeProgressSnapshot(snapshot, totalBytesCopied));
+                        };
+                    }
+
+                    _logger.LogInformation("Syncing lawyer archive from {Source} to {Remote} via rclone...", targetBase, lawyerRemote);
+                    var syncResult = await _rcloneRunner.SyncDirectoryAsync(targetBase, lawyerRemote, ct, normalizedProgress);
+                    if (!syncResult.Success)
+                    {
+                        var errMsg = $"rclone sync to {lawyerRemote} failed ({syncResult.ExitCode}): {syncResult.StandardError}";
+                        _logger.LogError(errMsg);
+
+                        record.MarkFailed(errMsg, totalFilesCopied, totalBytesCopied, lawyerRemote);
+                        await _db.SaveChangesAsync(ct);
+
+                        return new BackupResultDto(false, errMsg, totalFilesCopied, totalBytesCopied, null);
+                    }
+
+                    record.DestinationPath = lawyerRemote;
                 }
             }
 
             // Mark completed
-            record.Status = BackupStatus.Completed;
-            record.FileCount = totalFilesCopied;
-            record.TotalSizeBytes = totalBytesCopied;
-            record.CompletedAt = DateTime.UtcNow;
+            record.MarkCompleted(totalFilesCopied, totalBytesCopied);
             await _db.SaveChangesAsync(ct);
 
-            return new BackupResultDto(true, "Legal archive generated successfully.", totalFilesCopied, totalBytesCopied, targetBase);
+            var finalDestination = record.DestinationPath;
+            return new BackupResultDto(true, "Legal archive generated successfully.", totalFilesCopied, totalBytesCopied, finalDestination);
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("Legal archive backup {BackupId} was cancelled.", record.Id);
+            record.MarkCancelled(totalFilesCopied, totalBytesCopied);
+            await _db.SaveChangesAsync(CancellationToken.None);
+
+            return new BackupResultDto(false, "Backup job was cancelled.", totalFilesCopied, totalBytesCopied, null);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to generate human-readable archive.");
-            record.Status = BackupStatus.Failed;
-            record.ErrorMessage = ex.Message;
-            record.CompletedAt = DateTime.UtcNow;
+            record.MarkFailed(ex.Message, totalFilesCopied, totalBytesCopied);
             await _db.SaveChangesAsync(ct);
 
             return new BackupResultDto(false, $"Failed to generate archive: {ex.Message}", totalFilesCopied, totalBytesCopied, null);
@@ -249,6 +361,53 @@ public class BackupArchiveService : IBackupArchiveService
     }
 
     // ── Helper Methods ────────────────────────────────────────────────────────
+
+    private static BackupProgressSnapshotDto NormalizeProgressSnapshot(
+        BackupProgressSnapshotDto snapshot,
+        long archiveTotalBytes)
+    {
+        if (archiveTotalBytes <= 0 || snapshot.TotalBytes <= archiveTotalBytes)
+        {
+            return snapshot;
+        }
+
+        // When rclone retries a rate-limited/failed upload, it adds the retried file's bytes to TotalBytes.
+        // Normalize against the true archive size based on remaining bytes (TotalBytes - TransferredBytes).
+        var remainingBytes = Math.Clamp(snapshot.TotalBytes - snapshot.TransferredBytes, 0L, archiveTotalBytes);
+        var effectiveTransferred = archiveTotalBytes - remainingBytes;
+        var percentage = (int)Math.Clamp(Math.Round((double)effectiveTransferred * 100d / archiveTotalBytes), 0, 100);
+
+        return snapshot with
+        {
+            Percentage = percentage,
+            TransferredBytes = effectiveTransferred,
+            TotalBytes = archiveTotalBytes,
+            TransferredText = FormatBinaryBytes(effectiveTransferred),
+            TotalText = FormatBinaryBytes(archiveTotalBytes)
+        };
+    }
+
+    private static string FormatBinaryBytes(long bytes)
+    {
+        if (bytes <= 0) return "0 B";
+        const double kib = 1024d;
+        const double mib = 1024d * 1024d;
+        const double gib = 1024d * 1024d * 1024d;
+
+        if (bytes >= gib)
+        {
+            return string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{bytes / gib:F3} GiB");
+        }
+        if (bytes >= mib)
+        {
+            return string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{bytes / mib:F3} MiB");
+        }
+        if (bytes >= kib)
+        {
+            return string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{bytes / kib:F3} KiB");
+        }
+        return string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{bytes} B");
+    }
 
     private bool LinkOrCopyDocument(Document doc, string targetDir, string desiredFileName, out long fileSize)
     {

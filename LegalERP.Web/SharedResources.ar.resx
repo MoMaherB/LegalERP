@@ -1643,4 +1643,34 @@
   <data name="PartnerNameRequired" xml:space="preserve">
     <value>يجب إدخال اسم الشريك</value>
   </data>
+  <data name="BackupAlreadyRunning" xml:space="preserve">
+    <value>يوجد نسخ احتياطي قيد التشغيل حالياً. يرجى الانتظار حتى ينتهي.</value>
+  </data>
+  <data name="BackupInterruptedError" xml:space="preserve">
+    <value>توقف النسخ الاحتياطي بسبب إعادة تشغيل التطبيق أو انقطاع العملية.</value>
+  </data>
+  <data name="BackupSpeed" xml:space="preserve">
+    <value>السرعة</value>
+  </data>
+  <data name="BackupTimeRemaining" xml:space="preserve">
+    <value>الوقت المتبقي</value>
+  </data>
+  <data name="PreparingBackupUpload" xml:space="preserve">
+    <value>جاري تجهيز الأرشيف وحساب حجم الرفع...</value>
+  </data>
+  <data name="CancelBackup" xml:space="preserve">
+    <value>إلغاء النسخ</value>
+  </data>
+  <data name="ConfirmCancelBackup" xml:space="preserve">
+    <value>هل أنت متأكد من إلغاء عملية النسخ الاحتياطي الجارية؟</value>
+  </data>
+  <data name="BackupCancelledSuccess" xml:space="preserve">
+    <value>تم إلغاء النسخ الاحتياطي بنجاح.</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>ملغي</value>
+  </data>
+  <data name="NoBackupRunningToCancel" xml:space="preserve">
+    <value>لا توجد عملية نسخ احتياطي جارية حالياً.</value>
+  </data>
 </root>

@@ -5,5 +5,6 @@ public enum BackupStatus
     Pending,
     Running,
     Completed,
-    Failed
+    Failed,
+    Cancelled
 }

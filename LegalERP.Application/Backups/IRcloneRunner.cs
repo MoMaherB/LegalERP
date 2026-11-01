@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,10 +15,12 @@ public interface IRcloneRunner
     Task<RcloneExecutionResult> SyncDirectoryAsync(
         string localDirectoryPath,
         string remoteDestination,
-        CancellationToken ct = default);
+        CancellationToken ct = default,
+        Action<BackupProgressSnapshotDto>? onProgress = null);
 
     Task<RcloneExecutionResult> CopyFileAsync(
         string localFilePath,
         string remoteDestinationDirectory,
-        CancellationToken ct = default);
+        CancellationToken ct = default,
+        Action<BackupProgressSnapshotDto>? onProgress = null);
 }

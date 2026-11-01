@@ -39,6 +39,7 @@ bld/
 
 # Local configuration file
 *.local
+.env
 appsettings.Development.json
 appsettings.Local.json
 

@@ -10,9 +10,9 @@
 
 **Blocked by:** 01: Shared IRcloneRunner Seam & Omit Empty Archive Directories
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Clicking "إنشاء / تحديث الأرشيف الآن" (Card 1) builds the zero-byte-hardlinked Arabic folder tree without empty folders and calls `IRcloneRunner.SyncDirectoryAsync` to sync `legal_archive` to the configured `LawyerRemote` (`gdrive:LegalERP_Test/Lawyer_Archive`).
-- [ ] `BackupRecord.DestinationPath` records the `LawyerRemote` destination when synced to Google Drive, or marks the backup `Failed` with the error message if `rclone` fails.
-- [ ] `BackupManagement.razor` renders the full `DestinationPath` in the Backup History table without cutting it off at 35 characters.
-- [ ] Automated tests in `LegalERP.Tests/Backups/BackupArchiveServiceTests.cs` verify that `GenerateHumanReadableArchiveAsync` invokes `IRcloneRunner.SyncDirectoryAsync` with the staging folder and configured `LawyerRemote`, and omits empty directories on disk.
+- [x] Clicking "إنشاء / تحديث الأرشيف الآن" (Card 1) builds the zero-byte-hardlinked Arabic folder tree without empty folders and calls `IRcloneRunner.SyncDirectoryAsync` to sync `legal_archive` to the configured `LawyerRemote` (`gdrive:LegalERP_Test/Lawyer_Archive`).
+- [x] `BackupRecord.DestinationPath` records the `LawyerRemote` destination when synced to Google Drive, or marks the backup `Failed` with the error message if `rclone` fails.
+- [x] `BackupManagement.razor` renders the full `DestinationPath` in the Backup History table without cutting it off at 35 characters.
+- [x] Automated tests in `LegalERP.Tests/Backups/BackupArchiveServiceTests.cs` verify that `GenerateHumanReadableArchiveAsync` invokes `IRcloneRunner.SyncDirectoryAsync` with the staging folder and configured `LawyerRemote`, and omits empty directories on disk.

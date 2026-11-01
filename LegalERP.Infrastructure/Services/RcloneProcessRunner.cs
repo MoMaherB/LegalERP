@@ -146,25 +146,49 @@ public class RcloneProcessRunner : IRcloneRunner
         return null;
     }
 
+    private const string StatsArguments = "--tpslimit 4 --transfers 2 --checkers 4 --stats 1s --stats-one-line --stats-log-level NOTICE";
+
     public async Task<RcloneExecutionResult> SyncDirectoryAsync(
         string localDirectoryPath,
         string remoteDestination,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Action<BackupProgressSnapshotDto>? onProgress = null)
     {
-        var args = $"sync \"{localDirectoryPath}\" \"{remoteDestination}\"";
-        return await ExecuteProcessAsync(args, ct);
+        var args = $"sync \"{localDirectoryPath}\" \"{remoteDestination}\" {StatsArguments}";
+        return await ExecuteProcessAsync(args, ct, onProgress);
     }
 
     public async Task<RcloneExecutionResult> CopyFileAsync(
         string localFilePath,
         string remoteDestinationDirectory,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        Action<BackupProgressSnapshotDto>? onProgress = null)
     {
-        var args = $"copy \"{localFilePath}\" \"{remoteDestinationDirectory}\"";
-        return await ExecuteProcessAsync(args, ct);
+        var args = $"copy \"{localFilePath}\" \"{remoteDestinationDirectory}\" {StatsArguments}";
+        return await ExecuteProcessAsync(args, ct, onProgress);
     }
 
-    private async Task<RcloneExecutionResult> ExecuteProcessAsync(string arguments, CancellationToken ct)
+    private static void HandleOutputLine(
+        string? line,
+        StringBuilder buffer,
+        Action<BackupProgressSnapshotDto>? onProgress)
+    {
+        if (line == null) return;
+        lock (buffer)
+        {
+            buffer.AppendLine(line);
+        }
+
+        if (onProgress != null && RcloneStatsParser.TryParseStatsLine(line, out var snapshot) && snapshot != null)
+        {
+            onProgress(snapshot);
+        }
+    }
+
+    private async Task<RcloneExecutionResult> ExecuteProcessAsync(
+        string arguments,
+        CancellationToken ct,
+        Action<BackupProgressSnapshotDto>? onProgress = null)
     {
         var exePath = ResolveExecutablePath();
         if (string.IsNullOrWhiteSpace(exePath))
@@ -188,14 +212,8 @@ public class RcloneProcessRunner : IRcloneRunner
             var stdOut = new StringBuilder();
             var stdErr = new StringBuilder();
 
-            process.OutputDataReceived += (_, e) =>
-            {
-                if (e.Data != null) stdOut.AppendLine(e.Data);
-            };
-            process.ErrorDataReceived += (_, e) =>
-            {
-                if (e.Data != null) stdErr.AppendLine(e.Data);
-            };
+            process.OutputDataReceived += (_, e) => HandleOutputLine(e.Data, stdOut, onProgress);
+            process.ErrorDataReceived += (_, e) => HandleOutputLine(e.Data, stdErr, onProgress);
 
             process.Start();
             process.BeginOutputReadLine();

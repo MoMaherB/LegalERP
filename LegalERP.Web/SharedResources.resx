@@ -1445,4 +1445,34 @@
   <data name="PartnerNameRequired" xml:space="preserve">
     <value>Partner name is required</value>
   </data>
+  <data name="BackupAlreadyRunning" xml:space="preserve">
+    <value>A backup job is already running. Please wait for it to finish.</value>
+  </data>
+  <data name="BackupInterruptedError" xml:space="preserve">
+    <value>Interrupted: application restarted or backup job was terminated unexpectedly.</value>
+  </data>
+  <data name="BackupSpeed" xml:space="preserve">
+    <value>Speed</value>
+  </data>
+  <data name="BackupTimeRemaining" xml:space="preserve">
+    <value>Time Remaining</value>
+  </data>
+  <data name="PreparingBackupUpload" xml:space="preserve">
+    <value>Preparing archive and calculating upload size...</value>
+  </data>
+  <data name="CancelBackup" xml:space="preserve">
+    <value>Cancel Backup</value>
+  </data>
+  <data name="ConfirmCancelBackup" xml:space="preserve">
+    <value>Are you sure you want to cancel the running backup?</value>
+  </data>
+  <data name="BackupCancelledSuccess" xml:space="preserve">
+    <value>Backup cancelled successfully.</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="NoBackupRunningToCancel" xml:space="preserve">
+    <value>No backup job is currently running.</value>
+  </data>
 </root>

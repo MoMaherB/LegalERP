@@ -112,6 +112,7 @@ builder.Services.AddScoped<WebPushNotificationService>();
 builder.Services.AddScoped<HearingReminderJob>();
 builder.Services.AddScoped<LegalERP.Application.Backups.IBackupArchiveService, LegalERP.Infrastructure.Services.BackupArchiveService>();
 builder.Services.AddSingleton<LegalERP.Application.Backups.IRcloneRunner, LegalERP.Infrastructure.Services.RcloneProcessRunner>();
+builder.Services.AddSingleton<LegalERP.Application.Backups.IBackupJobCoordinator, LegalERP.Infrastructure.Services.BackupJobCoordinator>();
 
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers()
@@ -133,6 +134,7 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     await dbContext.Database.MigrateAsync();
 }
+await app.Services.GetRequiredService<LegalERP.Application.Backups.IBackupJobCoordinator>().ReconcileStaleRunningBackupsAsync();
 await DbSeeder.SeedAsync(app.Services, app.Configuration);
 
 if (app.Environment.IsDevelopment())
