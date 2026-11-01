@@ -234,6 +234,49 @@ public class BackupJobCoordinatorTests
         result.BackupId.Should().BeNull();
     }
 
+    [Fact]
+    public async Task StartDeveloperBackupAsync_RunsUnderSingleFlightLockAndBlocksConcurrentArchiveBackup()
+    {
+        var dbName = "CoordinatorDevBackup_" + Guid.NewGuid();
+        var tcs = new TaskCompletionSource<BackupResultDto>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var enteredTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var fakeArchiveService = new GateArchiveService(tcs.Task)
+        {
+            OnEntered = () => enteredTcs.TrySetResult()
+        };
+
+        using var provider = BuildServiceProvider(dbName, fakeArchiveService);
+        var coordinator = provider.GetRequiredService<IBackupJobCoordinator>();
+
+        // 1. Start Developer Backup (Card 2)
+        var devStart = await coordinator.StartDeveloperBackupAsync();
+        devStart.Started.Should().BeTrue();
+        devStart.BackupId.Should().NotBeNull();
+
+        await enteredTcs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var activeStatus = await coordinator.GetActiveBackupStatusAsync();
+        activeStatus.IsRunning.Should().BeTrue();
+        activeStatus.BackupType.Should().Be(BackupType.DatabaseSnapshot);
+        activeStatus.BackupId.Should().Be(devStart.BackupId);
+
+        // 2. Attempting to start Lawyer Archive Backup (Card 1) while Card 2 is running is rejected
+        var concurrentArchiveStart = await coordinator.StartArchiveBackupAsync();
+        concurrentArchiveStart.Started.Should().BeFalse();
+        concurrentArchiveStart.BackupId.Should().Be(devStart.BackupId);
+
+        // 3. Complete Card 2 job
+        tcs.SetResult(new BackupResultDto(true, "Dev backup done", 18, 21_000_000, "gdrive:LegalERP_Test/Dev_SystemBackup"));
+        await WaitUntilNotRunningAsync(coordinator);
+
+        using var scope = provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var record = await db.BackupRecords.SingleAsync(r => r.Id == devStart.BackupId!.Value);
+        record.BackupType.Should().Be(BackupType.DatabaseSnapshot);
+        record.Status.Should().Be(BackupStatus.Completed);
+        record.DestinationPath.Should().Be("gdrive:LegalERP_Test/Dev_SystemBackup");
+    }
+
     private static ServiceProvider BuildServiceProvider(string dbName, GateArchiveService archiveService)
     {
         var services = new ServiceCollection();
@@ -316,6 +359,12 @@ public class BackupJobCoordinatorTests
 
             return result;
         }
+
+        public Task<BackupResultDto> SyncDeveloperSystemBackupAsync(
+            CancellationToken ct = default,
+            Guid? existingRecordId = null,
+            Action<BackupProgressSnapshotDto>? onProgress = null)
+            => GenerateHumanReadableArchiveAsync(null, ct, existingRecordId, onProgress);
 
         public Task<(Stream FileStream, string FileName, long FileSizeBytes)> CreateDatabaseSnapshotAsync(CancellationToken ct = default)
             => throw new NotImplementedException();

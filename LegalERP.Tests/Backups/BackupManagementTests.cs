@@ -220,6 +220,77 @@ public class BackupManagementTests : TestContext
         cut.FindAll("[data-testid='cancel-backup-btn']").Should().ContainSingle();
     }
 
+    [Fact]
+    public async Task SyncDeveloperBackup_WhenClicked_CallsDeveloperBackupEndpointDisablesTriggerButtonsAndRefreshesSummaryAndHistoryOnCompletion()
+    {
+        var devJobId = Guid.NewGuid();
+        var completedAt = new DateTime(2026, 11, 1, 14, 30, 0, DateTimeKind.Utc);
+
+        _httpHandler.OnSyncDeveloperCalled = () =>
+        {
+            _httpHandler.StartResult = new BackupStartResultDto(true, devJobId, "Started");
+            _httpHandler.ActiveStatus = new ActiveBackupStatusDto(
+                IsRunning: true,
+                BackupId: devJobId,
+                BackupType: BackupType.DatabaseSnapshot,
+                StartedAt: DateTime.UtcNow,
+                Progress: new BackupProgressSnapshotDto(
+                    Percentage: 80,
+                    TransferredBytes: 16_000_000,
+                    TotalBytes: 20_000_000,
+                    TransferredText: "15.259 MiB",
+                    TotalText: "19.073 MiB",
+                    SpeedText: "2.100 MiB/s",
+                    EtaText: "2s"));
+        };
+
+        var cut = RenderComponent<BackupManagement>(parameters => parameters
+            .Add(p => p.PollingInterval, TimeSpan.FromMilliseconds(50)));
+
+        var devBtn = cut.Find("[data-testid='sync-developer-backup-btn']");
+        devBtn.HasAttribute("disabled").Should().BeFalse();
+
+        await cut.InvokeAsync(() => devBtn.Click());
+
+        cut.WaitForAssertion(() =>
+        {
+            _httpHandler.SyncDeveloperCallCount.Should().Be(1);
+            cut.Find("[data-testid='sync-developer-backup-btn']").HasAttribute("disabled").Should().BeTrue();
+            cut.Find("[data-testid='backup-progress-widget']").TextContent.Should().Contain("80%");
+            cut.FindAll("[data-testid='cancel-backup-btn']").Should().ContainSingle();
+        });
+
+        // Simulate completion on next poll tick
+        _httpHandler.Summary = _httpHandler.Summary with
+        {
+            LastDatabaseSnapshotDate = completedAt,
+            LastDatabaseSnapshotSizeBytes = 20_282_022,
+            TotalBackupsRun = 2
+        };
+        _httpHandler.History =
+        [
+            new BackupRecordDto(
+                Id: devJobId,
+                BackupType: BackupType.DatabaseSnapshot,
+                Status: BackupStatus.Completed,
+                FileCount: 18,
+                TotalSizeBytes: 20_282_022,
+                DestinationPath: "gdrive:LegalERP_Test/Dev_SystemBackup",
+                ErrorMessage: null,
+                CreatedAt: completedAt.AddSeconds(-10),
+                CompletedAt: completedAt)
+        ];
+        _httpHandler.ActiveStatus = new ActiveBackupStatusDto(false, null, null, null);
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.Find("[data-testid='sync-developer-backup-btn']").HasAttribute("disabled").Should().BeFalse();
+            cut.FindAll("[data-testid='backup-progress-widget']").Should().BeEmpty();
+            cut.Find("table.ios-table").TextContent.Should().Contain("gdrive:LegalERP_Test/Dev_SystemBackup");
+            _mockToast.Verify(t => t.ShowSuccess(It.IsAny<string>()), Times.AtLeastOnce);
+        }, TimeSpan.FromSeconds(5));
+    }
+
     private sealed class RecordingBackupHttpMessageHandler : HttpMessageHandler
     {
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
@@ -247,9 +318,13 @@ public class BackupManagementTests : TestContext
 
         public int ExportCallCount { get; private set; }
 
+        public int SyncDeveloperCallCount { get; private set; }
+
         public int CancelCallCount { get; private set; }
 
         public Action? OnExportCalled { get; set; }
+
+        public Action? OnSyncDeveloperCalled { get; set; }
 
         public Action? OnCancelCalled { get; set; }
 
@@ -276,6 +351,13 @@ public class BackupManagementTests : TestContext
             {
                 ExportCallCount++;
                 OnExportCalled?.Invoke();
+                return Task.FromResult(JsonResponse(StartStatusCode, StartResult));
+            }
+
+            if (request.Method == HttpMethod.Post && path.EndsWith("/api/backups/sync-developer-backup", StringComparison.OrdinalIgnoreCase))
+            {
+                SyncDeveloperCallCount++;
+                OnSyncDeveloperCalled?.Invoke();
                 return Task.FromResult(JsonResponse(StartStatusCode, StartResult));
             }
 

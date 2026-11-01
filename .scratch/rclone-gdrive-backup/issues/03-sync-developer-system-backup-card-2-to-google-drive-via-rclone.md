@@ -12,8 +12,8 @@
 
 **Blocked by:** 01: Shared IRcloneRunner Seam & Omit Empty Archive Directories, 02: Sync Lawyer's Organized Archive (Card 1) to Google Drive via IRcloneRunner, and `backup-job-reliability` tickets 01 (single app-wide background job), 02 (live progress), 03 (cancel). Card 2 must run through the same single-flight background job so it can never overlap with Card 1, and gets progress + cancel for free.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `POST api/backups/sync-developer-backup` runs `pg_dump`, uploads the `.dump` file to `{DeveloperRemote}/Database` via `IRcloneRunner.CopyFileAsync`, incrementally syncs `uploads/` to `{DeveloperRemote}/uploads` via `IRcloneRunner.SyncDirectoryAsync`, and saves a completed `DatabaseSnapshot` `BackupRecord`.
-- [ ] Card 2 on `BackupManagement.razor` provides a button to trigger `SyncDeveloperBackupAsync()`, shows a spinner while syncing, displays a toast on completion, and immediately refreshes `summary` ("آخر نسخة لقاعدة البيانات") and `history`.
-- [ ] Automated tests in `LegalERP.Tests/Backups/` verify `SyncDeveloperSystemBackupAsync`, `BackupsController.SyncDeveloperBackup`, and the Card 2 button behavior.
+- [x] `POST api/backups/sync-developer-backup` runs `pg_dump`, uploads the `.dump` file to `{DeveloperRemote}/Database` via `IRcloneRunner.CopyFileAsync`, incrementally syncs `uploads/` to `{DeveloperRemote}/uploads` via `IRcloneRunner.SyncDirectoryAsync`, and saves a completed `DatabaseSnapshot` `BackupRecord`.
+- [x] Card 2 on `BackupManagement.razor` provides a button to trigger `SyncDeveloperBackupAsync()`, shows a spinner while syncing, displays a toast on completion, and immediately refreshes `summary` ("آخر نسخة لقاعدة البيانات") and `history`.
+- [x] Automated tests in `LegalERP.Tests/Backups/` verify `SyncDeveloperSystemBackupAsync`, `BackupsController.SyncDeveloperBackup`, and the Card 2 button behavior.

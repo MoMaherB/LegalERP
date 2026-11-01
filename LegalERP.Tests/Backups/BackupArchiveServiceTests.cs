@@ -374,6 +374,101 @@ public class BackupArchiveServiceTests : IDisposable
         reportedSnapshot.TransferredBytes.Should().BeLessThanOrEqualTo(result.TotalSizeBytes);
     }
 
+    [Fact]
+    public async Task SyncDeveloperSystemBackupAsync_UploadsDumpAndSyncsUploadsToDeveloperRemote_MarksCompletedAndCleansTempDump()
+    {
+        var (db, _) = await CreateTestDbWithCompanyAsync();
+
+        // Also add a raw user profile picture in _storageBasePath/users/u1/avatar.png (not in Documents table)
+        var userAvatarDir = Path.Combine(_storageBasePath, "users", "u1");
+        Directory.CreateDirectory(userAvatarDir);
+        var avatarPath = Path.Combine(userAvatarDir, "avatar.png");
+        await File.WriteAllBytesAsync(avatarPath, new byte[200]);
+
+        var tempDumpPath = Path.Combine(_tempRoot, "legalerp_db_20261101_140000.dump");
+        await File.WriteAllBytesAsync(tempDumpPath, new byte[500]);
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Storage:BasePath"] = _storageBasePath,
+                ["Backup:RcloneDeveloperRemote"] = "gdrive:LegalERP_Test/Dev_SystemBackup"
+            })
+            .Build();
+
+        var fakeRclone = new FakeRcloneRunner();
+        var service = new BackupArchiveService(
+            db,
+            config,
+            NullLogger<BackupArchiveService>.Instance,
+            fakeRclone,
+            _ => Task.FromResult(tempDumpPath));
+
+        var result = await service.SyncDeveloperSystemBackupAsync();
+
+        result.Success.Should().BeTrue();
+        // 1 dump file (500B) + 1 company doc (12B "incorp-bytes") + 1 user avatar (200B) = 3 files, 712 bytes
+        result.FileCount.Should().Be(3);
+        result.TotalSizeBytes.Should().Be(712);
+        result.OutputPath.Should().Be("gdrive:LegalERP_Test/Dev_SystemBackup");
+
+        fakeRclone.LastCopySourceFile.Should().Be(tempDumpPath);
+        fakeRclone.LastCopyDestination.Should().Be("gdrive:LegalERP_Test/Dev_SystemBackup/Database");
+        fakeRclone.LastSyncSource.Should().Be(_storageBasePath);
+        fakeRclone.LastSyncDestination.Should().Be("gdrive:LegalERP_Test/Dev_SystemBackup/uploads");
+
+        // Temp dump file should be cleaned up after completion
+        File.Exists(tempDumpPath).Should().BeFalse();
+
+        var record = await db.BackupRecords.OrderByDescending(r => r.CreatedAt).FirstAsync();
+        record.BackupType.Should().Be(LegalERP.Domain.Enums.BackupType.DatabaseSnapshot);
+        record.Status.Should().Be(LegalERP.Domain.Enums.BackupStatus.Completed);
+        record.FileCount.Should().Be(3);
+        record.TotalSizeBytes.Should().Be(712);
+        record.DestinationPath.Should().Be("gdrive:LegalERP_Test/Dev_SystemBackup");
+        record.CompletedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task SyncDeveloperSystemBackupAsync_WhenRcloneCopyFails_MarksRecordFailedAndCleansTempDump()
+    {
+        var (db, _) = await CreateTestDbWithCompanyAsync();
+
+        var tempDumpPath = Path.Combine(_tempRoot, "legalerp_db_fail.dump");
+        await File.WriteAllBytesAsync(tempDumpPath, new byte[500]);
+
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Storage:BasePath"] = _storageBasePath,
+                ["Backup:RcloneDeveloperRemote"] = "gdrive:LegalERP_Test/Dev_SystemBackup"
+            })
+            .Build();
+
+        var fakeRclone = new FakeRcloneRunner
+        {
+            CopyResult = new RcloneExecutionResult(false, 1, "", "Upload quota exceeded")
+        };
+        var service = new BackupArchiveService(
+            db,
+            config,
+            NullLogger<BackupArchiveService>.Instance,
+            fakeRclone,
+            _ => Task.FromResult(tempDumpPath));
+
+        var result = await service.SyncDeveloperSystemBackupAsync();
+
+        result.Success.Should().BeFalse();
+        result.Message.Should().Contain("Upload quota exceeded");
+        File.Exists(tempDumpPath).Should().BeFalse();
+
+        var record = await db.BackupRecords.OrderByDescending(r => r.CreatedAt).FirstAsync();
+        record.BackupType.Should().Be(LegalERP.Domain.Enums.BackupType.DatabaseSnapshot);
+        record.Status.Should().Be(LegalERP.Domain.Enums.BackupStatus.Failed);
+        record.ErrorMessage.Should().Contain("Upload quota exceeded");
+        record.CompletedAt.Should().NotBeNull();
+    }
+
     private async Task<(ApplicationDbContext Db, Company Company)> CreateTestDbWithCompanyAsync()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -401,7 +496,10 @@ public class BackupArchiveServiceTests : IDisposable
     {
         public string? LastSyncSource { get; private set; }
         public string? LastSyncDestination { get; private set; }
+        public string? LastCopySourceFile { get; private set; }
+        public string? LastCopyDestination { get; private set; }
         public RcloneExecutionResult SyncResult { get; set; } = new(true, 0, "OK", "");
+        public RcloneExecutionResult CopyResult { get; set; } = new(true, 0, "OK", "");
         public Action? OnSyncCalled { get; set; }
         public BackupProgressSnapshotDto? SimulatedProgress { get; set; }
 
@@ -428,7 +526,10 @@ public class BackupArchiveServiceTests : IDisposable
             CancellationToken ct = default,
             Action<BackupProgressSnapshotDto>? onProgress = null)
         {
-            return Task.FromResult(new RcloneExecutionResult(true, 0, "OK", ""));
+            LastCopySourceFile = localFilePath;
+            LastCopyDestination = remoteDestinationDirectory;
+            ct.ThrowIfCancellationRequested();
+            return Task.FromResult(CopyResult);
         }
     }
 

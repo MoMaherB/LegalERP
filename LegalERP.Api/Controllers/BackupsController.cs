@@ -47,15 +47,14 @@ public class BackupsController : ControllerBase
 
     [HttpPost("export-archive")]
     public async Task<ActionResult<BackupStartResultDto>> ExportArchive(CancellationToken ct)
-    {
-        var result = await _jobCoordinator.StartArchiveBackupAsync(ct);
-        if (!result.Started)
-        {
-            return Conflict(result);
-        }
+        => ToStartActionResult(await _jobCoordinator.StartArchiveBackupAsync(ct));
 
-        return Ok(result);
-    }
+    [HttpPost("sync-developer-backup")]
+    public async Task<ActionResult<BackupStartResultDto>> SyncDeveloperBackup(CancellationToken ct)
+        => ToStartActionResult(await _jobCoordinator.StartDeveloperBackupAsync(ct));
+
+    private ActionResult<BackupStartResultDto> ToStartActionResult(BackupStartResultDto result)
+        => !result.Started ? Conflict(result) : Ok(result);
 
     [HttpPost("cancel")]
     public async Task<ActionResult<BackupCancelResultDto>> CancelActiveBackup(CancellationToken ct)

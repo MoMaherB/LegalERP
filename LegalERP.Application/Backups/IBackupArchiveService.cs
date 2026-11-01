@@ -13,6 +13,10 @@ public interface IBackupArchiveService
         CancellationToken ct = default,
         Guid? existingRecordId = null,
         Action<BackupProgressSnapshotDto>? onProgress = null);
+    Task<BackupResultDto> SyncDeveloperSystemBackupAsync(
+        CancellationToken ct = default,
+        Guid? existingRecordId = null,
+        Action<BackupProgressSnapshotDto>? onProgress = null);
     Task<(Stream FileStream, string FileName, long FileSizeBytes)> CreateDatabaseSnapshotAsync(CancellationToken ct = default);
     Task<List<BackupRecordDto>> GetBackupHistoryAsync(int take = 20, CancellationToken ct = default);
     Task<BackupStatusSummaryDto> GetStatusSummaryAsync(CancellationToken ct = default);

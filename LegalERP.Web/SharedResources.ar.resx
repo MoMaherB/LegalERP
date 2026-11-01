@@ -1673,4 +1673,13 @@
   <data name="NoBackupRunningToCancel" xml:space="preserve">
     <value>لا توجد عملية نسخ احتياطي جارية حالياً.</value>
   </data>
+  <data name="SyncDeveloperBackupNow" xml:space="preserve">
+    <value>مزامنة نسخة النظام الشاملة</value>
+  </data>
+  <data name="SyncingDeveloperBackup" xml:space="preserve">
+    <value>جاري مزامنة نسخة النظام...</value>
+  </data>
+  <data name="DeveloperBackupSyncedSuccess" xml:space="preserve">
+    <value>تمت مزامنة نسخة النظام الشاملة على جوجل درايف بنجاح!</value>
+  </data>
 </root>

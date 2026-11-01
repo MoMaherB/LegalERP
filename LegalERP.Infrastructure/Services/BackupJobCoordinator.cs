@@ -35,7 +35,31 @@ public class BackupJobCoordinator : IBackupJobCoordinator
         _logger = logger;
     }
 
-    public async Task<BackupStartResultDto> StartArchiveBackupAsync(CancellationToken ct = default)
+    public Task<BackupStartResultDto> StartArchiveBackupAsync(CancellationToken ct = default)
+        => StartJobCoreAsync(
+            BackupType.GoogleDriveArchive,
+            (archiveService, recordId, token, onProgress) =>
+                archiveService.GenerateHumanReadableArchiveAsync(
+                    customTargetPath: null,
+                    ct: token,
+                    existingRecordId: recordId,
+                    onProgress: onProgress),
+            ct);
+
+    public Task<BackupStartResultDto> StartDeveloperBackupAsync(CancellationToken ct = default)
+        => StartJobCoreAsync(
+            BackupType.DatabaseSnapshot,
+            (archiveService, recordId, token, onProgress) =>
+                archiveService.SyncDeveloperSystemBackupAsync(
+                    ct: token,
+                    existingRecordId: recordId,
+                    onProgress: onProgress),
+            ct);
+
+    private async Task<BackupStartResultDto> StartJobCoreAsync(
+        BackupType backupType,
+        Func<IBackupArchiveService, Guid, CancellationToken, Action<BackupProgressSnapshotDto>, Task<BackupResultDto>> jobAction,
+        CancellationToken ct)
     {
         if (!await _singleFlightLock.WaitAsync(0, ct))
         {
@@ -59,7 +83,7 @@ public class BackupJobCoordinator : IBackupJobCoordinator
                 var record = new BackupRecord
                 {
                     Id = recordId,
-                    BackupType = BackupType.GoogleDriveArchive,
+                    BackupType = backupType,
                     Status = BackupStatus.Running,
                     CreatedAt = startedAt
                 };
@@ -67,9 +91,9 @@ public class BackupJobCoordinator : IBackupJobCoordinator
                 await db.SaveChangesAsync(ct);
             }
 
-            _activeJob = new ActiveJobState(recordId, BackupType.GoogleDriveArchive, startedAt, jobCts, completionTcs);
+            _activeJob = new ActiveJobState(recordId, backupType, startedAt, jobCts, completionTcs);
 
-            _ = Task.Run(() => ExecuteArchiveJobInBackgroundAsync(recordId, jobCts, completionTcs));
+            _ = Task.Run(() => ExecuteJobInBackgroundAsync(recordId, jobAction, jobCts, completionTcs));
 
             return new BackupStartResultDto(
                 Started: true,
@@ -150,8 +174,9 @@ public class BackupJobCoordinator : IBackupJobCoordinator
         return staleRecords.Count;
     }
 
-    private async Task ExecuteArchiveJobInBackgroundAsync(
+    private async Task ExecuteJobInBackgroundAsync(
         Guid recordId,
+        Func<IBackupArchiveService, Guid, CancellationToken, Action<BackupProgressSnapshotDto>, Task<BackupResultDto>> jobAction,
         CancellationTokenSource jobCts,
         TaskCompletionSource completionTcs)
     {
@@ -159,11 +184,11 @@ public class BackupJobCoordinator : IBackupJobCoordinator
         {
             using var scope = _scopeFactory.CreateScope();
             var archiveService = scope.ServiceProvider.GetRequiredService<IBackupArchiveService>();
-            await archiveService.GenerateHumanReadableArchiveAsync(
-                customTargetPath: null,
-                ct: jobCts.Token,
-                existingRecordId: recordId,
-                onProgress: snapshot =>
+            await jobAction(
+                archiveService,
+                recordId,
+                jobCts.Token,
+                snapshot =>
                 {
                     var current = _activeJob;
                     if (current != null && current.BackupId == recordId)

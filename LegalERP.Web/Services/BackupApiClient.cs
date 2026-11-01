@@ -38,9 +38,15 @@ public class BackupApiClient
         return await _http.GetFromJsonAsync<ActiveBackupStatusDto>("api/backups/active", JsonOptions);
     }
 
-    public async Task<BackupStartResultDto?> StartArchiveBackupAsync()
+    public Task<BackupStartResultDto?> StartArchiveBackupAsync()
+        => PostBackupStartAsync("api/backups/export-archive");
+
+    public Task<BackupStartResultDto?> SyncDeveloperBackupAsync()
+        => PostBackupStartAsync("api/backups/sync-developer-backup");
+
+    private async Task<BackupStartResultDto?> PostBackupStartAsync(string endpoint)
     {
-        var response = await _http.PostAsync("api/backups/export-archive", null);
+        var response = await _http.PostAsync(endpoint, null);
         if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
         {
             return await response.Content.ReadFromJsonAsync<BackupStartResultDto>(JsonOptions);

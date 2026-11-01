@@ -1475,4 +1475,13 @@
   <data name="NoBackupRunningToCancel" xml:space="preserve">
     <value>No backup job is currently running.</value>
   </data>
+  <data name="SyncDeveloperBackupNow" xml:space="preserve">
+    <value>Sync System Backup Now</value>
+  </data>
+  <data name="SyncingDeveloperBackup" xml:space="preserve">
+    <value>Syncing System Backup...</value>
+  </data>
+  <data name="DeveloperBackupSyncedSuccess" xml:space="preserve">
+    <value>System backup synced to Google Drive successfully!</value>
+  </data>
 </root>

@@ -24,17 +24,20 @@ public class BackupArchiveService : IBackupArchiveService
     private readonly ILogger<BackupArchiveService> _logger;
     private readonly IRcloneRunner _rcloneRunner;
     private readonly string _storageBasePath;
+    private readonly Func<CancellationToken, Task<string>> _databaseDumpGenerator;
 
     public BackupArchiveService(
         ApplicationDbContext db,
         IConfiguration config,
         ILogger<BackupArchiveService> logger,
-        IRcloneRunner rcloneRunner)
+        IRcloneRunner rcloneRunner,
+        Func<CancellationToken, Task<string>>? databaseDumpGenerator = null)
     {
         _db = db;
         _config = config;
         _logger = logger;
         _rcloneRunner = rcloneRunner;
+        _databaseDumpGenerator = databaseDumpGenerator ?? GenerateDatabaseDumpFileAsync;
 
         // Base directory where uploads currently reside
         var configuredPath = _config["Storage:BasePath"];
@@ -66,30 +69,11 @@ public class BackupArchiveService : IBackupArchiveService
             ? customTargetPath
             : Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "exports", "legal_archive");
 
-        BackupRecord? record = null;
-        if (existingRecordId.HasValue)
-        {
-            record = await _db.BackupRecords.FirstOrDefaultAsync(r => r.Id == existingRecordId.Value, ct);
-        }
-
-        if (record == null)
-        {
-            record = new BackupRecord
-            {
-                Id = existingRecordId ?? Guid.NewGuid(),
-                BackupType = BackupType.GoogleDriveArchive,
-                Status = BackupStatus.Running,
-                DestinationPath = targetBase,
-                CreatedAt = DateTime.UtcNow
-            };
-            _db.BackupRecords.Add(record);
-            await _db.SaveChangesAsync(ct);
-        }
-        else if (string.IsNullOrWhiteSpace(record.DestinationPath))
-        {
-            record.DestinationPath = targetBase;
-            await _db.SaveChangesAsync(ct);
-        }
+        var record = await GetOrCreateRunningRecordAsync(
+            BackupType.GoogleDriveArchive,
+            existingRecordId,
+            targetBase,
+            ct);
 
         int totalFilesCopied = 0;
         long totalBytesCopied = 0;
@@ -208,14 +192,7 @@ public class BackupArchiveService : IBackupArchiveService
                         Directory.CreateDirectory(targetBase);
                     }
 
-                    Action<BackupProgressSnapshotDto>? normalizedProgress = null;
-                    if (onProgress != null)
-                    {
-                        normalizedProgress = snapshot =>
-                        {
-                            onProgress(NormalizeProgressSnapshot(snapshot, totalBytesCopied));
-                        };
-                    }
+                    var normalizedProgress = CreateNormalizedProgressCallback(onProgress, totalBytesCopied);
 
                     _logger.LogInformation("Syncing lawyer archive from {Source} to {Remote} via rclone...", targetBase, lawyerRemote);
                     var syncResult = await _rcloneRunner.SyncDirectoryAsync(targetBase, lawyerRemote, ct, normalizedProgress);
@@ -243,23 +220,169 @@ public class BackupArchiveService : IBackupArchiveService
         }
         catch (OperationCanceledException)
         {
-            _logger.LogInformation("Legal archive backup {BackupId} was cancelled.", record.Id);
-            record.MarkCancelled(totalFilesCopied, totalBytesCopied);
-            await _db.SaveChangesAsync(CancellationToken.None);
-
-            return new BackupResultDto(false, "Backup job was cancelled.", totalFilesCopied, totalBytesCopied, null);
+            return await HandleBackupCancelledAsync(record, totalFilesCopied, totalBytesCopied, null);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate human-readable archive.");
-            record.MarkFailed(ex.Message, totalFilesCopied, totalBytesCopied);
+            return await HandleBackupFailedAsync(record, ex, "Failed to generate archive", totalFilesCopied, totalBytesCopied, null);
+        }
+    }
+
+    public async Task<BackupResultDto> SyncDeveloperSystemBackupAsync(
+        CancellationToken ct = default,
+        Guid? existingRecordId = null,
+        Action<BackupProgressSnapshotDto>? onProgress = null)
+    {
+        var remoteOptions = BackupRemoteOptionsResolver.Resolve(_config);
+        var devRemote = remoteOptions.DeveloperRemote?.TrimEnd('/');
+
+        var record = await GetOrCreateRunningRecordAsync(
+            BackupType.DatabaseSnapshot,
+            existingRecordId,
+            devRemote ?? "Google Drive Developer Backup",
+            ct);
+
+        int totalFilesCount = 0;
+        long totalBytesCount = 0;
+        string? tempDumpFile = null;
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(devRemote))
+            {
+                const string missingRemoteMsg = "Developer Google Drive remote (Backup:RcloneDeveloperRemote) is not configured.";
+                record.MarkFailed(missingRemoteMsg);
+                await _db.SaveChangesAsync(ct);
+                return new BackupResultDto(false, missingRemoteMsg, 0, 0, null);
+            }
+
+            ct.ThrowIfCancellationRequested();
+            tempDumpFile = await _databaseDumpGenerator(ct);
+            var dumpInfo = new FileInfo(tempDumpFile);
+            long dumpBytes = dumpInfo.Exists ? dumpInfo.Length : 0;
+
+            int rawUploadsCount = 0;
+            long rawUploadsBytes = 0;
+            if (Directory.Exists(_storageBasePath))
+            {
+                foreach (var file in Directory.EnumerateFiles(_storageBasePath, "*", SearchOption.AllDirectories))
+                {
+                    ct.ThrowIfCancellationRequested();
+                    rawUploadsCount++;
+                    rawUploadsBytes += new FileInfo(file).Length;
+                }
+            }
+            else
+            {
+                Directory.CreateDirectory(_storageBasePath);
+            }
+
+            totalFilesCount = 1 + rawUploadsCount;
+            totalBytesCount = dumpBytes + rawUploadsBytes;
+
+            record.FileCount = totalFilesCount;
+            record.TotalSizeBytes = totalBytesCount;
+            record.DestinationPath = devRemote;
             await _db.SaveChangesAsync(ct);
 
-            return new BackupResultDto(false, $"Failed to generate archive: {ex.Message}", totalFilesCopied, totalBytesCopied, null);
+            var dumpProgress = CreateNormalizedProgressCallback(onProgress, dumpBytes);
+            var copyResult = await _rcloneRunner.CopyFileAsync(tempDumpFile, $"{devRemote}/Database", ct, dumpProgress);
+            if (!copyResult.Success)
+            {
+                var errMsg = $"rclone copy of database dump to {devRemote}/Database failed ({copyResult.ExitCode}): {copyResult.StandardError}";
+                _logger.LogError(errMsg);
+                record.MarkFailed(errMsg, totalFilesCount, totalBytesCount, devRemote);
+                await _db.SaveChangesAsync(ct);
+                return new BackupResultDto(false, errMsg, totalFilesCount, totalBytesCount, null);
+            }
+
+            var uploadsProgress = CreateNormalizedProgressCallback(onProgress, rawUploadsBytes);
+            var syncResult = await _rcloneRunner.SyncDirectoryAsync(_storageBasePath, $"{devRemote}/uploads", ct, uploadsProgress);
+            if (!syncResult.Success)
+            {
+                var errMsg = $"rclone sync of uploads to {devRemote}/uploads failed ({syncResult.ExitCode}): {syncResult.StandardError}";
+                _logger.LogError(errMsg);
+                record.MarkFailed(errMsg, totalFilesCount, totalBytesCount, devRemote);
+                await _db.SaveChangesAsync(ct);
+                return new BackupResultDto(false, errMsg, totalFilesCount, totalBytesCount, null);
+            }
+
+            record.MarkCompleted(totalFilesCount, totalBytesCount, devRemote);
+            await _db.SaveChangesAsync(ct);
+
+            return new BackupResultDto(true, "Developer system backup synced successfully.", totalFilesCount, totalBytesCount, devRemote);
+        }
+        catch (OperationCanceledException)
+        {
+            return await HandleBackupCancelledAsync(record, totalFilesCount, totalBytesCount, devRemote);
+        }
+        catch (Exception ex)
+        {
+            return await HandleBackupFailedAsync(record, ex, "Failed to sync developer system backup", totalFilesCount, totalBytesCount, devRemote);
+        }
+        finally
+        {
+            TryDeleteTempFile(tempDumpFile);
         }
     }
 
     public async Task<(Stream FileStream, string FileName, long FileSizeBytes)> CreateDatabaseSnapshotAsync(CancellationToken ct = default)
+    {
+        var tempFile = await _databaseDumpGenerator(ct);
+        var fileInfo = new FileInfo(tempFile);
+        var fileStream = new FileStream(tempFile, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.DeleteOnClose);
+
+        var record = new BackupRecord
+        {
+            BackupType = BackupType.DatabaseSnapshot,
+            Status = BackupStatus.Completed,
+            FileCount = 1,
+            TotalSizeBytes = fileInfo.Length,
+            DestinationPath = "Direct Stream",
+            CreatedAt = DateTime.UtcNow,
+            CompletedAt = DateTime.UtcNow
+        };
+        _db.BackupRecords.Add(record);
+        await _db.SaveChangesAsync(ct);
+
+        return (fileStream, Path.GetFileName(tempFile), fileInfo.Length);
+    }
+
+    private async Task<BackupRecord> GetOrCreateRunningRecordAsync(
+        BackupType backupType,
+        Guid? existingRecordId,
+        string? defaultDestinationPath,
+        CancellationToken ct)
+    {
+        BackupRecord? record = null;
+        if (existingRecordId.HasValue)
+        {
+            record = await _db.BackupRecords.FirstOrDefaultAsync(r => r.Id == existingRecordId.Value, ct);
+        }
+
+        if (record == null)
+        {
+            record = new BackupRecord
+            {
+                Id = existingRecordId ?? Guid.NewGuid(),
+                BackupType = backupType,
+                Status = BackupStatus.Running,
+                DestinationPath = defaultDestinationPath,
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.BackupRecords.Add(record);
+            await _db.SaveChangesAsync(ct);
+        }
+        else if (string.IsNullOrWhiteSpace(record.DestinationPath) && !string.IsNullOrWhiteSpace(defaultDestinationPath))
+        {
+            record.DestinationPath = defaultDestinationPath;
+            await _db.SaveChangesAsync(ct);
+        }
+
+        return record;
+    }
+
+    private async Task<string> GenerateDatabaseDumpFileAsync(CancellationToken ct)
     {
         var tempFile = Path.Combine(Path.GetTempPath(), $"legalerp_db_{DateTime.UtcNow:yyyyMMdd_HHmmss}.dump");
         var pgDumpPath = FindPgDumpExecutable();
@@ -290,31 +413,88 @@ public class BackupArchiveService : IBackupArchiveService
         using var process = new Process { StartInfo = startInfo };
         process.Start();
 
-        var error = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync(ct);
+        var errorTask = process.StandardError.ReadToEndAsync();
+        try
+        {
+            await process.WaitForExitAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch
+            {
+                // Ignore kill errors
+            }
+            TryDeleteTempFile(tempFile);
+            throw;
+        }
 
+        var error = await errorTask;
         if (process.ExitCode != 0)
         {
+            TryDeleteTempFile(tempFile);
             throw new Exception($"pg_dump failed (exit code {process.ExitCode}): {error}");
         }
 
-        var fileInfo = new FileInfo(tempFile);
-        var fileStream = new FileStream(tempFile, FileMode.Open, FileAccess.Read, FileShare.Read, 4096, FileOptions.DeleteOnClose);
+        return tempFile;
+    }
 
-        var record = new BackupRecord
+    private async Task<BackupResultDto> HandleBackupCancelledAsync(
+        BackupRecord record,
+        int fileCount,
+        long totalBytes,
+        string? destinationPath)
+    {
+        _logger.LogInformation("Backup job {BackupId} ({BackupType}) was cancelled.", record.Id, record.BackupType);
+        record.MarkCancelled(fileCount, totalBytes, destinationPath: destinationPath);
+        await _db.SaveChangesAsync(CancellationToken.None);
+        return new BackupResultDto(false, "Backup job was cancelled.", fileCount, totalBytes, null);
+    }
+
+    private async Task<BackupResultDto> HandleBackupFailedAsync(
+        BackupRecord record,
+        Exception ex,
+        string errorPrefix,
+        int fileCount,
+        long totalBytes,
+        string? destinationPath)
+    {
+        _logger.LogError(ex, "{Prefix} for backup {BackupId}.", errorPrefix, record.Id);
+        record.MarkFailed(ex.Message, fileCount, totalBytes, destinationPath);
+        await _db.SaveChangesAsync(CancellationToken.None);
+        return new BackupResultDto(false, $"{errorPrefix}: {ex.Message}", fileCount, totalBytes, null);
+    }
+
+    private static Action<BackupProgressSnapshotDto>? CreateNormalizedProgressCallback(
+        Action<BackupProgressSnapshotDto>? onProgress,
+        long expectedStepBytes)
+    {
+        if (onProgress == null)
         {
-            BackupType = BackupType.DatabaseSnapshot,
-            Status = BackupStatus.Completed,
-            FileCount = 1,
-            TotalSizeBytes = fileInfo.Length,
-            DestinationPath = "Direct Stream",
-            CreatedAt = DateTime.UtcNow,
-            CompletedAt = DateTime.UtcNow
-        };
-        _db.BackupRecords.Add(record);
-        await _db.SaveChangesAsync(ct);
+            return null;
+        }
 
-        return (fileStream, Path.GetFileName(tempFile), fileInfo.Length);
+        return snapshot => onProgress(NormalizeProgressSnapshot(snapshot, expectedStepBytes));
+    }
+
+    private void TryDeleteTempFile(string? tempFilePath)
+    {
+        if (string.IsNullOrWhiteSpace(tempFilePath) || !File.Exists(tempFilePath))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(tempFilePath);
+        }
+        catch (Exception cleanupEx)
+        {
+            _logger.LogWarning(cleanupEx, "Failed to delete temporary database dump {TempFile}", tempFilePath);
+        }
     }
 
     public async Task<List<BackupRecordDto>> GetBackupHistoryAsync(int take = 20, CancellationToken ct = default)

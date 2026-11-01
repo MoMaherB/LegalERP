@@ -96,4 +96,44 @@ public class BackupsControllerTests
         var okResult = actionResult.Result.Should().BeOfType<OkObjectResult>().Subject;
         okResult.Value.Should().BeEquivalentTo(cancelResult);
     }
+
+    [Fact]
+    public async Task SyncDeveloperBackup_WhenIdle_ReturnsOkWithStartResult()
+    {
+        var mockArchiveService = new Mock<IBackupArchiveService>();
+        var mockCoordinator = new Mock<IBackupJobCoordinator>();
+        var recordId = Guid.NewGuid();
+        var startResult = new BackupStartResultDto(true, recordId, "Backup job started in the background.");
+
+        mockCoordinator
+            .Setup(c => c.StartDeveloperBackupAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(startResult);
+
+        var controller = new BackupsController(mockArchiveService.Object, mockCoordinator.Object);
+
+        var actionResult = await controller.SyncDeveloperBackup(CancellationToken.None);
+
+        var okResult = actionResult.Result.Should().BeOfType<OkObjectResult>().Subject;
+        okResult.Value.Should().BeEquivalentTo(startResult);
+    }
+
+    [Fact]
+    public async Task SyncDeveloperBackup_WhenBackupAlreadyRunning_ReturnsConflictWithStartResult()
+    {
+        var mockArchiveService = new Mock<IBackupArchiveService>();
+        var mockCoordinator = new Mock<IBackupJobCoordinator>();
+        var activeId = Guid.NewGuid();
+        var startResult = new BackupStartResultDto(false, activeId, "A backup job is already running.");
+
+        mockCoordinator
+            .Setup(c => c.StartDeveloperBackupAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(startResult);
+
+        var controller = new BackupsController(mockArchiveService.Object, mockCoordinator.Object);
+
+        var actionResult = await controller.SyncDeveloperBackup(CancellationToken.None);
+
+        var conflictResult = actionResult.Result.Should().BeOfType<ConflictObjectResult>().Subject;
+        conflictResult.Value.Should().BeEquivalentTo(startResult);
+    }
 }
