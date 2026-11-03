@@ -46,7 +46,7 @@ This document defines the business and technical requirements for a Legal Manage
 
 > **Mobile app note:** A dedicated native/hybrid mobile app (e.g., .NET MAUI Blazor Hybrid) is **deferred, not required for this phase** — it added a large local toolchain footprint (~18GB of Visual Studio mobile workloads) that isn't justified yet. Instead, the Blazor Web App itself is required to be fully **mobile-friendly/responsive**, so it works well on a phone browser. The architecture (shared component library, API-first design) is kept compatible with adding a MAUI or other native app later without rework — see Section 11.
 
-The system is designed as a **single-server, cloud-hosted architecture** — there is no local/on-premise database on the office computer and no offline sync engine. The client communicates directly with a central Web API. To minimize hosting cost, the **entire production stack — API, database, web frontend, and uploaded document/photo files — runs on a single Linux VPS**, rather than being split across separate managed cloud services (no Google Drive, no separate managed database provider).
+The system is designed as a **single-server, cloud-hosted architecture** — there is no local/on-premise database on the office computer and no offline sync engine. The client communicates directly with a central Web API. To minimize hosting cost, the **entire production stack — API, database, web frontend, and live uploaded document/photo files — runs on a single Linux VPS**, rather than being split across separate managed cloud services for live traffic (Google Drive is used exclusively via `rclone` for off-site incremental backups per TR-9.5 and Feature 28).
 
 The system must strictly enforce **role-based access control**, most critically around financial data — Standard/Assistant users must never receive financial figures in any form, not even in a restricted or masked format.
 
@@ -75,7 +75,7 @@ The system will be built and delivered **feature-by-feature**, with each feature
 - E-signature / document generation workflows
 - Billing/invoicing integrations (e.g., accounting software, payment gateways)
 - Client-facing portal (system is for internal firm staff only, not external clients)
-- Third-party cloud storage providers (Google Drive, S3, R2, etc.) — superseded by single-VPS local file storage
+- Third-party cloud storage providers for *live* application file serving (S3, R2, etc.) — live uploads are stored on the single-VPS local file system, while Google Drive is used solely as an off-site incremental backup destination via `rclone` (TR-9.5)
 
 ### 2.3 High-Level Architecture
 
@@ -155,7 +155,7 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 | BR-2.11 | The full history of postponements for a case shall be retrievable as an audit trail (no hearing record is overwritten or lost). |
 | BR-2.12 | Every document uploaded to a case or case party shall support a custom user-defined title/label for identification. |
 | BR-2.13 | Closing a case shall capture the final Case Outcome (Won / Lost / Settled) and render distinct color badges (Green = Won, Red = Lost, Blue = Settled/Dismissed). |
-| BR-2.14 | Every person added to a case (whether our client or opponent) **must** be a registered Client record in the system. The UI shall provide a quick-search selector to pick an existing Client, or a "Client not found — Add new" option that redirects to create a new Client record and then returns to pick them. No manual inline name entry is allowed for case parties. |
+| BR-2.14 | Every "Our Client" (`موكلنا`) party added to a case **must** be linked to a registered Client record via the `ClientQuickSearchSelector` dropdown (or the "➕ Client not found — Add new client" option that redirects to `/clients/new`). Opposing parties (`خصمنا`) are entered directly via manual text input without requiring a registered Client record (see Feature 15). |
 
 ### BR-3: Financials & Fees Management
 | ID | Requirement |
@@ -169,9 +169,9 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 ### BR-4: Access Control
 | ID | Requirement |
 |----|-------------|
-| BR-4.1 | The system shall support two roles at minimum: Admin and Standard User (Viewer/Assistant). |
-| BR-4.2 | Admins shall have full CRUD access to companies, cases, documents, and all financial details. |
-| BR-4.3 | Standard Users shall be able to view and browse companies, cases, and documents, but shall be **completely restricted** from viewing any financial data — including agreed fees, collected amounts, and balances — in any form, partial or otherwise. |
+| BR-4.1 | The system shall support four roles: `SuperAdmin`, `Admin`, `Editor`, and `Viewer` (Standard User). |
+| BR-4.2 | `SuperAdmin` and `Admin` shall have full CRUD access to companies, cases, clients, attorneys, documents, and all financial details (`SuperAdmin` additionally manages user accounts and system backups). `Editor` shall have full CRUD access to companies, cases, clients, and attorneys, but no access to financial data or system administration. |
+| BR-4.3 | `Editor` and `Viewer` (Standard) users shall be **completely restricted** from viewing any financial data — including agreed fees, collected amounts, and balances — in any form, partial or otherwise. |
 
 ### BR-5: Usability & Accessibility
 | ID | Requirement |
@@ -193,7 +193,7 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 | BR-6.5 | The Client detail page shall display all **related Companies** (every company where this Client is a partner, with company name and ownership percentage). |
 | BR-6.6 | Client quick-search shall require **all query terms to match** (strict multi-word search) so searching for "محمد عيسي" does not match unrelated clients who only share "محمد". |
 | BR-6.7 | When adding a party to a Case, the UI shall provide a **quick-search dropdown** displaying `Full Name (National ID)` for clear disambiguation. The dropdown shall always include a **"➕ Client not found — Add new client"** option that redirects to `/clients/new`. |
-| BR-6.8 | When adding a Partner to a Company, the UI shall use the same **Client quick-search dropdown** (BR-6.7) to pick an existing Client record (or redirect to create a new Client if not found). The partner's name, National ID, and ID document shall be pulled directly from the central Client record to eliminate duplicate data entry. |
+| BR-6.8 | When adding a Partner to a Company in standard mode (`≤5 partners`, `HasManyPartners = false`), the UI shall use the `ClientQuickSearchSelector` dropdown (BR-6.7) to pick an existing Client record, pulling the partner's name, National ID, and ID document directly from the central Client record. When `HasManyPartners = true` (`>5 partners` mode, Feature 29), partners are entered directly by name (`ClientId = null`) and bulk PDF document slots (`بطاقات الشركاء` and `توكيلات الشركاء`) are provided at the company level. |
 
 ---
 
@@ -285,8 +285,8 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 - **Search:** Fuzzy search across `company_name` (Arabic) and `company_name_en` (English equivalent, optional).
 
 ### 5.2 Cases Module
-- **Entities:** Case, CaseParty (linked to Client), CaseMemo, CaseHearing, Document (linked)
-- **Key behavior:** Party color (Green/Client, Red/Opponent) is derived from the `is_our_client` boolean at render time — never stored as a literal color value. Case status color (Active/Amber, Closed/Green) is derived the same way from the `status` enum. Every party in a case must reference a registered Client record — no inline manual entry.
+- **Entities:** Case, CaseParty (linked to Client when `IsOurClient = true`), CaseMemo, CaseHearing, Document (linked)
+- **Key behavior:** Party color (Green/Client, Red/Opponent) is derived from the `is_our_client` boolean at render time — never stored as a literal color value. Case status color (Active/Amber, Closed/Green) is derived the same way from the `status` enum. "Our Client" parties reference a registered Client record via `ClientQuickSearchSelector`; opposing parties support direct manual name entry.
 - **Hearings:** Each hearing is an independent record; postponements create a new record linked to the prior one via `previous_hearing_id`, preserving a complete, non-destructive history.
 
 ### 5.3 Financials Module
@@ -315,19 +315,16 @@ All production components are deployed on **one Linux VPS** to keep hosting cost
 
 ## 6. Roles & Access Control Matrix
 
-| Capability | Admin | Standard User |
-|---|:---:|:---:|
-| View companies & documents | ✅ | ✅ |
-| Add / edit / delete companies | ✅ | ❌ |
-| View case details, parties, memos | ✅ | ✅ |
-| Add / edit / delete cases | ✅ | ❌ (view-only, or per firm policy) |
-| Log hearing outcomes / postponements | ✅ | ⚠️ Optional — decide per firm workflow |
-| View Agreed Fee | ✅ | ❌ |
-| View Collected Amount / Remaining Balance | ✅ | ❌ |
-| View Payment Status label (Paid/Partial/Unpaid) only | ✅ | ❌ (per current requirement: **no** financial data at all, not even status) |
-| Record fee payments | ✅ | ❌ |
-| Manage users / roles | ✅ | ❌ |
-| Upload / view documents | ✅ | ✅ |
+| Capability | SuperAdmin | Admin | Editor | Viewer |
+|---|:---:|:---:|:---:|:---:|
+| View companies, cases, clients, attorneys & documents | ✅ | ✅ | ✅ | ✅ |
+| Add / edit / delete companies, cases, clients, attorneys | ✅ | ✅ | ✅ | ❌ |
+| Log hearing outcomes / postponements & memos | ✅ | ✅ | ✅ | ❌ |
+| Upload / replace documents | ✅ | ✅ | ✅ | ❌ |
+| Delete standalone documents (`DELETE /api/documents/{id}`) | ✅ | ✅ | ❌ | ❌ |
+| View Agreed Fee, Collected Amount, Remaining Balance & Payment Status | ✅ | ✅ | ❌ | ❌ |
+| Record / delete fee payments | ✅ | ✅ | ❌ | ❌ |
+| Manage users / roles (`/users`) & system backups (`/admin/backups`) | ✅ | ❌ | ❌ | ❌ |
 
 > **Note:** The current requirement is stricter than a typical "hide numbers, show status" pattern — Standard Users are to be restricted from **any** financial data, including the Paid/Partial/Unpaid status label. This should be confirmed as final policy (see Section 11, Open Decisions) since some firms prefer assistants to at least see payment status without amounts.
 
@@ -388,9 +385,9 @@ Document (polymorphic: owner_type + owner_id) ──> Local VPS Storage Path
 | **Hangfire** | Background job scheduling (reminders) | Uses PostgreSQL storage — no separate Redis/SQL Server dependency needed; runs as part of the same VPS deployment |
 | **Let's Encrypt / Certbot** | Free SSL/TLS certificate for HTTPS | Required for secure API and Web App access on the VPS's domain |
 | **VPS Provider** (e.g., Hetzner, Contabo, DigitalOcean) | Hosts everything: API, database, web app, file storage | Selected on cost basis; sized for single-firm workload with headroom for document/photo growth |
-| **Off-site backup target** (e.g., a low-cost object storage bucket used only for backup archives) | Disaster recovery for database dumps + storage directory | Not used for live application storage — purely a backup destination, kept cheap and minimal |
+| **Off-site backup target (`rclone` → Google Drive)** | Dual-stream incremental off-site backups (Lawyer's human-readable archive + Developer's `pg_dump` and raw `uploads/` sync) | Not used for live application file serving — purely an off-site incremental backup destination via `IRcloneRunner` / `RcloneProcessRunner` (see TR-9.5 & Feature 28) |
 
-> Google Drive and any managed cloud database provider have been intentionally removed from this architecture — the single-VPS approach consolidates all costs into one server bill.
+> Managed cloud databases and cloud storage for *live* request serving are intentionally excluded so the single-VPS approach consolidates all runtime costs into one server bill, while `rclone` syncs incremental backups to Google Drive.
 
 ---
 
@@ -1016,6 +1013,24 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 - **UI Enhancements:**
   - Updated [`BackupManagement.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Admin/BackupManagement.razor) using Bootstrap `text-break` class to display the complete `DestinationPath` without truncation.
 - **Test-Driven Verification:** Expanded test suite to **130 passing tests** with 0 failures (`BackupArchiveServiceTests` with FakeRcloneRunner and local override tests).
+
+**Refactor: Single-Flight Background Backup Job Coordinator, Live Progress & Cancellation — Tickets 01–03 — ✅ COMPLETED (2026-11-01)**
+- **Single-Flight Background Execution (`Ticket 01`):**
+  - Created [`IBackupJobCoordinator.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Backups/IBackupJobCoordinator.cs) and singleton [`BackupJobCoordinator.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Infrastructure/Services/BackupJobCoordinator.cs) enforcing a single app-wide backup job at a time (`409 Conflict` on concurrent start), running jobs in an isolated `IServiceScope` on a background thread, exposing `GET /api/backups/active` for status polling, and reconciling stale `Running` records to `Failed` (`"Interrupted: ..."`) on API startup.
+- **Live `rclone` Progress, Speed & ETA (`Ticket 02`):**
+  - Created pure [`RcloneStatsParser.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Application/Backups/RcloneStatsParser.cs) to parse `rclone --stats 1s --stats-one-line -v` output into `BackupProgressSnapshotDto` (`Percentage`, `TransferredBytes`, `TotalBytes`, `TransferredText`, `TotalText`, `SpeedText`, `EtaText`), with retry-inflation normalization against each step's byte total and Google Drive API rate-limit pacing (`--tpslimit 4 --transfers 2 --checkers 4`).
+- **Cancel Running Backup (`Ticket 03`):**
+  - Added `BackupStatus.Cancelled`, `BackupRecord.MarkCancelled()`, `IBackupJobCoordinator.CancelActiveBackupAsync()`, and `POST /api/backups/cancel` to terminate active `rclone` / `pg_dump` process trees (`Kill(entireProcessTree: true)`), mark the `BackupRecord` as `Cancelled` with completion timestamp, and immediately release the single-flight lock.
+
+**Refactor: Sync Developer System Backup (Card 2) to Google Drive via `rclone` & Dedicated Progress Card — Ticket 03 — ✅ COMPLETED (2026-11-01)**
+- **Developer System Backup Sync (`IBackupArchiveService.SyncDeveloperSystemBackupAsync`):**
+  - Extracted shared [`GenerateDatabaseDumpFileAsync`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Infrastructure/Services/BackupArchiveService.cs) (reused by both `CreateDatabaseSnapshotAsync` local download and `SyncDeveloperSystemBackupAsync` cloud sync) with process-tree termination and partial temp-file cleanup on failure/cancellation.
+  - Uploads the compressed `.dump` file to `{DeveloperRemote}/Database` via `IRcloneRunner.CopyFileAsync`, syncs raw `_storageBasePath` (`uploads/`, including `users/` avatars) to `{DeveloperRemote}/uploads` via `IRcloneRunner.SyncDirectoryAsync`, records `FileCount = 1 + rawUploadsCount` and `TotalSizeBytes = dumpBytes + rawUploadsBytes` on the `DatabaseSnapshot` `BackupRecord` with `DestinationPath = devRemote`, and deletes the temporary `.dump` file in `finally`.
+- **Unified Coordinator, Controller & UI:**
+  - Extended [`BackupJobCoordinator`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Infrastructure/Services/BackupJobCoordinator.cs) (`StartDeveloperBackupAsync`), [`BackupsController`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Api/Controllers/BackupsController.cs) (`POST /api/backups/sync-developer-backup`), and [`BackupApiClient`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Services/BackupApiClient.cs) (`SyncDeveloperBackupAsync`) using shared single-flight job orchestration.
+  - Updated [`BackupManagement.razor`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Web/Components/Pages/Admin/BackupManagement.razor) to render a dedicated, full-width Progress & Data Transfer card beneath the two action cards (with active backup title, Cancel button, progress bar, transferred/total size, speed, and ETA) while keeping the local `.dump` browser download button alongside the Card 2 cloud sync button.
+- **Test-Driven Verification & Code Hygiene:**
+  - Added [`CompanyPartnersSectionTests.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Tests/Companies/CompanyPartnersSectionTests.cs) and resolved all compiler warnings across the solution, expanding the automated test suite to **160 passing tests** with **0 failures** and **0 warnings**.
 
 ---
 

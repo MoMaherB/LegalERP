@@ -125,7 +125,7 @@ public class BackupArchiveService : IBackupArchiveService
                 .ToListAsync(ct);
 
             var cases = await _db.Cases
-                .Include(c => c.Memos).ThenInclude(m => m.Document)
+                .Include(c => c.Memos!).ThenInclude(m => m.Document)
                 .ToListAsync(ct);
 
             var caseDocs = await _db.Documents

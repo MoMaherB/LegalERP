@@ -25,7 +25,7 @@ public class CompanyRepository : ICompanyRepository
             .Include(c => c.PartnersAttorneysDocument)
             .Include(c => c.Amendments).ThenInclude(a => a.Document)
             .Include(c => c.Partners).ThenInclude(p => p.NationalIdDocument)
-            .Include(c => c.Partners).ThenInclude(p => p.Client).ThenInclude(cl => cl.NationalIdDocument)
+            .Include(c => c.Partners).ThenInclude(p => p.Client!).ThenInclude(cl => cl.NationalIdDocument)
             .Include(c => c.FeeTransactions)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 

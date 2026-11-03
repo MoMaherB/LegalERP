@@ -13,7 +13,6 @@
 
 @code {
     private bool isDarkMode = false;
-    private bool isInitialized = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -21,7 +20,6 @@
         {
             var currentTheme = await JSRuntime.InvokeAsync<string>("themeManager.getTheme");
             isDarkMode = currentTheme == "dark";
-            isInitialized = true;
             StateHasChanged();
         }
     }

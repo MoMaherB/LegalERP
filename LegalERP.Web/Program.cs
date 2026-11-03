@@ -73,9 +73,12 @@ var localizationOptions = new RequestLocalizationOptions()
     .AddSupportedCultures(supportedCultures)
     .AddSupportedUICultures(supportedCultures);
 
-localizationOptions.RequestCultureProviders.Remove(
-    localizationOptions.RequestCultureProviders
-        .FirstOrDefault(p => p is Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider));
+var acceptLanguageProvider = localizationOptions.RequestCultureProviders
+    .FirstOrDefault(p => p is Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider);
+if (acceptLanguageProvider != null)
+{
+    localizationOptions.RequestCultureProviders.Remove(acceptLanguageProvider);
+}
 
 app.UseRequestLocalization(localizationOptions);
 

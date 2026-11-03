@@ -146,7 +146,6 @@
     private string _wordThumbId = "wthumb_" + Guid.NewGuid().ToString("N");
     private string _wordModalId = "wmodal_" + Guid.NewGuid().ToString("N");
     private bool _thumbnailRendered = false;
-    private bool _wordModalRendered = false;
 
     private bool IsImage => Document?.ContentType?.StartsWith("image/") == true
                             || new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" }
@@ -188,7 +187,6 @@
     private async Task OpenViewer()
     {
         showViewer = true;
-        _wordModalRendered = false;
         StateHasChanged();
 
         // Give Blazor a tick to render the modal DOM, then render Word content
@@ -198,7 +196,6 @@
             try
             {
                 await JS.InvokeVoidAsync("renderWordPreview", GetViewUrl(), _wordModalId);
-                _wordModalRendered = true;
             }
             catch { }
         }
