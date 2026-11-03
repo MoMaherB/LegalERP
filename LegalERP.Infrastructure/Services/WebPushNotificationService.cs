@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using LegalERP.Application.Notifications;
 using LegalERP.Domain.Entities;
 using LegalERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ using WebPush;
 
 namespace LegalERP.Infrastructure.Services;
 
-public class WebPushNotificationService
+public class WebPushNotificationService : IWebPushNotificationService
 {
     private readonly IConfiguration _config;
     private readonly ILogger<WebPushNotificationService> _logger;

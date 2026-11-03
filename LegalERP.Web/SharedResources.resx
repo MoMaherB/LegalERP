@@ -1484,4 +1484,16 @@
   <data name="DeveloperBackupSyncedSuccess" xml:space="preserve">
     <value>System backup synced to Google Drive successfully!</value>
   </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="MarkAllRead" xml:space="preserve">
+    <value>Mark all read</value>
+  </data>
+  <data name="NoNotificationsYet" xml:space="preserve">
+    <value>No notifications yet.</value>
+  </data>
+  <data name="New" xml:space="preserve">
+    <value>New</value>
+  </data>
 </root>

@@ -49,7 +49,8 @@ public class NotificationApiClient
     {
         try
         {
-            return await _http.GetStringAsync("api/notifications/vapid-public-key");
+            var raw = await _http.GetStringAsync("api/notifications/vapid-public-key");
+            return raw?.Trim('"', ' ', '\r', '\n');
         }
         catch
         {

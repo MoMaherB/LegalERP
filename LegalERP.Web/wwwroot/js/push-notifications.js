@@ -25,9 +25,13 @@ window.pushNotifications = {
         }
 
         try {
+            if (typeof vapidPublicKey === 'string') {
+                vapidPublicKey = vapidPublicKey.replace(/^["']|["']$/g, '').trim();
+            }
+
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') {
-                console.log('Notification permission denied');
+                console.log('Notification permission denied:', permission);
                 return null;
             }
 
@@ -45,6 +49,25 @@ window.pushNotifications = {
             };
         } catch (error) {
             console.error('Push subscription failed:', error);
+            return null;
+        }
+    },
+
+    // Get existing subscription if present
+    getExistingSubscription: async function () {
+        if (!('serviceWorker' in navigator)) return null;
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            const subscription = await registration.pushManager.getSubscription();
+            if (!subscription) return null;
+            const json = subscription.toJSON();
+            return {
+                endpoint: json.endpoint,
+                p256dh: json.keys.p256dh,
+                auth: json.keys.auth
+            };
+        } catch (error) {
+            console.error('Failed to get existing subscription:', error);
             return null;
         }
     },

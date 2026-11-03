@@ -1,11 +1,13 @@
 using LegalERP.Application.Notifications;
 using LegalERP.Domain.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LegalERP.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class NotificationsController : ControllerBase
 {
     private readonly INotificationRepository _repository;
@@ -87,7 +89,16 @@ public class NotificationsController : ControllerBase
         return NoContent();
     }
 
+    // POST /api/notifications/trigger-reminders
+    [HttpPost("trigger-reminders")]
+    public async Task<ActionResult> TriggerReminders([FromServices] LegalERP.Infrastructure.Services.HearingReminderJob job)
+    {
+        await job.ExecuteAsync();
+        return Ok(new { message = "Hearing reminder job executed successfully." });
+    }
+
     // GET /api/notifications/vapid-public-key
+    [AllowAnonymous]
     [HttpGet("vapid-public-key")]
     public ActionResult<string> GetVapidPublicKey([FromServices] IConfiguration config)
     {
