@@ -4,10 +4,10 @@
 
 **Blocked by:** None (01 resolved)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `ClientDetail` resolves party role labels in the Related Cases table using `CasePartyRoleHelper.GetRoleLocalizationKey(c.CaseType, c.PartyRole)` instead of non-existent `"Defendant"` / `"Victim"` resource keys.
-- [ ] `ClientDetail` localizes the case type badge in the Related Cases table (`@Loc[c.CaseType.ToString()]`) and uses canonical `DocumentOwnerTypes.Client` and `DocumentOwnerTypes.Attorney` constants.
-- [ ] `ClientDetail` cards use vertical flex alignment (`flex-column align-items-stretch`) so linked Power of Attorney cards and sections stack cleanly without horizontal crowding.
-- [ ] Automated unit tests cover `ClientsController` (CRUD, search delegation, and 360° `ClientDto` mapping of related cases and company partnerships).
-- [ ] Automated bUnit tests cover `ClientDetail` (rendering personal info, related cases with localized Criminal vs. Civil party roles and case types, related companies, linked attorneys, and delete confirmation) and `ClientList` (searching clients and delete confirmation).
+- [x] `ClientDetail` resolves party role labels in the Related Cases table using `CasePartyRoleHelper.GetRoleLocalizationKey(c.CaseType, c.PartyRole)` instead of non-existent `"Defendant"` / `"Victim"` resource keys.
+- [x] `ClientDetail` localizes the case type badge in the Related Cases table (`@Loc[c.CaseType.ToString()]`) and uses canonical `DocumentOwnerTypes.Client` and `DocumentOwnerTypes.Attorney` constants.
+- [x] `ClientDetail` cards use vertical flex alignment (`flex-column align-items-stretch`) so linked Power of Attorney cards and sections stack cleanly without horizontal crowding.
+- [x] Automated unit tests cover `ClientsController` (CRUD, search delegation, and 360° `ClientDto` mapping of related cases and company partnerships).
+- [x] Automated bUnit tests cover `ClientDetail` (rendering personal info, related cases with localized Criminal vs. Civil party roles and case types, related companies, linked attorneys, and delete confirmation) and `ClientList` (searching clients and delete confirmation).

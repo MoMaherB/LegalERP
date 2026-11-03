@@ -2,7 +2,7 @@
 
 **What to build:** Review, polish card layout on `AttorneyForm`, and add comprehensive unit and bUnit tests for the Power of Attorney (`التوكيلات`) CRUD lifecycle across `AttorneysController`, `AttorneyForm`, and `AttorneyList`.
 
-**Blocked by:** 02: Fix Client 360° Profile Party Role & Case Type Localization, Card Layout, and Test the Clients Slice
+**Blocked by:** None (02 resolved)
 
 **Status:** ready-for-agent
 
