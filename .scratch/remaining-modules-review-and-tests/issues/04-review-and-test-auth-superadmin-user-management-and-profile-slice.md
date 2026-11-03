@@ -2,7 +2,7 @@
 
 **What to build:** Harden `ProfileController` so profile picture uploads use `DocumentOwnerTypes.Users` and delete superseded avatar files on disk when replaced, and add unit and bUnit tests covering `AuthController`, `UsersController` safety invariants, `ProfileController`, and `UserManagement`.
 
-**Blocked by:** 03: Review and Test Power of Attorney (التوكيلات) Controller, Create/Edit Form, and List View
+**Blocked by:** None (03 resolved)
 
 **Status:** ready-for-agent
 

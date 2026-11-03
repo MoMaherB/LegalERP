@@ -4,9 +4,9 @@
 
 **Blocked by:** None (02 resolved)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `AttorneyForm` cards use `flex-column align-items-stretch` so form sections stack cleanly.
-- [ ] Automated unit tests cover `AttorneysController` (GetAll, Search, GetById, GetByClientId, Create, Update, Delete, linking a client via `AddClient`, returning `409 Conflict` when linking an already-linked client, and unlinking a client via `RemoveClient`).
-- [ ] Automated bUnit tests cover `AttorneyForm` in both Create mode (creating the attorney first, then uploading the document scan with `OwnerId == created.Id` and updating the attorney's `DocumentId`) and Edit mode (replacing or preserving the existing document via `DocumentApiClient.UploadOrReplaceDocumentAsync`).
-- [ ] Automated bUnit tests cover `AttorneyList` (rendering attorneys with client counts, searching by attorney number, and confirming before deletion).
+- [x] `AttorneyForm` cards use `flex-column align-items-stretch` so form sections stack cleanly.
+- [x] Automated unit tests cover `AttorneysController` (GetAll, Search, GetById, GetByClientId, Create, Update, Delete, linking a client via `AddClient`, returning `409 Conflict` when linking an already-linked client, and unlinking a client via `RemoveClient`).
+- [x] Automated bUnit tests cover `AttorneyForm` in both Create mode (creating the attorney first, then uploading the document scan with `OwnerId == created.Id` and updating the attorney's `DocumentId`) and Edit mode (replacing or preserving the existing document via `DocumentApiClient.UploadOrReplaceDocumentAsync`).
+- [x] Automated bUnit tests cover `AttorneyList` (rendering attorneys with client counts, searching by attorney number, and confirming before deletion).
