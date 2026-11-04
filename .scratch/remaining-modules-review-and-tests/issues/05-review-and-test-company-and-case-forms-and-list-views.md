@@ -4,8 +4,8 @@
 
 **Blocked by:** None (04 resolved)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Automated bUnit tests cover `CompanyForm` in Create mode (creating the company first and uploading the Incorporation Contract `عقد التأسيس` with `OwnerId == newCompany.Id`) and Edit mode (preserving `HasManyPartners`, `PartnersIdsDocumentId`, and `PartnersAttorneysDocumentId` without wiping existing bulk partner document links).
-- [ ] Automated bUnit tests cover `CaseForm` in Create and Edit modes (verifying `CaseStatus.Closed` outcome selection `مكسب`/`خسارة`/`تصالح` and ensuring `Outcome` is cleared when `CaseStatus.Active` is selected).
-- [ ] Automated bUnit tests cover `CompanyList` (category filtering, search by term, and delete confirmation) and `CaseList` (search by term, status/outcome badges, and delete confirmation).
+- [x] Automated bUnit tests cover `CompanyForm` in Create mode (creating the company first and uploading the Incorporation Contract `عقد التأسيس` with `OwnerId == newCompany.Id`) and Edit mode (preserving `HasManyPartners`, `PartnersIdsDocumentId`, and `PartnersAttorneysDocumentId` without wiping existing bulk partner document links).
+- [x] Automated bUnit tests cover `CaseForm` in Create and Edit modes (verifying `CaseStatus.Closed` outcome selection `مكسب`/`خسارة`/`تصالح` and ensuring `Outcome` is cleared when `CaseStatus.Active` is selected).
+- [x] Automated bUnit tests cover `CompanyList` (category filtering, search by term, and delete confirmation) and `CaseList` (search by term, status/outcome badges, and delete confirmation).

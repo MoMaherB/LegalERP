@@ -155,6 +155,11 @@ else
             return;
         }
 
+        if (model.Status != CaseStatus.Closed)
+        {
+            model.Outcome = null;
+        }
+
         isSubmitting = true;
 
         try
@@ -210,7 +215,16 @@ else
         public string CaseNumber { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public CaseType CaseType { get; set; } = CaseType.Civil;
-        public CaseStatus Status { get; set; } = CaseStatus.Active;
+        private CaseStatus _status = CaseStatus.Active;
+        public CaseStatus Status
+        {
+            get => _status;
+            set
+            {
+                _status = value;
+                if (_status != CaseStatus.Closed) Outcome = null;
+            }
+        }
         public CaseOutcome? Outcome { get; set; }
         public DateOnly? FilingDate { get; set; }
         public string? CourtName { get; set; }
