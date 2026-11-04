@@ -2,7 +2,7 @@
 
 **What to build:** Review and add bUnit tests for `CompanyForm`, `CompanyList`, `CaseForm`, and `CaseList` so all primary CRUD entry forms and list filters across Companies (`الشركات`) and Cases (`القضايا`) have automated regression coverage.
 
-**Blocked by:** 04: Harden and Test Authentication, SuperAdmin User Management Guards, and User Profile Picture Lifecycle
+**Blocked by:** None (04 resolved)
 
 **Status:** ready-for-agent
 

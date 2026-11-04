@@ -1,4 +1,5 @@
 using LegalERP.Application.Auth;
+using LegalERP.Application.Common;
 using LegalERP.Application.Storage;
 using LegalERP.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
@@ -46,10 +47,23 @@ public class ProfileController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest(new { message = "لم يتم رفع أي ملف." });
 
+        var previousPath = user.ProfilePicturePath;
+
         using var stream = file.OpenReadStream();
-        var storedPath = await _storage.SaveFileAsync(stream, file.FileName, "users", user.Id);
+        var storedPath = await _storage.SaveFileAsync(stream, file.FileName, DocumentOwnerTypes.Users, user.Id);
         user.ProfilePicturePath = storedPath;
-        await _userManager.UpdateAsync(user);
+        var updateResult = await _userManager.UpdateAsync(user);
+
+        if (!updateResult.Succeeded)
+        {
+            await _storage.DeleteFileAsync(DocumentOwnerTypes.Users, user.Id, storedPath);
+            return BadRequest(new { message = string.Join(", ", updateResult.Errors.Select(e => e.Description)) });
+        }
+
+        if (!string.IsNullOrWhiteSpace(previousPath) && previousPath != storedPath)
+        {
+            await _storage.DeleteFileAsync(DocumentOwnerTypes.Users, user.Id, previousPath);
+        }
 
         return Ok(new { profilePicturePath = storedPath });
     }
