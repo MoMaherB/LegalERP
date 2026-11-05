@@ -813,77 +813,54 @@ body {
     display: inline-block;
 }
 
-/* Sleek Compact Segmented Pagination */
-.ios-pagination-group {
-    display: inline-flex;
-    align-items: stretch;
-    background: rgba(148, 163, 184, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    border-radius: 8px;
-    padding: 2px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    vertical-align: middle;
-}
-[data-theme="dark"] .ios-pagination-group {
-    background: rgba(30, 41, 59, 0.6);
-    border-color: rgba(255, 255, 255, 0.12);
-}
-
-.ios-pagination-btn {
-    border: none;
-    background: transparent;
-    color: #334155;
-    font-size: 0.8rem;
-    font-weight: 600;
-    padding: 3px 10px;
-    border-radius: 6px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    line-height: 1.4;
+/* Sleek Glassmorphism Pagination Pills */
+.ios-pagination-pill {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 50px !important;
+    font-size: 0.8rem !important;
+    padding: 4px 14px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.4) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
     text-decoration: none;
-}
-[data-theme="dark"] .ios-pagination-btn {
-    color: #cbd5e1;
+    line-height: 1;
 }
 
-.ios-pagination-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.6);
-    color: #0f172a;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-[data-theme="dark"] .ios-pagination-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.15);
-    color: #ffffff;
+.ios-pagination-pill:disabled {
+    opacity: 0.45 !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
 }
 
-.ios-pagination-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+.ios-pagination-indicator-pill {
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 50px !important;
+    font-size: 0.8rem !important;
+    padding: 4px 16px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 700 !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    border: 1px solid rgba(59, 130, 246, 0.35) !important;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.35)) !important;
+    color: #1d4ed8 !important;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+    line-height: 1;
 }
 
-.ios-pagination-indicator {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3px 10px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #1e293b;
-    border-left: 1px solid rgba(148, 163, 184, 0.25);
-    border-right: 1px solid rgba(148, 163, 184, 0.25);
-    background: rgba(255, 255, 255, 0.35);
-    line-height: 1.4;
-    margin: 0;
-    white-space: nowrap;
-}
-[data-theme="dark"] .ios-pagination-indicator {
-    color: #e2e8f0;
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.12);
+[data-theme="dark"] .ios-pagination-indicator-pill {
+    color: #bfdbfe !important;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.4)) !important;
+    border-color: rgba(59, 130, 246, 0.4) !important;
 }
 

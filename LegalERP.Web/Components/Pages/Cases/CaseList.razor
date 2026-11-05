@@ -154,33 +154,34 @@ else
                 </span>
             </div>
 
-            <div class="col-12 col-md-4 d-flex justify-content-center">
-                <div class="ios-pagination-group" role="group" aria-label="Pagination">
-                    <button type="button"
-                            class="ios-pagination-btn pagination-prev"
-                            disabled="@(!hasPreviousPage)"
-                            @onclick="() => GoToPage(currentPage - 1)">
-                        <i class="fa-solid fa-chevron-left rtl-flip"></i>
-                        <span>@Loc["Previous"]</span>
-                    </button>
+            <div class="col-12 col-md-4 d-flex justify-content-center align-items-center gap-2">
+                <button type="button"
+                        class="ios-btn ios-btn-secondary ios-pagination-pill pagination-prev m-0"
+                        style="padding: 4px 14px; font-size: 0.8rem; border-radius: 50px; height: 32px;"
+                        disabled="@(!hasPreviousPage)"
+                        @onclick="() => GoToPage(currentPage - 1)">
+                    <i class="fa-solid fa-chevron-left rtl-flip"></i>
+                    <span>@Loc["Previous"]</span>
+                </button>
 
-                    <span class="ios-pagination-indicator pagination-indicator">
-                        @Loc["Page"] @currentPage / @Math.Max(1, totalPages)
-                    </span>
+                <span class="ios-btn ios-btn-primary ios-pagination-indicator-pill pagination-indicator m-0"
+                      style="padding: 4px 16px; font-size: 0.8rem; border-radius: 50px; height: 32px; font-weight: 700; pointer-events: none; white-space: nowrap;">
+                    @Loc["Page"] @currentPage / @Math.Max(1, totalPages)
+                </span>
 
-                    <button type="button"
-                            class="ios-pagination-btn pagination-next"
-                            disabled="@(!hasNextPage)"
-                            @onclick="() => GoToPage(currentPage + 1)">
-                        <span>@Loc["Next"]</span>
-                        <i class="fa-solid fa-chevron-right rtl-flip"></i>
-                    </button>
-                </div>
+                <button type="button"
+                        class="ios-btn ios-btn-secondary ios-pagination-pill pagination-next m-0"
+                        style="padding: 4px 14px; font-size: 0.8rem; border-radius: 50px; height: 32px;"
+                        disabled="@(!hasNextPage)"
+                        @onclick="() => GoToPage(currentPage + 1)">
+                    <span>@Loc["Next"]</span>
+                    <i class="fa-solid fa-chevron-right rtl-flip"></i>
+                </button>
             </div>
 
             <div class="col-12 col-md-4 d-flex justify-content-center justify-content-md-end align-items-center gap-1">
                 <label class="ios-details text-muted mb-0 small">@Loc["RowsPerPage"]:</label>
-                <select class="ios-select form-select-sm py-0 px-2" style="width: auto; font-size: 0.8rem; height: 28px;" value="@pageSize" @onchange="OnPageSizeChanged">
+                <select class="ios-select form-select-sm py-0 px-2" style="width: auto; font-size: 0.8rem; height: 30px; border-radius: 20px;" value="@pageSize" @onchange="OnPageSizeChanged">
                     <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
