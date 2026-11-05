@@ -1,3 +1,5 @@
+using LegalERP.Api.Common;
+using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
 using LegalERP.Application.Financials;
 using LegalERP.Domain.Entities;
@@ -18,19 +20,85 @@ public class CompaniesController : ControllerBase
 
     // GET /api/companies
     [HttpGet]
-    public async Task<ActionResult<List<CompanyDto>>> GetAll(CancellationToken ct)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? pageNumber,
+        [FromQuery] int? pageSize,
+        CancellationToken ct,
+        [FromQuery] string? term = null,
+        [FromQuery] CompanyCategory? category = null)
     {
+        if (!string.IsNullOrWhiteSpace(term) || category.HasValue)
+        {
+            return await Search(term, category, pageNumber, pageSize, ct);
+        }
+
+        if (pageNumber.HasValue || pageSize.HasValue)
+        {
+            var pagination = new PaginationParams { PageNumber = pageNumber ?? 1, PageSize = pageSize ?? 25 };
+            var paged = await _repository.GetPagedAsync(pagination, ct);
+            Response.SetPaginationHeaders(paged);
+
+            var dtos = paged.Items.Select(ToDto).ToList();
+            return Ok(new PagedResult<CompanyDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
+        }
+
         var companies = await _repository.GetAllAsync(ct);
-        return Ok(companies.Select(ToDto));
+        return Ok(companies.Select(ToDto).ToList());
+    }
+
+    // GET /api/companies/paged?pageNumber=1&pageSize=25
+    [HttpGet("paged")]
+    public async Task<ActionResult<PagedResult<CompanyDto>>> GetPaged(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
+    {
+        var pagination = new PaginationParams { PageNumber = pageNumber, PageSize = pageSize };
+        var paged = await _repository.GetPagedAsync(pagination, ct);
+        Response.SetPaginationHeaders(paged);
+
+        var dtos = paged.Items.Select(ToDto).ToList();
+        return Ok(new PagedResult<CompanyDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
     }
 
     // GET /api/companies/search?term=xxx&category=CapitalCompany
     [HttpGet("search")]
-    public async Task<ActionResult<List<CompanyDto>>> Search(
-        [FromQuery] string? term, [FromQuery] CompanyCategory? category, CancellationToken ct)
+    public async Task<IActionResult> Search(
+        [FromQuery] string? term,
+        [FromQuery] CompanyCategory? category,
+        [FromQuery] int? pageNumber,
+        [FromQuery] int? pageSize,
+        CancellationToken ct)
     {
+        if (pageNumber.HasValue || pageSize.HasValue)
+        {
+            var pagination = new PaginationParams { PageNumber = pageNumber ?? 1, PageSize = pageSize ?? 25 };
+            var paged = await _repository.SearchPagedAsync(term, category, pagination, ct);
+            Response.SetPaginationHeaders(paged);
+
+            var dtos = paged.Items.Select(ToDto).ToList();
+            return Ok(new PagedResult<CompanyDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
+        }
+
         var companies = await _repository.SearchAsync(term, category, ct);
-        return Ok(companies.Select(ToDto));
+        return Ok(companies.Select(ToDto).ToList());
+    }
+
+    // GET /api/companies/search/paged?term=xxx&category=CapitalCompany&pageNumber=1&pageSize=25
+    [HttpGet("search/paged")]
+    public async Task<ActionResult<PagedResult<CompanyDto>>> SearchPaged(
+        [FromQuery] string? term,
+        [FromQuery] CompanyCategory? category,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
+    {
+        var pagination = new PaginationParams { PageNumber = pageNumber, PageSize = pageSize };
+        var paged = await _repository.SearchPagedAsync(term, category, pagination, ct);
+        Response.SetPaginationHeaders(paged);
+
+        var dtos = paged.Items.Select(ToDto).ToList();
+        return Ok(new PagedResult<CompanyDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
     }
 
     // POST /api/companies

@@ -62,7 +62,7 @@
 {
     <p>@Loc["Loading"]</p>
 }
-else if (cases.Count == 0)
+else if (totalCount == 0)
 {
     <div class="alert alert-info">
         @Loc["NoCasesFound"]
@@ -184,13 +184,6 @@ else
         </div>
     }
 }
-
-<style>
-    [dir="rtl"] .rtl-flip {
-        transform: scaleX(-1);
-        display: inline-block;
-    }
-</style>
 
 @code {
     private List<CaseDto>? cases;

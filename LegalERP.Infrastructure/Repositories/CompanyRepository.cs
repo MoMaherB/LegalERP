@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
 using LegalERP.Domain.Entities;
 using LegalERP.Domain.Enums;
@@ -32,10 +32,40 @@ public class CompanyRepository : ICompanyRepository
     public async Task<List<Company>> GetAllAsync(CancellationToken ct = default) =>
         await _db.Companies.Include(c => c.FeeTransactions).OrderBy(c => c.CompanyName).ToListAsync(ct);
 
+    public async Task<PagedResult<Company>> GetPagedAsync(PaginationParams pagination, CancellationToken ct = default)
+    {
+        var query = _db.Companies.Include(c => c.FeeTransactions);
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .OrderBy(c => c.CompanyName)
+            .Skip(pagination.Skip)
+            .Take(pagination.Take)
+            .ToListAsync(ct);
+
+        return new PagedResult<Company>(items, totalCount, pagination.PageNumber, pagination.Take);
+    }
+
     public async Task<List<Company>> SearchAsync(string? searchTerm, CompanyCategory? category, CancellationToken ct = default)
     {
-        var query = _db.Companies.AsQueryable();
+        var query = ApplySearchFilters(_db.Companies.AsQueryable(), searchTerm, category);
+        return await query.OrderBy(c => c.CompanyName).ToListAsync(ct);
+    }
 
+    public async Task<PagedResult<Company>> SearchPagedAsync(string? searchTerm, CompanyCategory? category, PaginationParams pagination, CancellationToken ct = default)
+    {
+        var query = ApplySearchFilters(_db.Companies.Include(c => c.FeeTransactions), searchTerm, category);
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .OrderBy(c => c.CompanyName)
+            .Skip(pagination.Skip)
+            .Take(pagination.Take)
+            .ToListAsync(ct);
+
+        return new PagedResult<Company>(items, totalCount, pagination.PageNumber, pagination.Take);
+    }
+
+    private static IQueryable<Company> ApplySearchFilters(IQueryable<Company> query, string? searchTerm, CompanyCategory? category)
+    {
         if (category is not null)
             query = query.Where(c => c.Category == category);
 
@@ -51,7 +81,7 @@ public class CompanyRepository : ICompanyRepository
                 (c.CompanyNameEn != null && EF.Functions.TrigramsAreSimilar(c.CompanyNameEn, searchTerm)));
         }
 
-        return await query.OrderBy(c => c.CompanyName).ToListAsync(ct);
+        return query;
     }
 
     public async Task AddAsync(Company entity, CancellationToken ct = default) =>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using LegalERP.Api.Common;
 using LegalERP.Application.Cases;
 using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
@@ -34,7 +35,7 @@ public class CasesController : ControllerBase
         {
             var pagination = new PaginationParams { PageNumber = pageNumber ?? 1, PageSize = pageSize ?? 25 };
             var paged = await _repository.GetPagedAsync(pagination, ct);
-            SetPaginationHeaders(paged);
+            Response.SetPaginationHeaders(paged);
 
             var dtos = paged.Items.Select(ToDto).ToList();
             return Ok(new PagedResult<CaseDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
@@ -53,7 +54,7 @@ public class CasesController : ControllerBase
     {
         var pagination = new PaginationParams { PageNumber = pageNumber, PageSize = pageSize };
         var paged = await _repository.GetPagedAsync(pagination, ct);
-        SetPaginationHeaders(paged);
+        Response.SetPaginationHeaders(paged);
 
         var dtos = paged.Items.Select(ToDto).ToList();
         return Ok(new PagedResult<CaseDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
@@ -73,7 +74,7 @@ public class CasesController : ControllerBase
         {
             var pagination = new PaginationParams { PageNumber = pageNumber ?? 1, PageSize = pageSize ?? 25 };
             var paged = await _repository.SearchPagedAsync(term, type, status, pagination, ct);
-            SetPaginationHeaders(paged);
+            Response.SetPaginationHeaders(paged);
 
             var dtos = paged.Items.Select(ToDto).ToList();
             return Ok(new PagedResult<CaseDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
@@ -95,19 +96,10 @@ public class CasesController : ControllerBase
     {
         var pagination = new PaginationParams { PageNumber = pageNumber, PageSize = pageSize };
         var paged = await _repository.SearchPagedAsync(term, type, status, pagination, ct);
-        SetPaginationHeaders(paged);
+        Response.SetPaginationHeaders(paged);
 
         var dtos = paged.Items.Select(ToDto).ToList();
         return Ok(new PagedResult<CaseDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
-    }
-
-    private void SetPaginationHeaders<T>(PagedResult<T> paged)
-    {
-        if (Response?.Headers is null) return;
-        Response.Headers["X-Total-Count"] = paged.TotalCount.ToString();
-        Response.Headers["X-Page-Number"] = paged.PageNumber.ToString();
-        Response.Headers["X-Page-Size"] = paged.PageSize.ToString();
-        Response.Headers["X-Total-Pages"] = paged.TotalPages.ToString();
     }
 
     // GET /api/cases/{id}

@@ -807,3 +807,9 @@ body {
 /* EmptyLayout bare wrapper */
 .bare-layout { min-height: 100vh; }
 
+/* RTL Flip Utilities */
+[dir="rtl"] .rtl-flip {
+    transform: scaleX(-1);
+    display: inline-block;
+}
+

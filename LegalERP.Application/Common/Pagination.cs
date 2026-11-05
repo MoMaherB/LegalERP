@@ -5,11 +5,23 @@ namespace LegalERP.Application.Common;
 
 public record PaginationParams
 {
-    public int PageNumber { get; init; } = 1;
-    public int PageSize { get; init; } = 25;
+    private readonly int _pageNumber = 1;
+    private readonly int _pageSize = 25;
 
-    public int Skip => Math.Max(0, (PageNumber - 1) * PageSize);
-    public int Take => Math.Clamp(PageSize, 1, 100);
+    public int PageNumber
+    {
+        get => _pageNumber;
+        init => _pageNumber = Math.Max(1, value);
+    }
+
+    public int PageSize
+    {
+        get => _pageSize;
+        init => _pageSize = Math.Clamp(value, 1, 100);
+    }
+
+    public int Skip => (PageNumber - 1) * PageSize;
+    public int Take => PageSize;
 }
 
 public record PagedResult<T>(

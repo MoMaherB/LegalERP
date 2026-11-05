@@ -1,3 +1,4 @@
+using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -25,6 +26,14 @@ public class CompanyApiClient
         return result ?? new List<CompanyDto>();
     }
 
+    public async Task<PagedResult<CompanyDto>> GetPagedAsync(int pageNumber = 1, int pageSize = 25)
+    {
+        var result = await _http.GetFromJsonAsync<PagedResult<CompanyDto>>(
+            $"api/companies/paged?pageNumber={pageNumber}&pageSize={pageSize}",
+            JsonOptions);
+        return result ?? new PagedResult<CompanyDto>([], 0, pageNumber, pageSize);
+    }
+
     public async Task<List<CompanyDto>> SearchAsync(string? searchTerm, LegalERP.Domain.Enums.CompanyCategory? category)
     {
         var queryParams = new List<string>();
@@ -36,6 +45,29 @@ public class CompanyApiClient
         var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
         var result = await _http.GetFromJsonAsync<List<CompanyDto>>($"api/companies/search{queryString}", JsonOptions);
         return result ?? new List<CompanyDto>();
+    }
+
+    public async Task<PagedResult<CompanyDto>> SearchPagedAsync(
+        string? searchTerm,
+        LegalERP.Domain.Enums.CompanyCategory? category,
+        int pageNumber = 1,
+        int pageSize = 25)
+    {
+        var queryParams = new List<string>
+        {
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+            queryParams.Add($"term={Uri.EscapeDataString(searchTerm)}");
+        if (category.HasValue)
+            queryParams.Add($"category={category.Value}");
+
+        var queryString = "?" + string.Join("&", queryParams);
+        var result = await _http.GetFromJsonAsync<PagedResult<CompanyDto>>(
+            $"api/companies/search/paged{queryString}",
+            JsonOptions);
+        return result ?? new PagedResult<CompanyDto>([], 0, pageNumber, pageSize);
     }
 
     public async Task<CompanyDto?> CreateAsync(CreateCompanyDto dto)

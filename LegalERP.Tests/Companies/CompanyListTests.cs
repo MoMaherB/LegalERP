@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Bunit;
 using Bunit.TestDoubles;
 using FluentAssertions;
+using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
 using LegalERP.Domain.Enums;
 using LegalERP.Web;
@@ -187,6 +188,144 @@ public class CompanyListTests : TestContext
         _mockToast.Verify(t => t.ShowSuccess(It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task CompanyList_WithPagination_RendersControlsAndNavigatesBetweenPages()
+    {
+        _httpHandler.Companies = Enumerable.Range(1, 35)
+            .Select(i => CreateCompanyDto(Guid.NewGuid(), fileNumber: $"COMP-{i:D2}", companyName: $"شركة رقم {i}"))
+            .ToList();
+
+        var cut = RenderComponent<CompanyList>();
+
+        // Page 1: 25 items rendered
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll("tbody tr");
+            rows.Should().HaveCount(25);
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("1 / 2");
+
+            var prevBtn = cut.Find("button.pagination-prev");
+            prevBtn.HasAttribute("disabled").Should().BeTrue();
+
+            var nextBtn = cut.Find("button.pagination-next");
+            nextBtn.HasAttribute("disabled").Should().BeFalse();
+        });
+
+        // Click next -> Page 2: 10 items rendered
+        var nextButton = cut.Find("button.pagination-next");
+        await cut.InvokeAsync(() => nextButton.Click());
+
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll("tbody tr");
+            rows.Should().HaveCount(10);
+            rows[0].TextContent.Should().Contain("COMP-26");
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("2 / 2");
+
+            var prevBtn = cut.Find("button.pagination-prev");
+            prevBtn.HasAttribute("disabled").Should().BeFalse();
+
+            var nextBtn = cut.Find("button.pagination-next");
+            nextBtn.HasAttribute("disabled").Should().BeTrue();
+        });
+
+        // Click previous -> Page 1 again
+        var prevButton = cut.Find("button.pagination-prev");
+        await cut.InvokeAsync(() => prevButton.Click());
+
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll("tbody tr");
+            rows.Should().HaveCount(25);
+            rows[0].TextContent.Should().Contain("COMP-01");
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("1 / 2");
+        });
+    }
+
+    [Fact]
+    public async Task CompanyList_WhenPageSizeChanged_UpdatesPageAndItemsCount()
+    {
+        _httpHandler.Companies = Enumerable.Range(1, 25)
+            .Select(i => CreateCompanyDto(Guid.NewGuid(), fileNumber: $"COMP-{i:D2}", companyName: $"شركة {i}"))
+            .ToList();
+
+        var cut = RenderComponent<CompanyList>();
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.FindAll("tbody tr").Should().HaveCount(25);
+        });
+
+        // Change page size to 10
+        var select = cut.Find("select.ios-select.form-select-sm");
+        await cut.InvokeAsync(() => select.Change("10"));
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.FindAll("tbody tr").Should().HaveCount(10);
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("1 / 3");
+        });
+    }
+
+    [Fact]
+    public async Task CompanyList_PreservesFiltersAcrossPagination()
+    {
+        _httpHandler.SearchResults = Enumerable.Range(1, 30)
+            .Select(i => CreateCompanyDto(Guid.NewGuid(), fileNumber: $"COMP-F-{i:D2}", companyName: $"شركة حديثة {i}", category: CompanyCategory.Partnership))
+            .ToList();
+
+        var cut = RenderComponent<CompanyList>();
+
+        var searchInput = cut.WaitForElement("input.ios-input");
+        searchInput.Input("حديثة");
+
+        var select = cut.Find("select.ios-select");
+        select.Change(CompanyCategory.Partnership.ToString());
+
+        var searchBtn = cut.FindAll("button.ios-btn-primary")
+            .First(b => b.TextContent.Contains("Search"));
+        await cut.InvokeAsync(() => searchBtn.Click());
+
+        cut.WaitForAssertion(() =>
+        {
+            _httpHandler.LastSearchTerm.Should().Be("حديثة");
+            _httpHandler.LastCategory.Should().Be(CompanyCategory.Partnership.ToString());
+            cut.FindAll("tbody tr").Should().HaveCount(25);
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("1 / 2");
+        });
+
+        // Click next on filtered results
+        var nextBtn = cut.Find("button.pagination-next");
+        await cut.InvokeAsync(() => nextBtn.Click());
+
+        cut.WaitForAssertion(() =>
+        {
+            _httpHandler.LastSearchTerm.Should().Be("حديثة");
+            _httpHandler.LastCategory.Should().Be(CompanyCategory.Partnership.ToString());
+            cut.FindAll("tbody tr").Should().HaveCount(5);
+            cut.Find("tbody tr").TextContent.Should().Contain("COMP-F-26");
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("2 / 2");
+        });
+    }
+
+    [Fact]
+    public void CompanyList_WhenOutOfRangePage_PreviousAndNextButtonsRemainDisabled()
+    {
+        _httpHandler.Companies = Enumerable.Range(1, 5)
+            .Select(i => CreateCompanyDto(Guid.NewGuid(), companyName: $"شركة {i}"))
+            .ToList();
+
+        var cut = RenderComponent<CompanyList>();
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.FindAll("tbody tr").Should().HaveCount(5);
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("1 / 1");
+            cut.Find("button.pagination-prev").HasAttribute("disabled").Should().BeTrue();
+            cut.Find("button.pagination-next").HasAttribute("disabled").Should().BeTrue();
+        });
+    }
+
     private static CompanyDto CreateCompanyDto(
         Guid id,
         string? fileNumber = null,
@@ -258,16 +397,38 @@ public class CompanyListTests : TestContext
                 queryParams.TryGetValue("category", out var cat);
                 LastCategory = cat;
 
-                if (string.IsNullOrWhiteSpace(term) && string.IsNullOrWhiteSpace(cat))
+                int pageNumber = queryParams.TryGetValue("pageNumber", out var pageStr) && int.TryParse(pageStr, out var parsedPage) ? parsedPage : 1;
+                int pageSize = queryParams.TryGetValue("pageSize", out var sizeStr) && int.TryParse(sizeStr, out var parsedSize) ? parsedSize : 25;
+
+                var source = (string.IsNullOrWhiteSpace(term) && string.IsNullOrWhiteSpace(cat)) ? Companies : SearchResults;
+
+                if (path.Contains("/paged") || queryParams.ContainsKey("pageNumber"))
                 {
-                    return Task.FromResult(JsonResponse(HttpStatusCode.OK, Companies));
+                    var pagedItems = source.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                    return Task.FromResult(JsonResponse(HttpStatusCode.OK, new PagedResult<CompanyDto>(pagedItems, source.Count, pageNumber, pageSize)));
                 }
 
-                return Task.FromResult(JsonResponse(HttpStatusCode.OK, SearchResults));
+                return Task.FromResult(JsonResponse(HttpStatusCode.OK, source));
             }
 
-            if (request.Method == HttpMethod.Get && (path.EndsWith("/api/companies") || path.EndsWith("/api/companies/")))
+            if (request.Method == HttpMethod.Get && (path.Contains("/api/companies/paged") || path.Contains("/api/companies")))
             {
+                var uri = request.RequestUri!;
+                var queryParams = uri.Query.TrimStart('?')
+                    .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => p.Split('=', 2))
+                    .Where(p => p.Length == 2)
+                    .ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]), StringComparer.OrdinalIgnoreCase);
+
+                int pageNumber = queryParams.TryGetValue("pageNumber", out var pageStr) && int.TryParse(pageStr, out var parsedPage) ? parsedPage : 1;
+                int pageSize = queryParams.TryGetValue("pageSize", out var sizeStr) && int.TryParse(sizeStr, out var parsedSize) ? parsedSize : 25;
+
+                if (path.Contains("/paged") || queryParams.ContainsKey("pageNumber"))
+                {
+                    var pagedItems = Companies.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                    return Task.FromResult(JsonResponse(HttpStatusCode.OK, new PagedResult<CompanyDto>(pagedItems, Companies.Count, pageNumber, pageSize)));
+                }
+
                 return Task.FromResult(JsonResponse(HttpStatusCode.OK, Companies));
             }
 

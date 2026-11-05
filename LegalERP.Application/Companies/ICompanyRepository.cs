@@ -12,6 +12,9 @@ namespace LegalERP.Application.Companies;
 public interface ICompanyRepository : IRepository<Company>
 {
     Task<List<Company>> SearchAsync(string? searchTerm, CompanyCategory? category, CancellationToken ct = default);
+    Task<PagedResult<Company>> GetPagedAsync(PaginationParams pagination, CancellationToken ct = default);
+    Task<PagedResult<Company>> SearchPagedAsync(string? searchTerm, CompanyCategory? category, PaginationParams pagination, CancellationToken ct = default);
+
     Task AddAmendmentAsync(CompanyAmendment amendment, CancellationToken ct = default);
     Task<CompanyAmendment?> GetAmendmentByIdAsync(Guid amendmentId, CancellationToken ct = default);
     void UpdateAmendment(CompanyAmendment amendment);

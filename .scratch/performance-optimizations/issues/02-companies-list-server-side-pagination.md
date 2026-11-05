@@ -4,8 +4,8 @@
 
 **Blocked by:** 01 (Core Pagination Abstraction & Cases List Pagination)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] `GET /api/companies` and `GET /api/companies/search` accept pagination parameters alongside category and search term filters, returning a structured `PagedResult<CompanyDto>`.
-- [ ] `CompanyList.razor` includes pagination controls aligned with the design system, preserving active category and search filters across page navigation.
-- [ ] Automated tests verify that searching and changing pages on companies preserves query filters, handles out-of-range pages cleanly, and updates the list view.
+- [x] `GET /api/companies` and `GET /api/companies/search` accept pagination parameters alongside category and search term filters, returning a structured `PagedResult<CompanyDto>`.
+- [x] `CompanyList.razor` includes pagination controls aligned with the design system, preserving active category and search filters across page navigation.
+- [x] Automated tests verify that searching and changing pages on companies preserves query filters, handles out-of-range pages cleanly, and updates the list view.
