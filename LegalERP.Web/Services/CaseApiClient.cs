@@ -1,4 +1,5 @@
 using LegalERP.Application.Cases;
+using LegalERP.Application.Common;
 using LegalERP.Application.Financials;
 using LegalERP.Domain.Enums;
 using System.Net.Http.Json;
@@ -27,6 +28,14 @@ public class CaseApiClient
         return result ?? new List<CaseDto>();
     }
 
+    public async Task<PagedResult<CaseDto>> GetPagedAsync(int pageNumber = 1, int pageSize = 25)
+    {
+        var result = await _http.GetFromJsonAsync<PagedResult<CaseDto>>(
+            $"api/cases/paged?pageNumber={pageNumber}&pageSize={pageSize}",
+            JsonOptions);
+        return result ?? new PagedResult<CaseDto>([], 0, pageNumber, pageSize);
+    }
+
     public async Task<List<CaseDto>> SearchAsync(string? searchTerm, CaseType? type, CaseStatus? status)
     {
         var queryParams = new List<string>();
@@ -40,6 +49,32 @@ public class CaseApiClient
         var queryString = queryParams.Count > 0 ? "?" + string.Join("&", queryParams) : "";
         var result = await _http.GetFromJsonAsync<List<CaseDto>>($"api/cases/search{queryString}", JsonOptions);
         return result ?? new List<CaseDto>();
+    }
+
+    public async Task<PagedResult<CaseDto>> SearchPagedAsync(
+        string? searchTerm,
+        CaseType? type,
+        CaseStatus? status,
+        int pageNumber = 1,
+        int pageSize = 25)
+    {
+        var queryParams = new List<string>
+        {
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+            queryParams.Add($"term={Uri.EscapeDataString(searchTerm)}");
+        if (type.HasValue)
+            queryParams.Add($"type={type.Value}");
+        if (status.HasValue)
+            queryParams.Add($"status={status.Value}");
+
+        var queryString = "?" + string.Join("&", queryParams);
+        var result = await _http.GetFromJsonAsync<PagedResult<CaseDto>>(
+            $"api/cases/search/paged{queryString}",
+            JsonOptions);
+        return result ?? new PagedResult<CaseDto>([], 0, pageNumber, pageSize);
     }
 
     public async Task<CaseDto?> GetByIdAsync(Guid id)

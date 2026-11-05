@@ -10,6 +10,8 @@ namespace LegalERP.Application.Cases;
 public interface ICaseRepository : IRepository<Case>
 {
     Task<List<Case>> SearchAsync(string? searchTerm, CaseType? type, CaseStatus? status, CancellationToken ct = default);
+    Task<PagedResult<Case>> GetPagedAsync(PaginationParams pagination, CancellationToken ct = default);
+    Task<PagedResult<Case>> SearchPagedAsync(string? searchTerm, CaseType? type, CaseStatus? status, PaginationParams pagination, CancellationToken ct = default);
 
     Task AddPartyAsync(CaseParty party, CancellationToken ct = default);
     Task<CaseParty?> GetPartyByIdAsync(Guid partyId, CancellationToken ct = default);

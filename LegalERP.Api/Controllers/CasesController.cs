@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using LegalERP.Application.Cases;
+using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
 using LegalERP.Application.Financials;
 using LegalERP.Domain.Entities;
@@ -24,19 +25,89 @@ public class CasesController : ControllerBase
 
     // GET /api/cases
     [HttpGet]
-    public async Task<ActionResult<List<CaseDto>>> GetAll(CancellationToken ct)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? pageNumber,
+        [FromQuery] int? pageSize,
+        CancellationToken ct)
     {
+        if (pageNumber.HasValue || pageSize.HasValue)
+        {
+            var pagination = new PaginationParams { PageNumber = pageNumber ?? 1, PageSize = pageSize ?? 25 };
+            var paged = await _repository.GetPagedAsync(pagination, ct);
+            SetPaginationHeaders(paged);
+
+            var dtos = paged.Items.Select(ToDto).ToList();
+            return Ok(new PagedResult<CaseDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
+        }
+
         var cases = await _repository.GetAllAsync(ct);
-        return Ok(cases.Select(ToDto));
+        return Ok(cases.Select(ToDto).ToList());
+    }
+
+    // GET /api/cases/paged?pageNumber=1&pageSize=25
+    [HttpGet("paged")]
+    public async Task<ActionResult<PagedResult<CaseDto>>> GetPaged(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
+    {
+        var pagination = new PaginationParams { PageNumber = pageNumber, PageSize = pageSize };
+        var paged = await _repository.GetPagedAsync(pagination, ct);
+        SetPaginationHeaders(paged);
+
+        var dtos = paged.Items.Select(ToDto).ToList();
+        return Ok(new PagedResult<CaseDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
     }
 
     // GET /api/cases/search?term=xxx&type=Criminal&status=Active
     [HttpGet("search")]
-    public async Task<ActionResult<List<CaseDto>>> Search(
-        [FromQuery] string? term, [FromQuery] CaseType? type, [FromQuery] CaseStatus? status, CancellationToken ct)
+    public async Task<IActionResult> Search(
+        [FromQuery] string? term,
+        [FromQuery] CaseType? type,
+        [FromQuery] CaseStatus? status,
+        [FromQuery] int? pageNumber,
+        [FromQuery] int? pageSize,
+        CancellationToken ct)
     {
+        if (pageNumber.HasValue || pageSize.HasValue)
+        {
+            var pagination = new PaginationParams { PageNumber = pageNumber ?? 1, PageSize = pageSize ?? 25 };
+            var paged = await _repository.SearchPagedAsync(term, type, status, pagination, ct);
+            SetPaginationHeaders(paged);
+
+            var dtos = paged.Items.Select(ToDto).ToList();
+            return Ok(new PagedResult<CaseDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
+        }
+
         var cases = await _repository.SearchAsync(term, type, status, ct);
-        return Ok(cases.Select(ToDto));
+        return Ok(cases.Select(ToDto).ToList());
+    }
+
+    // GET /api/cases/search/paged?term=xxx&type=Criminal&status=Active&pageNumber=1&pageSize=25
+    [HttpGet("search/paged")]
+    public async Task<ActionResult<PagedResult<CaseDto>>> SearchPaged(
+        [FromQuery] string? term,
+        [FromQuery] CaseType? type,
+        [FromQuery] CaseStatus? status,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
+    {
+        var pagination = new PaginationParams { PageNumber = pageNumber, PageSize = pageSize };
+        var paged = await _repository.SearchPagedAsync(term, type, status, pagination, ct);
+        SetPaginationHeaders(paged);
+
+        var dtos = paged.Items.Select(ToDto).ToList();
+        return Ok(new PagedResult<CaseDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
+    }
+
+    private void SetPaginationHeaders<T>(PagedResult<T> paged)
+    {
+        if (Response?.Headers is null) return;
+        Response.Headers["X-Total-Count"] = paged.TotalCount.ToString();
+        Response.Headers["X-Page-Number"] = paged.PageNumber.ToString();
+        Response.Headers["X-Page-Size"] = paged.PageSize.ToString();
+        Response.Headers["X-Total-Pages"] = paged.TotalPages.ToString();
     }
 
     // GET /api/cases/{id}

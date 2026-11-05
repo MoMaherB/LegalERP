@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LegalERP.Application.Cases;
+using LegalERP.Application.Common;
 using LegalERP.Domain.Entities;
 using LegalERP.Domain.Enums;
 using LegalERP.Infrastructure.Persistence;
@@ -28,10 +29,40 @@ public class CaseRepository : ICaseRepository
     public async Task<List<Case>> GetAllAsync(CancellationToken ct = default) =>
         await _db.Cases.Include(c => c.FeeTransactions).OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
 
+    public async Task<PagedResult<Case>> GetPagedAsync(PaginationParams pagination, CancellationToken ct = default)
+    {
+        var query = _db.Cases.Include(c => c.FeeTransactions);
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .OrderByDescending(c => c.CreatedAt)
+            .Skip(pagination.Skip)
+            .Take(pagination.Take)
+            .ToListAsync(ct);
+
+        return new PagedResult<Case>(items, totalCount, pagination.PageNumber, pagination.Take);
+    }
+
     public async Task<List<Case>> SearchAsync(string? searchTerm, CaseType? type, CaseStatus? status, CancellationToken ct = default)
     {
-        var query = _db.Cases.AsQueryable();
+        var query = ApplySearchFilters(_db.Cases.AsQueryable(), searchTerm, type, status);
+        return await query.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
+    }
 
+    public async Task<PagedResult<Case>> SearchPagedAsync(string? searchTerm, CaseType? type, CaseStatus? status, PaginationParams pagination, CancellationToken ct = default)
+    {
+        var query = ApplySearchFilters(_db.Cases.AsQueryable(), searchTerm, type, status);
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .OrderByDescending(c => c.CreatedAt)
+            .Skip(pagination.Skip)
+            .Take(pagination.Take)
+            .ToListAsync(ct);
+
+        return new PagedResult<Case>(items, totalCount, pagination.PageNumber, pagination.Take);
+    }
+
+    private static IQueryable<Case> ApplySearchFilters(IQueryable<Case> query, string? searchTerm, CaseType? type, CaseStatus? status)
+    {
         if (type.HasValue)
             query = query.Where(c => c.CaseType == type.Value);
 
@@ -49,7 +80,7 @@ public class CaseRepository : ICaseRepository
                 EF.Functions.TrigramsAreSimilar(c.Title, searchTerm));
         }
 
-        return await query.OrderByDescending(c => c.CreatedAt).ToListAsync(ct);
+        return query;
     }
 
     public async Task AddAsync(Case entity, CancellationToken ct = default) =>

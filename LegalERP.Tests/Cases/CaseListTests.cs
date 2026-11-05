@@ -12,6 +12,7 @@ using Bunit;
 using Bunit.TestDoubles;
 using FluentAssertions;
 using LegalERP.Application.Cases;
+using LegalERP.Application.Common;
 using LegalERP.Domain.Enums;
 using LegalERP.Web;
 using LegalERP.Web.Components.Pages.Cases;
@@ -200,6 +201,85 @@ public class CaseListTests : TestContext
         _mockToast.Verify(t => t.ShowSuccess(It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task CaseList_WithPagination_RendersControlsAndNavigatesBetweenPages()
+    {
+        _httpHandler.Cases = Enumerable.Range(1, 30)
+            .Select(i => CreateCaseDto(Guid.NewGuid(), $"CASE-{i:D2}", $"قضية رقم {i}"))
+            .ToList();
+
+        var cut = RenderComponent<CaseList>();
+
+        // Page 1: 25 items rendered
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll("tbody tr");
+            rows.Should().HaveCount(25);
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("1 / 2");
+
+            var prevBtn = cut.Find("button.pagination-prev");
+            prevBtn.HasAttribute("disabled").Should().BeTrue();
+
+            var nextBtn = cut.Find("button.pagination-next");
+            nextBtn.HasAttribute("disabled").Should().BeFalse();
+        });
+
+        // Click next -> Page 2: 5 items rendered
+        var nextButton = cut.Find("button.pagination-next");
+        await cut.InvokeAsync(() => nextButton.Click());
+
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll("tbody tr");
+            rows.Should().HaveCount(5);
+            rows[0].TextContent.Should().Contain("CASE-26");
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("2 / 2");
+
+            var prevBtn = cut.Find("button.pagination-prev");
+            prevBtn.HasAttribute("disabled").Should().BeFalse();
+
+            var nextBtn = cut.Find("button.pagination-next");
+            nextBtn.HasAttribute("disabled").Should().BeTrue();
+        });
+
+        // Click previous -> Page 1 again
+        var prevButton = cut.Find("button.pagination-prev");
+        await cut.InvokeAsync(() => prevButton.Click());
+
+        cut.WaitForAssertion(() =>
+        {
+            var rows = cut.FindAll("tbody tr");
+            rows.Should().HaveCount(25);
+            rows[0].TextContent.Should().Contain("CASE-01");
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("1 / 2");
+        });
+    }
+
+    [Fact]
+    public async Task CaseList_WhenPageSizeChanged_UpdatesPageAndItemsCount()
+    {
+        _httpHandler.Cases = Enumerable.Range(1, 25)
+            .Select(i => CreateCaseDto(Guid.NewGuid(), $"CASE-{i:D2}", $"قضية {i}"))
+            .ToList();
+
+        var cut = RenderComponent<CaseList>();
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.FindAll("tbody tr").Should().HaveCount(25);
+        });
+
+        // Change page size to 10
+        var select = cut.Find("select.ios-select.form-select-sm");
+        await cut.InvokeAsync(() => select.Change("10"));
+
+        cut.WaitForAssertion(() =>
+        {
+            cut.FindAll("tbody tr").Should().HaveCount(10);
+            cut.Find(".pagination-indicator").TextContent.Should().Contain("1 / 3");
+        });
+    }
+
     private static CaseDto CreateCaseDto(
         Guid id,
         string caseNumber,
@@ -254,11 +334,36 @@ public class CaseListTests : TestContext
                 queryParams.TryGetValue("term", out var term);
                 LastSearchTerm = term;
 
+                int pageNumber = queryParams.TryGetValue("pageNumber", out var pn) && int.TryParse(pn, out var pnv) ? pnv : 1;
+                int pageSize = queryParams.TryGetValue("pageSize", out var ps) && int.TryParse(ps, out var psv) ? psv : 25;
+
+                if (path.Contains("/paged") || queryParams.ContainsKey("pageNumber"))
+                {
+                    var pagedItems = SearchResults.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                    return Task.FromResult(JsonResponse(HttpStatusCode.OK, new PagedResult<CaseDto>(pagedItems, SearchResults.Count, pageNumber, pageSize)));
+                }
+
                 return Task.FromResult(JsonResponse(HttpStatusCode.OK, SearchResults));
             }
 
-            if (request.Method == HttpMethod.Get && (path.EndsWith("/api/cases") || path.EndsWith("/api/cases/")))
+            if (request.Method == HttpMethod.Get && (path.Contains("/api/cases/paged") || path.Contains("/api/cases")))
             {
+                var uri = request.RequestUri!;
+                var queryParams = uri.Query.TrimStart('?')
+                    .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => p.Split('=', 2))
+                    .Where(p => p.Length == 2)
+                    .ToDictionary(p => p[0], p => Uri.UnescapeDataString(p[1]), StringComparer.OrdinalIgnoreCase);
+
+                int pageNumber = queryParams.TryGetValue("pageNumber", out var pn) && int.TryParse(pn, out var pnv) ? pnv : 1;
+                int pageSize = queryParams.TryGetValue("pageSize", out var ps) && int.TryParse(ps, out var psv) ? psv : 25;
+
+                if (path.Contains("/paged") || queryParams.ContainsKey("pageNumber"))
+                {
+                    var pagedItems = Cases.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+                    return Task.FromResult(JsonResponse(HttpStatusCode.OK, new PagedResult<CaseDto>(pagedItems, Cases.Count, pageNumber, pageSize)));
+                }
+
                 return Task.FromResult(JsonResponse(HttpStatusCode.OK, Cases));
             }
 
