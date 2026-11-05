@@ -813,3 +813,77 @@ body {
     display: inline-block;
 }
 
+/* Sleek Compact Segmented Pagination */
+.ios-pagination-group {
+    display: inline-flex;
+    align-items: stretch;
+    background: rgba(148, 163, 184, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 8px;
+    padding: 2px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    vertical-align: middle;
+}
+[data-theme="dark"] .ios-pagination-group {
+    background: rgba(30, 41, 59, 0.6);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+
+.ios-pagination-btn {
+    border: none;
+    background: transparent;
+    color: #334155;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1.4;
+    text-decoration: none;
+}
+[data-theme="dark"] .ios-pagination-btn {
+    color: #cbd5e1;
+}
+
+.ios-pagination-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.6);
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+[data-theme="dark"] .ios-pagination-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.ios-pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.ios-pagination-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #1e293b;
+    border-left: 1px solid rgba(148, 163, 184, 0.25);
+    border-right: 1px solid rgba(148, 163, 184, 0.25);
+    background: rgba(255, 255, 255, 0.35);
+    line-height: 1.4;
+    margin: 0;
+    white-space: nowrap;
+}
+[data-theme="dark"] .ios-pagination-indicator {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+

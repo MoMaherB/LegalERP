@@ -129,39 +129,45 @@ else
         var startItem = (currentPage - 1) * pageSize + 1;
         var endItem = Math.Min(currentPage * pageSize, totalCount);
 
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-3 px-1 py-2">
-            <div class="ios-details text-muted">
-                @Loc["Showing"] <strong>@startItem</strong> @Loc["To"] <strong>@endItem</strong> @Loc["Of"] <strong>@totalCount</strong> @Loc["Companies"]
+        <div class="row align-items-center g-2 mt-3 px-1 py-2">
+            <div class="col-12 col-md-4 text-center text-md-start">
+                <span class="ios-details text-muted small">
+                    @Loc["Showing"] <strong>@startItem</strong> @Loc["To"] <strong>@endItem</strong> @Loc["Of"] <strong>@totalCount</strong> @Loc["Companies"]
+                </span>
             </div>
 
-            <div class="d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center gap-1 me-2">
-                    <label class="ios-details text-muted mb-0 me-1">@Loc["RowsPerPage"]:</label>
-                    <select class="ios-select form-select-sm py-1 px-2" style="width: auto;" value="@pageSize" @onchange="OnPageSizeChanged">
-                        <option value="10">10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </div>
-
-                <div class="btn-group" role="group" aria-label="Pagination">
-                    <button class="ios-btn ios-btn-secondary py-1 px-3 pagination-prev"
+            <div class="col-12 col-md-4 d-flex justify-content-center">
+                <div class="ios-pagination-group" role="group" aria-label="Pagination">
+                    <button type="button"
+                            class="ios-pagination-btn pagination-prev"
                             disabled="@(!hasPreviousPage)"
                             @onclick="() => GoToPage(currentPage - 1)">
-                        <i class="fa-solid fa-chevron-left me-1 rtl-flip"></i> @Loc["Previous"]
+                        <i class="fa-solid fa-chevron-left rtl-flip"></i>
+                        <span>@Loc["Previous"]</span>
                     </button>
 
-                    <span class="d-flex align-items-center px-3 ios-badge ios-details fw-semibold text-body pagination-indicator">
+                    <span class="ios-pagination-indicator pagination-indicator">
                         @Loc["Page"] @currentPage / @Math.Max(1, totalPages)
                     </span>
 
-                    <button class="ios-btn ios-btn-secondary py-1 px-3 pagination-next"
+                    <button type="button"
+                            class="ios-pagination-btn pagination-next"
                             disabled="@(!hasNextPage)"
                             @onclick="() => GoToPage(currentPage + 1)">
-                        @Loc["Next"] <i class="fa-solid fa-chevron-right ms-1 rtl-flip"></i>
+                        <span>@Loc["Next"]</span>
+                        <i class="fa-solid fa-chevron-right rtl-flip"></i>
                     </button>
                 </div>
+            </div>
+
+            <div class="col-12 col-md-4 d-flex justify-content-center justify-content-md-end align-items-center gap-1">
+                <label class="ios-details text-muted mb-0 small">@Loc["RowsPerPage"]:</label>
+                <select class="ios-select form-select-sm py-0 px-2" style="width: auto; font-size: 0.8rem; height: 28px;" value="@pageSize" @onchange="OnPageSizeChanged">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
             </div>
         </div>
     }
