@@ -108,6 +108,8 @@ builder.Services.AddScoped<LegalERP.Application.Attorneys.IAttorneyRepository, A
 builder.Services.AddScoped<LegalERP.Application.Storage.IFileStorageService, LegalERP.Infrastructure.Storage.LocalFileStorageService>();
 
 // ── Services ──────────────────────────────────────────────────────────────────
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<LegalERP.Application.Financials.IFinancialSummaryCache, FinancialSummaryCache>();
 builder.Services.AddScoped<IWebPushNotificationService, WebPushNotificationService>();
 builder.Services.AddScoped<HearingReminderJob>();
 builder.Services.AddScoped<LegalERP.Application.Backups.IBackupArchiveService, LegalERP.Infrastructure.Services.BackupArchiveService>();

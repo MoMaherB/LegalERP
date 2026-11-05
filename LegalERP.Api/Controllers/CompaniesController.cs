@@ -15,8 +15,13 @@ namespace LegalERP.Api.Controllers;
 public class CompaniesController : ControllerBase
 {
     private readonly ICompanyRepository _repository;
+    private readonly IFinancialSummaryCache? _financialCache;
 
-    public CompaniesController(ICompanyRepository repository) => _repository = repository;
+    public CompaniesController(ICompanyRepository repository, IFinancialSummaryCache? financialCache = null)
+    {
+        _repository = repository;
+        _financialCache = financialCache;
+    }
 
     // GET /api/companies
     [HttpGet]
@@ -221,6 +226,7 @@ public class CompaniesController : ControllerBase
 
         _repository.SoftDelete(company);
         await _repository.SaveChangesAsync(ct);
+        _financialCache?.Invalidate();
 
         return NoContent();
     }

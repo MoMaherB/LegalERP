@@ -6,7 +6,9 @@ using LegalERP.Application.Companies;
 using LegalERP.Application.Financials;
 using LegalERP.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Net.Http.Headers;
 
 namespace LegalERP.Api.Controllers;
 
@@ -20,21 +22,47 @@ public class FinancialsController : ControllerBase
 
     private readonly ICaseRepository _caseRepository;
     private readonly ICompanyRepository _companyRepository;
+    private readonly IFinancialSummaryCache _cache;
 
-    public FinancialsController(ICaseRepository caseRepository, ICompanyRepository companyRepository)
+    public FinancialsController(
+        ICaseRepository caseRepository,
+        ICompanyRepository companyRepository,
+        IFinancialSummaryCache cache)
     {
         _caseRepository = caseRepository;
         _companyRepository = companyRepository;
+        _cache = cache;
     }
 
     // GET /api/financials/summary
     [HttpGet("summary")]
     public async Task<ActionResult<GlobalFinancialsDto>> GetSummary(CancellationToken ct)
     {
-        var cases = await _caseRepository.GetAllAsync(ct);
-        var companies = await _companyRepository.GetAllAsync(ct);
+        var summary = await _cache.GetOrCreateSummaryAsync(async token =>
+        {
+            var cases = await _caseRepository.GetAllAsync(token);
+            var companies = await _companyRepository.GetAllAsync(token);
+            return FinancialLedgerCalculator.BuildSummary(cases, companies);
+        }, ct);
 
-        return Ok(FinancialLedgerCalculator.BuildSummary(cases, companies));
+        var etag = summary.ComputeETag();
+
+        if (Response?.Headers != null)
+        {
+            Response.Headers[HeaderNames.ETag] = etag;
+            Response.Headers[HeaderNames.CacheControl] = $"private, max-age={_cache.SlidingExpirationSeconds}, must-revalidate";
+        }
+
+        if (Request?.Headers != null && Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var ifNoneMatchValues))
+        {
+            var ifNoneMatch = ifNoneMatchValues.ToString().Trim();
+            if (ifNoneMatch == etag || ifNoneMatch == $"W/{etag}" || ifNoneMatch == "*")
+            {
+                return StatusCode(StatusCodes.Status304NotModified);
+            }
+        }
+
+        return Ok(summary);
     }
 
     // GET /api/financials/{ownerType}/{ownerId}
@@ -70,7 +98,7 @@ public class FinancialsController : ControllerBase
                 caseEntity.AgreedFee = dto.AgreedFee;
                 _caseRepository.Update(caseEntity);
                 await _caseRepository.SaveChangesAsync(ct);
-                return NoContent();
+                break;
 
             case CompanyOwner:
                 var company = await _companyRepository.GetByIdAsync(ownerId, ct);
@@ -78,11 +106,14 @@ public class FinancialsController : ControllerBase
                 company.AgreedFee = dto.AgreedFee;
                 _companyRepository.Update(company);
                 await _companyRepository.SaveChangesAsync(ct);
-                return NoContent();
+                break;
 
             default:
                 return UnknownOwnerType(ownerType);
         }
+
+        _cache.Invalidate();
+        return NoContent();
     }
 
     // POST /api/financials/{ownerType}/{ownerId}/transactions
@@ -117,6 +148,7 @@ public class FinancialsController : ControllerBase
                 return UnknownOwnerType(ownerType);
         }
 
+        _cache.Invalidate();
         return Ok(FinancialLedgerCalculator.ToTransactionDto(transaction));
     }
 
@@ -131,18 +163,21 @@ public class FinancialsController : ControllerBase
                 if (caseTransaction is null || caseTransaction.CaseId != ownerId) return NotFound();
                 _caseRepository.SoftDeleteFeeTransaction(caseTransaction);
                 await _caseRepository.SaveChangesAsync(ct);
-                return NoContent();
+                break;
 
             case CompanyOwner:
                 var companyTransaction = await _companyRepository.GetFeeTransactionByIdAsync(transactionId, ct);
                 if (companyTransaction is null || companyTransaction.CompanyId != ownerId) return NotFound();
                 _companyRepository.SoftDeleteFeeTransaction(companyTransaction);
                 await _companyRepository.SaveChangesAsync(ct);
-                return NoContent();
+                break;
 
             default:
                 return UnknownOwnerType(ownerType);
         }
+
+        _cache.Invalidate();
+        return NoContent();
     }
 
     private BadRequestObjectResult UnknownOwnerType(string ownerType) =>

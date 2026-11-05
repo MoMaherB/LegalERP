@@ -21,8 +21,13 @@ namespace LegalERP.Api.Controllers;
 public class CasesController : ControllerBase
 {
     private readonly ICaseRepository _repository;
+    private readonly IFinancialSummaryCache? _financialCache;
 
-    public CasesController(ICaseRepository repository) => _repository = repository;
+    public CasesController(ICaseRepository repository, IFinancialSummaryCache? financialCache = null)
+    {
+        _repository = repository;
+        _financialCache = financialCache;
+    }
 
     // GET /api/cases
     [HttpGet]
@@ -170,6 +175,7 @@ public class CasesController : ControllerBase
 
         _repository.SoftDelete(entity);
         await _repository.SaveChangesAsync(ct);
+        _financialCache?.Invalidate();
 
         return NoContent();
     }

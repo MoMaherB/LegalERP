@@ -15,11 +15,16 @@ public class FinancialsControllerTests
 {
     private readonly Mock<ICaseRepository> _mockCaseRepo = new();
     private readonly Mock<ICompanyRepository> _mockCompanyRepo = new();
+    private readonly Mock<IFinancialSummaryCache> _mockCache = new();
     private readonly FinancialsController _controller;
 
     public FinancialsControllerTests()
     {
-        _controller = new FinancialsController(_mockCaseRepo.Object, _mockCompanyRepo.Object);
+        _mockCache
+            .Setup(c => c.GetOrCreateSummaryAsync(It.IsAny<Func<CancellationToken, Task<GlobalFinancialsDto>>>(), It.IsAny<CancellationToken>()))
+            .Returns<Func<CancellationToken, Task<GlobalFinancialsDto>>, CancellationToken>((factory, ct) => factory(ct));
+
+        _controller = new FinancialsController(_mockCaseRepo.Object, _mockCompanyRepo.Object, _mockCache.Object);
     }
 
     [Fact]
