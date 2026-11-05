@@ -1,10 +1,13 @@
+using LegalERP.Api.Common;
 using LegalERP.Application.Clients;
+using LegalERP.Application.Common;
 using LegalERP.Application.Companies;
 using LegalERP.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace LegalERP.Api.Controllers;
@@ -21,20 +24,82 @@ public class ClientsController : ControllerBase
         _clientRepository = clientRepository;
     }
 
+    // GET /api/clients
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? pageNumber = null,
+        [FromQuery] int? pageSize = null,
+        CancellationToken ct = default,
+        [FromQuery] string? term = null)
     {
-        var clients = await _clientRepository.GetAllAsync();
-        var dtos = clients.Select(ToSummaryDto);
-        return Ok(dtos);
+        if (!string.IsNullOrWhiteSpace(term))
+        {
+            return await Search(term, pageNumber, pageSize, ct);
+        }
+
+        if (pageNumber.HasValue || pageSize.HasValue)
+        {
+            var pagination = new PaginationParams { PageNumber = pageNumber ?? 1, PageSize = pageSize ?? 25 };
+            var actionResult = await ExecutePagedResult(_clientRepository.GetPagedAsync(pagination, ct));
+            return actionResult.Result!;
+        }
+
+        var clients = await _clientRepository.GetAllAsync(ct);
+        var summaries = clients.Select(ToSummaryDto).ToList();
+        return Ok(summaries);
     }
 
-    [HttpGet("search")]
-    public async Task<IActionResult> Search([FromQuery] string term)
+    // GET /api/clients/paged?pageNumber=1&pageSize=25
+    [HttpGet("paged")]
+    public Task<ActionResult<PagedResult<ClientSummaryDto>>> GetPaged(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
     {
-        var clients = await _clientRepository.SearchAsync(term);
-        var dtos = clients.Select(ToSummaryDto);
-        return Ok(dtos);
+        var pagination = new PaginationParams { PageNumber = pageNumber, PageSize = pageSize };
+        return ExecutePagedResult(_clientRepository.GetPagedAsync(pagination, ct));
+    }
+
+    // GET /api/clients/search?term=xxx
+    [HttpGet("search")]
+    public async Task<IActionResult> Search(
+        [FromQuery] string? term = null,
+        [FromQuery] int? pageNumber = null,
+        [FromQuery] int? pageSize = null,
+        CancellationToken ct = default)
+    {
+        if (pageNumber.HasValue || pageSize.HasValue)
+        {
+            var pagination = new PaginationParams { PageNumber = pageNumber ?? 1, PageSize = pageSize ?? 25 };
+            var actionResult = await ExecutePagedResult(_clientRepository.SearchPagedAsync(term, pagination, ct));
+            return actionResult.Result!;
+        }
+
+        var clients = await _clientRepository.SearchAsync(term, ct);
+        var summaries = clients.Select(ToSummaryDto).ToList();
+        return Ok(summaries);
+    }
+
+    // GET /api/clients/search/paged?term=xxx&pageNumber=1&pageSize=25
+    [HttpGet("search/paged")]
+    public Task<ActionResult<PagedResult<ClientSummaryDto>>> SearchPaged(
+        [FromQuery] string? term,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 25,
+        CancellationToken ct = default)
+    {
+        var pagination = new PaginationParams { PageNumber = pageNumber, PageSize = pageSize };
+        return ExecutePagedResult(_clientRepository.SearchPagedAsync(term, pagination, ct));
+    }
+
+    private async Task<ActionResult<PagedResult<ClientSummaryDto>>> ExecutePagedResult(
+        Task<PagedResult<Client>> queryTask)
+    {
+        var paged = await queryTask;
+        Response.SetPaginationHeaders(paged);
+
+        var dtos = paged.Items.Select(ToSummaryDto).ToList();
+        return Ok(new PagedResult<ClientSummaryDto>(dtos, paged.TotalCount, paged.PageNumber, paged.PageSize));
     }
 
     [HttpGet("{id:guid}")]

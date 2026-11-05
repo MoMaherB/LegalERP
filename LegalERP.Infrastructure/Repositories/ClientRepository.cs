@@ -1,4 +1,5 @@
 using LegalERP.Application.Clients;
+using LegalERP.Application.Common;
 using LegalERP.Domain.Entities;
 using LegalERP.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -55,16 +56,40 @@ public class ClientRepository : IClientRepository
         await _db.SaveChangesAsync(ct);
     }
 
+    public Task<PagedResult<Client>> GetPagedAsync(PaginationParams pagination, CancellationToken ct = default)
+    {
+        return SearchPagedAsync(null, pagination, ct);
+    }
+
     public async Task<List<Client>> SearchAsync(string? searchTerm, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(searchTerm))
-            return await GetAllAsync(ct);
+        var query = BuildSearchQuery(searchTerm);
+        return await query.OrderBy(c => c.FullName).ToListAsync(ct);
+    }
 
-        var words = searchTerm.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+    public async Task<PagedResult<Client>> SearchPagedAsync(string? searchTerm, PaginationParams pagination, CancellationToken ct = default)
+    {
+        var query = BuildSearchQuery(searchTerm);
+        var totalCount = await query.CountAsync(ct);
+        var items = await query
+            .OrderBy(c => c.FullName)
+            .Skip(pagination.Skip)
+            .Take(pagination.Take)
+            .ToListAsync(ct);
+
+        return new PagedResult<Client>(items, totalCount, pagination.PageNumber, pagination.Take);
+    }
+
+    private IQueryable<Client> BuildSearchQuery(string? searchTerm)
+    {
         var query = _db.Clients
             .Include(c => c.NationalIdDocument)
             .AsQueryable();
 
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return query;
+
+        var words = searchTerm.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
         foreach (var word in words)
         {
             var pattern = $"%{word}%";
@@ -75,8 +100,6 @@ public class ClientRepository : IClientRepository
                                      c.AttorneyClients.Any(ac => !ac.IsDeleted && ac.Attorney != null && !ac.Attorney.IsDeleted && EF.Functions.ILike(ac.Attorney.AttorneyNumber, pattern)));
         }
 
-        return await query
-            .OrderBy(c => c.FullName)
-            .ToListAsync(ct);
+        return query;
     }
 }

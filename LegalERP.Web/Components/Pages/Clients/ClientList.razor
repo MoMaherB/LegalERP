@@ -37,7 +37,7 @@
                    @bind="searchTerm" @bind:event="oninput" @onkeyup="HandleKeyUp" />
         </div>
         <div class="col-12 col-md-4 px-1 d-flex gap-2">
-            <button class="ios-btn ios-btn-primary w-100" @onclick="PerformSearch">@Loc["Search"]</button>
+            <button class="ios-btn ios-btn-primary w-100" @onclick="ApplySearch">@Loc["Search"]</button>
             <button class="ios-btn ios-btn-secondary" @onclick="ResetSearch">@Loc["Reset"]</button>
         </div>
     </div>
@@ -47,7 +47,7 @@
 {
     <p>@Loc["Loading"]</p>
 }
-else if (clients.Count == 0)
+else if (totalCount == 0)
 {
     <div class="alert alert-info">
         @Loc["NoClientsFound"] 
@@ -118,40 +118,117 @@ else
             </tbody>
         </table>
     </div>
+
+    <!-- Pagination Controls -->
+    @if (totalCount > 0)
+    {
+        var startItem = (currentPage - 1) * pageSize + 1;
+        var endItem = Math.Min(currentPage * pageSize, totalCount);
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-3 px-1 py-2">
+            <div class="ios-details text-muted">
+                @Loc["Showing"] <strong>@startItem</strong> @Loc["To"] <strong>@endItem</strong> @Loc["Of"] <strong>@totalCount</strong> @Loc["Clients"]
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-1 me-2">
+                    <label class="ios-details text-muted mb-0 me-1">@Loc["RowsPerPage"]:</label>
+                    <select class="ios-select form-select-sm py-1 px-2" style="width: auto;" value="@pageSize" @onchange="OnPageSizeChanged">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+
+                <div class="btn-group" role="group" aria-label="Pagination">
+                    <button class="ios-btn ios-btn-secondary py-1 px-3 pagination-prev"
+                            disabled="@(!hasPreviousPage)"
+                            @onclick="() => GoToPage(currentPage - 1)">
+                        <i class="fa-solid fa-chevron-left me-1 rtl-flip"></i> @Loc["Previous"]
+                    </button>
+
+                    <span class="d-flex align-items-center px-3 ios-badge ios-details fw-semibold text-body pagination-indicator">
+                        @Loc["Page"] @currentPage / @Math.Max(1, totalPages)
+                    </span>
+
+                    <button class="ios-btn ios-btn-secondary py-1 px-3 pagination-next"
+                            disabled="@(!hasNextPage)"
+                            @onclick="() => GoToPage(currentPage + 1)">
+                        @Loc["Next"] <i class="fa-solid fa-chevron-right ms-1 rtl-flip"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
     private List<ClientSummaryDto>? clients;
     private string? searchTerm;
+    private string? appliedSearchTerm;
+
+    private int currentPage = 1;
+    private int pageSize = 25;
+    private int totalCount = 0;
+    private int totalPages = 1;
+    private bool hasPreviousPage => currentPage > 1;
+    private bool hasNextPage => currentPage < totalPages;
 
     protected override async Task OnInitializedAsync()
     {
-        await PerformSearch();
+        await PerformSearch(1);
     }
 
-    private async Task PerformSearch()
+    private async Task ApplySearch()
     {
-        if (string.IsNullOrWhiteSpace(searchTerm))
+        appliedSearchTerm = searchTerm;
+        await PerformSearch(1);
+    }
+
+    private async Task PerformSearch(int page)
+    {
+        currentPage = Math.Max(1, page);
+        var paged = string.IsNullOrWhiteSpace(appliedSearchTerm)
+            ? await ClientApi.GetPagedAsync(currentPage, pageSize)
+            : await ClientApi.SearchPagedAsync(appliedSearchTerm, currentPage, pageSize);
+
+        clients = paged.Items;
+        totalCount = paged.TotalCount;
+        currentPage = paged.PageNumber;
+        pageSize = paged.PageSize;
+        totalPages = paged.TotalPages;
+    }
+
+    private async Task OnPageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var newSize) && newSize > 0)
         {
-            clients = await ClientApi.GetAllAsync();
+            pageSize = newSize;
+            await PerformSearch(1);
         }
-        else
-        {
-            clients = await ClientApi.SearchAsync(searchTerm);
-        }
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page < 1 || (totalPages > 0 && page > totalPages) || page == currentPage)
+            return;
+        await PerformSearch(page);
     }
 
     private async Task ResetSearch()
     {
         searchTerm = null;
-        await PerformSearch();
+        appliedSearchTerm = null;
+        currentPage = 1;
+        await PerformSearch(1);
     }
 
     private async Task HandleKeyUp(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            await PerformSearch();
+            await ApplySearch();
         }
     }
 
@@ -162,7 +239,8 @@ else
         {
             await ClientApi.DeleteAsync(id);
             ToastService.ShowSuccess(Loc["ClientDeleted"].Value);
-            await PerformSearch();
+            var targetPage = (clients?.Count == 1 && currentPage > 1) ? currentPage - 1 : currentPage;
+            await PerformSearch(targetPage);
         }
     }
 }

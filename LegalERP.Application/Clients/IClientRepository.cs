@@ -10,4 +10,6 @@ namespace LegalERP.Application.Clients;
 public interface IClientRepository : IRepository<Client>
 {
     Task<List<Client>> SearchAsync(string? searchTerm, CancellationToken ct = default);
+    Task<PagedResult<Client>> GetPagedAsync(PaginationParams pagination, CancellationToken ct = default);
+    Task<PagedResult<Client>> SearchPagedAsync(string? searchTerm, PaginationParams pagination, CancellationToken ct = default);
 }

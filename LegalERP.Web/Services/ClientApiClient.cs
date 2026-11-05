@@ -1,4 +1,5 @@
 using LegalERP.Application.Clients;
+using LegalERP.Application.Common;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -25,11 +26,36 @@ public class ClientApiClient
         return result ?? new();
     }
 
+    public async Task<PagedResult<ClientSummaryDto>> GetPagedAsync(int pageNumber = 1, int pageSize = 25)
+    {
+        var result = await _http.GetFromJsonAsync<PagedResult<ClientSummaryDto>>(
+            $"api/clients/paged?pageNumber={pageNumber}&pageSize={pageSize}",
+            JsonOptions);
+        return result ?? new PagedResult<ClientSummaryDto>([], 0, pageNumber, pageSize);
+    }
+
     public async Task<List<ClientSummaryDto>> SearchAsync(string? term)
     {
         var url = $"api/clients/search?term={Uri.EscapeDataString(term ?? "")}";
         var result = await _http.GetFromJsonAsync<List<ClientSummaryDto>>(url, JsonOptions);
         return result ?? new();
+    }
+
+    public async Task<PagedResult<ClientSummaryDto>> SearchPagedAsync(string? term, int pageNumber = 1, int pageSize = 25)
+    {
+        var queryParams = new List<string>
+        {
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+        if (!string.IsNullOrWhiteSpace(term))
+            queryParams.Add($"term={Uri.EscapeDataString(term)}");
+
+        var queryString = "?" + string.Join("&", queryParams);
+        var result = await _http.GetFromJsonAsync<PagedResult<ClientSummaryDto>>(
+            $"api/clients/search/paged{queryString}",
+            JsonOptions);
+        return result ?? new PagedResult<ClientSummaryDto>([], 0, pageNumber, pageSize);
     }
 
     public async Task<ClientDto?> GetByIdAsync(Guid id)
