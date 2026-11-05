@@ -26,8 +26,6 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(c => c.RegistrationNumber).HasMaxLength(100);
         builder.Property(c => c.Address).HasMaxLength(1000);
 
-      
-
         builder.HasQueryFilter(c => !c.IsDeleted);
 
         // Many-Partners mode
@@ -71,5 +69,12 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.HasIndex(c => c.TradeName)
             .HasMethod("gin")
             .HasOperators("gin_trgm_ops");
+
+        // Performance Indexes (Ticket 04)
+        builder.HasIndex(c => c.RegistrationNumber)
+            .HasDatabaseName("IX_companies_RegistrationNumber");
+
+        builder.HasIndex(c => c.Category)
+            .HasDatabaseName("IX_companies_Category");
     }
 }

@@ -18,5 +18,12 @@ public class CaseHearingConfiguration : IEntityTypeConfiguration<CaseHearing>
             .WithMany(c => c.Hearings)
             .HasForeignKey(h => h.CaseId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Performance Indexes (Ticket 04)
+        builder.HasIndex(h => new { h.HearingDate, h.IsDeleted })
+            .HasDatabaseName("IX_case_hearings_HearingDate_IsDeleted");
+
+        builder.HasIndex(h => h.CaseId)
+            .HasDatabaseName("IX_case_hearings_CaseId");
     }
 }

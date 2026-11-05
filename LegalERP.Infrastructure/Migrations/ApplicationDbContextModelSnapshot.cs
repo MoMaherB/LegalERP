@@ -283,10 +283,16 @@ namespace LegalERP.Infrastructure.Migrations
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("CaseNumber"), "gin");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("CaseNumber"), new[] { "gin_trgm_ops" });
 
+                    b.HasIndex("FilingDate")
+                        .HasDatabaseName("IX_cases_FilingDate");
+
                     b.HasIndex("Title");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("Title"), "gin");
                     NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Title"), new[] { "gin_trgm_ops" });
+
+                    b.HasIndex("Status", "IsDeleted")
+                        .HasDatabaseName("IX_cases_Status_IsDeleted");
 
                     b.ToTable("cases", (string)null);
                 });
@@ -323,7 +329,11 @@ namespace LegalERP.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CaseId");
+                    b.HasIndex("CaseId")
+                        .HasDatabaseName("IX_case_hearings_CaseId");
+
+                    b.HasIndex("HearingDate", "IsDeleted")
+                        .HasDatabaseName("IX_case_hearings_HearingDate_IsDeleted");
 
                     b.ToTable("case_hearings", (string)null);
                 });
@@ -495,6 +505,12 @@ namespace LegalERP.Infrastructure.Migrations
 
                     b.HasIndex("NationalIdDocumentId");
 
+                    b.HasIndex("NationalIdNumber")
+                        .HasDatabaseName("IX_clients_NationalIdNumber");
+
+                    b.HasIndex("FullName", "IsDeleted")
+                        .HasDatabaseName("IX_clients_FullName_IsDeleted");
+
                     b.ToTable("clients", (string)null);
                 });
 
@@ -581,6 +597,9 @@ namespace LegalERP.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Category")
+                        .HasDatabaseName("IX_companies_Category");
+
                     b.HasIndex("CompanyName");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex("CompanyName"), "gin");
@@ -596,6 +615,9 @@ namespace LegalERP.Infrastructure.Migrations
                     b.HasIndex("PartnersAttorneysDocumentId");
 
                     b.HasIndex("PartnersIdsDocumentId");
+
+                    b.HasIndex("RegistrationNumber")
+                        .HasDatabaseName("IX_companies_RegistrationNumber");
 
                     b.HasIndex("TradeName");
 

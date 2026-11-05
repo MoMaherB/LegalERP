@@ -35,5 +35,12 @@ public class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.HasIndex(c => c.FullNameEn)
             .HasMethod("gin")
             .HasOperators("gin_trgm_ops");
+
+        // Performance Indexes (Ticket 04)
+        builder.HasIndex(c => c.NationalIdNumber)
+            .HasDatabaseName("IX_clients_NationalIdNumber");
+
+        builder.HasIndex(c => new { c.FullName, c.IsDeleted })
+            .HasDatabaseName("IX_clients_FullName_IsDeleted");
     }
 }

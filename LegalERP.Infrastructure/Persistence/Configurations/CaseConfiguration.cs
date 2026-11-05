@@ -35,5 +35,12 @@ public class CaseConfiguration : IEntityTypeConfiguration<Case>
         builder.HasIndex(c => c.Title)
             .HasMethod("gin")
             .HasOperators("gin_trgm_ops");
+
+        // Performance Indexes (Ticket 04)
+        builder.HasIndex(c => new { c.Status, c.IsDeleted })
+            .HasDatabaseName("IX_cases_Status_IsDeleted");
+
+        builder.HasIndex(c => c.FilingDate)
+            .HasDatabaseName("IX_cases_FilingDate");
     }
 }
