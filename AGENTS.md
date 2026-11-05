@@ -1032,6 +1032,21 @@ Feature 14 (UI Glassmorphism Upgrades) is implemented, verified, and active. The
 - **Test-Driven Verification & Code Hygiene:**
   - Added [`CompanyPartnersSectionTests.cs`](file:///C:/MoMaherB/LegalERP.Web/LegalERP.Tests/Companies/CompanyPartnersSectionTests.cs) and resolved all compiler warnings across the solution, expanding the automated test suite to **160 passing tests** with **0 failures** and **0 warnings**.
 
+**Performance Optimizations & Automated k6 Regression Gate — Tickets 01–07 — ✅ COMPLETED (2026-11-05)**
+- **Server-Side Pagination (Tickets 01–03):**
+  - Core pagination abstractions (`PagedResult<T>`, `PaginationParams`, `PaginationHeaderExtensions`) implemented in `LegalERP.Application.Common.Pagination`.
+  - Server-side pagination with query preservation implemented across Cases (`CasesController`, `CaseList.razor`), Companies (`CompaniesController`, `CompanyList.razor`), and Clients (`ClientsController`, `ClientList.razor`).
+- **PostgreSQL Database Indexes (Ticket 04):**
+  - Composite indexes added to `case_hearings` (`HearingDate`, `IsDeleted`, `CaseId`), `cases` (`Status`, `IsDeleted`, `FilingDate`), `clients` (`NationalIdNumber`, `FullName`, `IsDeleted`), and `companies` (`RegistrationNumber`, `Category`).
+- **Financial Ledger In-Memory Caching (Ticket 05):**
+  - Implemented `IFinancialSummaryCache` with sliding-window caching (`IMemoryCache`), proactive invalidation on fees/transactions and case/company deletions, collision-resistant `ComputeETag()`, and HTTP `304 Not Modified` / `Cache-Control` response headers.
+- **ASP.NET Core 8 Rate Limiting Middleware (Ticket 06):**
+  - Dual-policy rate limiting (`AuthLoginPolicy` 10 req/min, `GeneralApiPolicy` 150 req/min) with `X-Internal-Bypass-Key` shared-secret header, loopback bypass, and localized bilingual 429 response bodies.
+- **Automated k6 Performance Regression Gate (Ticket 07):**
+  - Integrated benchmark suite in `.scratch/k6-performance/performance-gate.js` enforcing strict SLOs: `p95 < 250ms`, `errors < 1%`.
+  - Added runnable CLI runner script `run-performance-gate.ps1` at the repository root and documented in `docs/PERFORMANCE_GATE.md`.
+- **Test-Driven Verification:** Expanded test suite to **390 automated unit and integration tests** with 0 failures and 0 warnings.
+
 ---
 
 *End of reference document.*

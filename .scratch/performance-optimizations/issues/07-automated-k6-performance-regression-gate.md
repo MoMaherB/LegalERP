@@ -4,9 +4,9 @@
 
 **Blocked by:** 01 (Core Pagination & Cases Pagination), 02 (Companies Pagination), 03 (Clients Pagination), 04 (PostgreSQL Indexes), 05 (Financials Caching), 06 (Rate Limiting)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] A dedicated benchmark script in `.scratch/k6-performance/` validates paginated cases, companies, and clients endpoints, cached financials summary, and rate-limited auth.
-- [ ] A runnable CLI command or script (e.g., `run-performance-gate.ps1`) executes the benchmark, verifies thresholds, and fails with a non-zero exit code if any threshold is violated.
-- [ ] Thresholds are strictly configured: `http_req_failed < 1%`, `http_req_duration p(95) < 250ms`, and all module health checks pass 100%.
-- [ ] Documentation is added to `docs/` or `AGENTS.md` explaining how developers and CI agents run and verify the performance gate before major releases.
+- [x] A dedicated benchmark script in `.scratch/k6-performance/` validates paginated cases, companies, and clients endpoints, cached financials summary, and rate-limited auth.
+- [x] A runnable CLI command or script (e.g., `run-performance-gate.ps1`) executes the benchmark, verifies thresholds, and fails with a non-zero exit code if any threshold is violated.
+- [x] Thresholds are strictly configured: `http_req_failed < 1%`, `http_req_duration p(95) < 250ms`, and all module health checks pass 100%.
+- [x] Documentation is added to `docs/` or `AGENTS.md` explaining how developers and CI agents run and verify the performance gate before major releases.
