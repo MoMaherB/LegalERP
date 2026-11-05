@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Hangfire;
 using Hangfire.PostgreSql;
+using LegalERP.Api.Common.RateLimiting;
 using LegalERP.Application.Companies;
 using LegalERP.Application.Notifications;
 using LegalERP.Domain.Entities;
@@ -110,6 +111,7 @@ builder.Services.AddScoped<LegalERP.Application.Storage.IFileStorageService, Leg
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<LegalERP.Application.Financials.IFinancialSummaryCache, FinancialSummaryCache>();
+builder.Services.AddAppRateLimiting(builder.Configuration);
 builder.Services.AddScoped<IWebPushNotificationService, WebPushNotificationService>();
 builder.Services.AddScoped<HearingReminderJob>();
 builder.Services.AddScoped<LegalERP.Application.Backups.IBackupArchiveService, LegalERP.Infrastructure.Services.BackupArchiveService>();
@@ -149,11 +151,12 @@ app.UseHttpsRedirection();
 app.UseCors("AllowWebApp");
 app.UseAuthentication(); // Must be before UseAuthorization
 app.UseAuthorization();
+app.UseRateLimiter();
 
 // Hangfire Dashboard (admin only in production — open for dev)
 app.UseHangfireDashboard("/hangfire");
 
-app.MapControllers();
+app.MapControllers().RequireRateLimiting(RateLimitingConstants.GeneralApiPolicy);
 
 // Recurring hearing reminder job — runs daily at 08:00 AM
 RecurringJob.AddOrUpdate<HearingReminderJob>(

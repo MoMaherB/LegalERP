@@ -4,11 +4,11 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Rate limiting middleware (`Microsoft.AspNetCore.RateLimiting`) is registered and configured with policies:
+- [x] Rate limiting middleware (`Microsoft.AspNetCore.RateLimiting`) is registered and configured with policies:
   - Strict policy for `/api/auth/login` (e.g. max 10 requests per minute per IP address).
   - General API policy for public/authenticated endpoints (e.g. 150 requests per minute).
-- [ ] Rate-limited responses return status code `429 Too Many Requests` with a clear localized error message or `Retry-After` header.
-- [ ] Whitelist or bypass is provided for internal server-to-server calls or loopback traffic.
-- [ ] Automated tests verify that requests within limits succeed and requests exceeding the threshold return HTTP 429.
+- [x] Rate-limited responses return status code `429 Too Many Requests` with a clear localized error message or `Retry-After` header.
+- [x] Whitelist or bypass is provided for internal server-to-server calls or loopback traffic.
+- [x] Automated tests verify that requests within limits succeed and requests exceeding the threshold return HTTP 429.

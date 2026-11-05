@@ -1,8 +1,10 @@
+using LegalERP.Api.Common.RateLimiting;
 using LegalERP.Application.Auth;
 using LegalERP.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace LegalERP.Api.Controllers;
 
@@ -21,6 +23,7 @@ public class AuthController : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitingConstants.AuthLoginPolicy)]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         Console.WriteLine($"[AUTH DEBUG] Attempting login for {dto.Email}");
